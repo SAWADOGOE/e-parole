@@ -5,13 +5,25 @@
 ## Services (`compose.yaml`)
 | Service | Image | Port hôte (dev) | Réseau | Volume | Healthcheck |
 |---|---|---|---|---|---|
-| `web` | build local (`Dockerfile`, cible `runner`) | `${WEB_PORT:-3410}` | `edge`, `internal` | — | `GET /api/health` |
+| `web` | build local (`Dockerfile`, cible `runner`) | `${WEB_PORT:-53000}` | `edge`, `internal` | — | `GET /api/health` |
 | `worker` | même image, `CMD node dist/worker.js` | — | `internal` | — | heartbeat pg-boss |
 | `db` | `postgres:17-alpine` | `127.0.0.1:${DB_PORT:-55432}` (dev seulement) | `internal` | `eparole_pgdata` | `pg_isready` |
 | `storage` | `minio/minio` | `127.0.0.1:${S3_PORT:-59000}`, console `59001` | `internal` | `eparole_s3data` | `mc ready local` |
 | `mail` | `axllent/mailpit` | UI `127.0.0.1:${MAIL_UI_PORT:-58025}`, SMTP `127.0.0.1:${SMTP_PORT:-51025}` | `internal` | — | HTTP UI |
 
-Ports hors des plages usuelles (3000, 5432, 9000, 8025) pour éviter les conflits avec d'autres projets locaux.
+**Convention de ports (décision de l'utilisateur)** : chaque port hôte est le port standard du service **précédé d'un 5**,
+pour éviter les conflits avec d'autres projets locaux.
+
+| Service | Port standard | Port e-Parole |
+|---|---|---|
+| Next.js | 3000 | 53000 |
+| PostgreSQL | 5432 | 55432 |
+| MinIO API / console | 9000 / 9001 | 59000 / 59001 |
+| Mailpit UI / SMTP | 8025 / 1025 | 58025 / 51025 |
+| Redis (Phase 7) | 6379 | 56379 |
+
+Tout nouveau service suit la même règle. Les ports restent surchargeables par variable d'environnement. À l'intérieur
+du réseau Docker, les services gardent leurs ports standards (ex. `db:5432`).
 En dev, Next.js tourne de préférence **hors Docker** (`pnpm dev`) pour la vitesse ; Docker fournit db, storage, mail.
 Profil `full` pour tout lancer en conteneurs.
 
@@ -26,10 +38,10 @@ Migrations : service ponctuel `migrate` (`prisma migrate deploy`) exécuté avan
 
 ## `.env.example` (clés prévues, sans valeurs réelles)
 ```dotenv
-APP_URL=http://localhost:3410
+APP_URL=http://localhost:53000
 DATABASE_URL=postgresql://eparole:CHANGE_ME@localhost:55432/eparole
 BETTER_AUTH_SECRET=CHANGE_ME_32_BYTES_MIN
-BETTER_AUTH_URL=http://localhost:3410
+BETTER_AUTH_URL=http://localhost:53000
 S3_ENDPOINT=http://localhost:59000
 S3_REGION=us-east-1
 S3_BUCKET_PUBLIC=eparole-public

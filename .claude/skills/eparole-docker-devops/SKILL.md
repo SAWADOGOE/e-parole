@@ -10,7 +10,7 @@ description: Use when creating or changing e-Parole Dockerfile, compose.yaml, .e
 2. Images stables à tag précis (puis digest) : `node:22-alpine`, `postgres:17-alpine`, `axllent/mailpit`, `minio/minio` (dev).
 3. Dockerfile multi-stage (`base` → `deps` → `build` → `runner`), utilisateur non root, `output: "standalone"`, `HEALTHCHECK`.
 4. Compose : réseaux `edge`/`internal` ; DB et stockage liés à `127.0.0.1` en dev, **non exposés** en prod ; ports par défaut
-   hors plages usuelles (web 3410, db 55432, S3 59000/59001, Mailpit 58025/51025) et surchargeables.
+   préfixés par 5 (web 53000, db 55432, S3 59000/59001, Mailpit 58025/51025) et surchargeables.
 5. Volumes nommés `eparole_*` ; service `migrate` ponctuel avant `web`.
 6. `.env.example` sans aucune valeur réelle ; secrets réels hors dépôt.
 7. GitHub Actions : actions épinglées par SHA, `permissions` minimales, environnements protégés pour la prod,

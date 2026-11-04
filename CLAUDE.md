@@ -56,6 +56,10 @@ Jamais d'alpha, beta, RC ou canary sans accord explicite.
 Branches `feat/…`, `fix/…`, `docs/…`, `chore/…`. Conventional Commits. Pas de push, merge, reset destructif ni
 déploiement sans demande explicite. Voir `docs/26-GIT-WORKFLOW.md`.
 
+## Ports locaux
+Port standard précédé d'un 5 : web 53000, PostgreSQL 55432, MinIO 59000/59001, Mailpit 58025/51025, Redis 56379.
+Tout nouveau service suit cette règle (`docs/22-DOCKER-SETUP.md`).
+
 ## Commandes (Phase 1, pas encore disponibles)
 `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:e2e` · `pnpm db:migrate` · `docker compose up -d`
 
