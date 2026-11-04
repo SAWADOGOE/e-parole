@@ -17,7 +17,11 @@ export function SignInForm() {
   const params = useSearchParams();
   const [errors, setErrors] = useState<FieldErrorKeys>({});
   const [formError, setFormError] = useState<string | null>(
-    params.get("raison") === "session-admin-expiree" ? t("adminSessionExpired") : null,
+    params.get("raison") === "session-admin-expiree"
+      ? t("adminSessionExpired")
+      : params.get("raison") === "mfa-admin"
+        ? t("adminMfaReverify")
+        : null,
   );
   const [pending, setPending] = useState(false);
 
@@ -38,7 +42,8 @@ export function SignInForm() {
       return;
     }
     if ("twoFactorRedirect" in data) {
-      router.push("/connexion/deux-facteurs");
+      const retour = params.get("retour");
+      router.push(retour ? `/connexion/deux-facteurs?retour=${encodeURIComponent(safeReturnTo(retour))}` : "/connexion/deux-facteurs");
       return;
     }
     router.push(safeReturnTo(params.get("retour")));

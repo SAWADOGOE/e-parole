@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GlobalRoleName } from "@/server/policies/roles";
+import { errorKey } from "@/lib/error-key";
 import { changeRoleAction, reauthenticateAction } from "../server/actions";
 
 interface RoleState {
@@ -37,13 +38,14 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
   const [confirming, setConfirming] = useState<Pending>(null);
   const [reauthFor, setReauthFor] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reauthError, setReauthError] = useState<string | undefined>(undefined);
+  const tErrors = useTranslations("errors.codes");
   const [busy, setBusy] = useState(false);
 
   async function apply(change: NonNullable<Pending>) {
     setBusy(true);
     setError(null);
-    const result = await changeRoleAction(change.mode, { userId, role: change.role });
-    setBusy(false);
+    const result = await changeRoleAction(change.mode, { userId, role: change.role }).finally(() => setBusy(false));
     if (result.ok) {
       toast(t("roleChanged"));
       router.refresh();
@@ -53,7 +55,7 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
       setReauthFor(change);
       return;
     }
-    setError(result.error.message);
+    setError(tErrors(errorKey(result.error.code)));
   }
 
   async function submitReauth(event: SubmitEvent<HTMLFormElement>) {
@@ -62,10 +64,11 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
     if (!change) return;
     const password = formText(new FormData(event.currentTarget), "password");
     setBusy(true);
-    const result = await reauthenticateAction({ password });
-    setBusy(false);
+    setReauthError(undefined);
+    const result = await reauthenticateAction({ password }).finally(() => setBusy(false));
     if (!result.ok) {
-      setError(result.error.fieldErrors?.["password"]?.[0] ?? result.error.message);
+      // L'erreur s'affiche DANS la modale (le reste de la page est masqué par Radix).
+      setReauthError(result.error.fieldErrors?.["password"] ? tAuth("wrongPassword") : tErrors(errorKey(result.error.code)));
       return;
     }
     setReauthFor(null);
@@ -134,7 +137,14 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
           <AlertDialogTitle>{t("reauthTitle")}</AlertDialogTitle>
           <AlertDialogDescription>{t("reauthIntro")}</AlertDialogDescription>
           <form method="post" onSubmit={(e) => void submitReauth(e)} className="flex flex-col gap-4">
-            <FormField name="password" type="password" label={tAuth("passwordLabel")} autoComplete="current-password" required />
+            <FormField
+              name="password"
+              type="password"
+              label={tAuth("passwordLabel")}
+              autoComplete="current-password"
+              required
+              error={reauthError}
+            />
             <AlertDialogFooter>
               <AlertDialogCancel type="button">{tCommon("cancel")}</AlertDialogCancel>
               <Button type="submit" disabled={busy}>

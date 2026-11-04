@@ -7,11 +7,16 @@ vi.mock("next/headers", () => ({ headers: vi.fn() }));
 const { evaluateAdminGate } = await import("@/server/auth/session");
 const { makeActor } = await import("../../factories/actor");
 
-function session(overrides: Parameters<typeof makeActor>[0] = {}, createdAt = new Date()) {
+function session(
+  overrides: Parameters<typeof makeActor>[0] = {},
+  createdAt = new Date(),
+  mfaVerifiedAt: Date | null = new Date(),
+) {
   return {
     sessionId: "s1",
     createdAt,
     reauthenticatedAt: null,
+    mfaVerifiedAt,
     actor: makeActor(overrides),
     displayName: "Test",
     handle: "test",
@@ -39,6 +44,10 @@ describe("garde d'accès à /admin", () => {
   it("expire une session d'administration de plus de 12 heures", () => {
     const old = new Date(Date.now() - 13 * 60 * 60 * 1000);
     expect(evaluateAdminGate(session({ roles: ["ADMIN"] }, old)).kind).toBe("session_expired");
+  });
+
+  it("refuse une session ouverte sans second facteur, même si le compte a la MFA", () => {
+    expect(evaluateAdminGate(session({ roles: ["SUPER_ADMIN"] }, new Date(), null)).kind).toBe("mfa_reverify");
   });
 
   it("autorise un admin avec MFA et session récente", () => {

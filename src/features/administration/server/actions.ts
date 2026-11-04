@@ -6,7 +6,8 @@ import { parseInput, toResult } from "@/server/actions/action";
 import { adminAction } from "@/server/actions/admin-action";
 import { getAuth } from "@/server/auth/auth";
 import { requireAdminActor } from "@/server/auth/session";
-import { db } from "@/server/db";
+import { REAUTH_WINDOW_MS } from "@/server/auth/constants";
+import { markSessionReauthenticated } from "@/server/auth/session-repository";
 import { AppError } from "@/server/errors/app-error";
 import { fail, type Result } from "@/server/errors/result";
 import { enforceRateLimit } from "@/server/rate-limit/rate-limit";
@@ -35,10 +36,10 @@ export async function reauthenticateAction(input: unknown): Promise<Result<{ unt
     try {
       await getAuth().api.verifyPassword({ headers: await headers(), body: { password } });
     } catch {
-      throw new AppError("VALIDATION", { fieldErrors: { password: ["Mot de passe incorrect."] } });
+      throw new AppError("VALIDATION", { fieldErrors: { password: ["wrongPassword"] } });
     }
     const now = new Date();
-    await db.session.update({ where: { id: session.sessionId }, data: { reauthenticatedAt: now } });
-    return { until: new Date(now.getTime() + 10 * 60 * 1000).toISOString() };
+    await markSessionReauthenticated(session.sessionId, now);
+    return { until: new Date(now.getTime() + REAUTH_WINDOW_MS).toISOString() };
   });
 }

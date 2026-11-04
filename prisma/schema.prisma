@@ -127,6 +127,8 @@ model Session {
   userAgent         String?
   /// Dernière ré-authentification (mot de passe) pour les actions sensibles.
   reauthenticatedAt DateTime?
+  /// Second facteur vérifié POUR CETTE SESSION (TOTP ou code de secours) ; exigé par /admin.
+  mfaVerifiedAt     DateTime?
   userId            String
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -285,7 +287,8 @@ model CommunityMember {
 model AuditLog {
   id         String   @id @default(cuid(2))
   actorId    String?
-  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  /// RESTRICT : une action référentielle contournerait le REVOKE UPDATE (journal append-only).
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: Restrict)
   actorRoles String[]
   action     String
   targetType String

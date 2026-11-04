@@ -6,7 +6,9 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+  // Identifiant de corrélation : repris seulement s'il a un format sûr, sinon régénéré.
+  const incoming = request.headers.get("x-request-id");
+  const requestId = incoming && /^[A-Za-z0-9-]{8,64}$/.test(incoming) ? incoming : crypto.randomUUID();
   const isDev = process.env.NODE_ENV === "development";
 
   const csp = [

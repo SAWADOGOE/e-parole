@@ -1,4 +1,4 @@
-export const EMAIL_TEMPLATES = ["verify-email", "reset-password"] as const;
+export const EMAIL_TEMPLATES = ["verify-email", "reset-password", "account-exists"] as const;
 export type EmailTemplate = (typeof EMAIL_TEMPLATES)[number];
 
 export interface RenderedEmail {
@@ -54,6 +54,16 @@ export function renderEmail(template: EmailTemplate, params: { url: string }): R
         subject,
         text: `${intro}\n\n${params.url}\n\n${outro}`,
         html: layout("Réinitialiser votre mot de passe", intro, "Choisir un nouveau mot de passe", params.url, outro),
+      };
+    }
+    case "account-exists": {
+      const subject = "Tentative d'inscription avec votre adresse — e-Parole";
+      const intro = "Quelqu'un a essayé de créer un compte e-Parole avec votre adresse email, qui est déjà inscrite.";
+      const outro = "Si c'était vous, connectez-vous ou réinitialisez votre mot de passe. Sinon, vous pouvez ignorer ce message.";
+      return {
+        subject,
+        text: `${intro}\n\n${params.url}\n\n${outro}`,
+        html: layout("Votre adresse est déjà inscrite", intro, "Me connecter", params.url, outro),
       };
     }
     default: {

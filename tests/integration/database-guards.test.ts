@@ -21,6 +21,12 @@ describe("garde-fous PostgreSQL", () => {
     expect(await db.auditLog.count()).toBe(1);
   });
 
+  it("le rôle applicatif ne peut ni supprimer physiquement un compte ni toucher à l'historique des migrations", async () => {
+    await createTestUser();
+    await expect(queryAsApp(`DELETE FROM "user"`)).rejects.toThrow(/permission denied/i);
+    await expect(queryAsApp(`DELETE FROM "_prisma_migrations"`)).rejects.toThrow(/permission denied/i);
+  });
+
   it("le rôle applicatif n'est pas superutilisateur", async () => {
     const { rows } = await queryAsApp("SELECT rolsuper FROM pg_roles WHERE rolname = current_user");
     expect(rows[0]).toEqual({ rolsuper: false });

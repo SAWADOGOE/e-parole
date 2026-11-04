@@ -63,6 +63,15 @@ test.describe("authentification", () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
+  test("une inscription avec une adresse existante ne révèle rien et prévient le titulaire", async ({ page }) => {
+    const email = uniqueEmail("existant");
+    await signUp(page, { name: "Premier", email, password: PASSWORD, birthYear: "1990" });
+    await expect(page).toHaveURL(/\/verification\?statut=envoye/);
+    await signUp(page, { name: "Second", email, password: "un-autre-mot-de-passe", birthYear: "1991" });
+    await expect(page).toHaveURL(/\/verification\?statut=envoye/);
+    expect(await waitForEmailLink(email, "Tentative d'inscription")).toContain("/connexion");
+  });
+
   test("pages d'authentification accessibles", async ({ page }) => {
     for (const path of ["/connexion", "/inscription", "/mot-de-passe-oublie"]) {
       await page.goto(path);

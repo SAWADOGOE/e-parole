@@ -1,17 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, type SubmitEvent } from "react";
 import { FormAlert, FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { authClient } from "../lib/auth-client";
 import { authErrorKey } from "../lib/error-codes";
+import { safeReturnTo } from "../lib/return-to";
 import { backupCodeSchema, totpSchema } from "../schemas";
 
 export function TwoFactorForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const params = useSearchParams();
   const [mode, setMode] = useState<"totp" | "backup">("totp");
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -20,7 +22,6 @@ export function TwoFactorForm() {
     event.preventDefault();
     setFormError(null);
     const form = new FormData(event.currentTarget);
-    const trustDevice = form.get("trust") === "on";
     const schema = mode === "totp" ? totpSchema : backupCodeSchema;
     const parsed = schema.safeParse({ code: form.get("code") });
     if (!parsed.success) {
@@ -30,14 +31,14 @@ export function TwoFactorForm() {
     setPending(true);
     const { error } =
       mode === "totp"
-        ? await authClient.twoFactor.verifyTotp({ code: parsed.data.code, trustDevice })
-        : await authClient.twoFactor.verifyBackupCode({ code: parsed.data.code, trustDevice });
+        ? await authClient.twoFactor.verifyTotp({ code: parsed.data.code })
+        : await authClient.twoFactor.verifyBackupCode({ code: parsed.data.code });
     setPending(false);
     if (error) {
       setFormError(t(authErrorKey(error)));
       return;
     }
-    router.push("/");
+    router.push(safeReturnTo(params.get("retour")));
     router.refresh();
   }
 
@@ -53,10 +54,6 @@ export function TwoFactorForm() {
         maxLength={mode === "totp" ? 6 : 32}
         required
       />
-      <label className="flex items-center gap-3 text-sm text-fg">
-        <input name="trust" type="checkbox" className="size-5 accent-(--accent)" />
-        {t("trustDevice")}
-      </label>
       <Button type="submit" size="lg" disabled={pending}>
         {pending ? t("pending") : t("submitVerify")}
       </Button>

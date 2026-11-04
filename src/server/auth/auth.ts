@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
@@ -7,14 +7,22 @@ import { db } from "../db";
 import { getEnv } from "../env";
 import { enqueueEmail } from "../jobs/enqueue";
 import { logger } from "../logger";
-import { consumeRateLimit } from "../rate-limit/rate-limit";
+import { consumeRateLimit, isRateLimited } from "../rate-limit/rate-limit";
 import { AUTH_LIMITS, MINIMUM_AGE, SESSION_MAX_AGE_SECONDS, TRUSTED_IP_HEADER } from "./constants";
-import { accountLimitFor } from "./account-limits";
+import { emailSendingLimit, SIGN_IN_PATH, signInFailureLimits } from "./account-limits";
 import { createProfileForUser } from "./profile-bootstrap";
+import { markSessionMfaVerified, revokeOtherSessions } from "./session-repository";
+
+const MFA_VERIFICATION_PATHS = new Set(["/two-factor/verify-totp", "/two-factor/verify-backup-code"]);
+const MFA_CHANGE_PATHS = new Set(["/two-factor/enable", "/two-factor/disable"]);
 
 function isTooYoung(birthYear: unknown): boolean {
   if (typeof birthYear !== "number") return true;
   return new Date().getUTCFullYear() - birthYear < MINIMUM_AGE;
+}
+
+function tooManyRequests(retryAfterSeconds: number): APIError {
+  return new APIError("TOO_MANY_REQUESTS", { message: "RATE_LIMITED", headers: { "Retry-After": String(retryAfterSeconds) } });
 }
 
 function buildAuth() {
@@ -36,7 +44,12 @@ function buildAuth() {
       enabled: true,
       // Un compte non vérifié peut lire ; toute écriture est refusée par authorize() (docs/12-AUTHENTICATION.md).
       requireEmailVerification: false,
-      autoSignIn: true,
+      // autoSignIn désactivé : Better Auth renvoie alors une réponse identique que l'adresse existe ou non
+      // (pas d'énumération). La vérification de l'email connecte ensuite l'utilisateur.
+      autoSignIn: false,
+      onExistingUserSignUp: async ({ user }) => {
+        await enqueueEmail({ to: user.email, template: "account-exists", url: `${getEnv().APP_URL}/connexion` });
+      },
       minPasswordLength: AUTH_LIMITS.minPasswordLength,
       maxPasswordLength: AUTH_LIMITS.maxPasswordLength,
       resetPasswordTokenExpiresIn: 60 * 60,
@@ -58,6 +71,7 @@ function buildAuth() {
       updateAge: 24 * 60 * 60,
       additionalFields: {
         reauthenticatedAt: { type: "date", required: false, input: false },
+        mfaVerifiedAt: { type: "date", required: false, input: false },
       },
     },
     rateLimit: {
@@ -74,14 +88,44 @@ function buildAuth() {
         "/two-factor/verify-backup-code": { window: 5 * 60, max: 5 },
       },
     },
-    // Limite par compte (email), indépendante de l'IP : complète la limite par IP ci-dessus.
+    // Limites par compte (email haché), en complément de la limite par IP ci-dessus (docs/19-SECURITY.md).
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
-        const limit = accountLimitFor(ctx.path, ctx.body);
+        if (ctx.path === SIGN_IN_PATH) {
+          const ip = ctx.request?.headers.get(TRUSTED_IP_HEADER) ?? null;
+          for (const limit of signInFailureLimits(ctx.body, ip)) {
+            const { limited, retryAfterSeconds } = await isRateLimited(limit.name, limit.subject);
+            if (limited) throw tooManyRequests(retryAfterSeconds);
+          }
+          return;
+        }
+        const limit = emailSendingLimit(ctx.path, ctx.body);
         if (!limit) return;
         const { allowed, retryAfterSeconds } = await consumeRateLimit(limit.name, limit.subject);
-        if (!allowed) {
-          throw new APIError("TOO_MANY_REQUESTS", { message: "RATE_LIMITED", headers: { "Retry-After": String(retryAfterSeconds) } });
+        if (!allowed) throw tooManyRequests(retryAfterSeconds);
+      }),
+      // Seuls les ÉCHECS de connexion sont comptés : un tiers ne peut pas verrouiller un compte avec de bonnes requêtes,
+      // et le compteur email+IP n'affecte pas l'utilisateur légitime connecté depuis une autre adresse.
+      after: createAuthMiddleware(async (ctx) => {
+        const failed = isAPIError(ctx.context.returned);
+        if (ctx.path === SIGN_IN_PATH && failed) {
+          const ip = ctx.request?.headers.get(TRUSTED_IP_HEADER) ?? null;
+          for (const limit of signInFailureLimits(ctx.body, ip)) {
+            await consumeRateLimit(limit.name, limit.subject);
+          }
+          return;
+        }
+        if (failed) return;
+        // Le second facteur est attesté PAR SESSION : /admin exige mfaVerifiedAt (docs/admin/ADMIN-SECURITY.md).
+        if (MFA_VERIFICATION_PATHS.has(ctx.path)) {
+          const sessionId = ctx.context.newSession?.session.id;
+          if (sessionId) await markSessionMfaVerified(sessionId);
+          return;
+        }
+        // Activer ou désactiver la 2FA révoque toutes les autres sessions du compte.
+        if (MFA_CHANGE_PATHS.has(ctx.path)) {
+          const current = ctx.context.session?.session;
+          if (current) await revokeOtherSessions(current.userId, current.id);
         }
       }),
     },
@@ -133,6 +177,10 @@ function buildAuth() {
     plugins: [
       twoFactor({
         issuer: "e-Parole",
+        // Verrouillage par compte, tous défis confondus (NIST SP 800-63B §5.2.2).
+        accountLockout: { enabled: true, maxFailedAttempts: 5, durationSeconds: 15 * 60 },
+        // Pas d'« appareil de confiance » : il permettrait d'ouvrir une session sans second facteur.
+        trustDeviceMaxAge: 1,
         backupCodeOptions: { amount: 10, length: 10 },
       }),
       nextCookies(),

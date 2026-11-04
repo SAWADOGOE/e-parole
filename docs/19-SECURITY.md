@@ -43,6 +43,20 @@
 - **Formulaires d'authentification** en `method="post"` : une soumission avant hydratation ne place jamais le mot de passe dans l'URL.
 - **Sessions** : la liste n'expose jamais les jetons au navigateur ; révocation par identifiant de session, filtrée sur l'utilisateur.
 - `birthYear` n'est pas modifiable après l'inscription (hook `user.update.before`).
+- **MFA par session** : `/admin` exige `session.mfaVerifiedAt`, posé uniquement après vérification d'un code TOTP ou de
+  secours pour CETTE session. Activer ou désactiver la 2FA révoque les autres sessions. Pas d'« appareil de confiance ».
+- **Verrouillage 2FA** par compte : 5 échecs → 15 min (Better Auth `accountLockout`).
+- **Limites de connexion** : seuls les **échecs** sont comptés (email+IP 10 / 15 min, email seul 50 / h), pour qu'un tiers
+  ne puisse pas bloquer un compte avec des requêtes valides.
+- **Énumération à l'inscription** : `autoSignIn: false` → réponse identique que l'adresse existe ou non ; le titulaire
+  reçoit un email « tentative d'inscription ».
+- **Port web** lié à `127.0.0.1` dans `compose.yaml` : seul le reverse proxy local doit joindre l'application.
+- `x-request-id` entrant accepté seulement s'il respecte `^[A-Za-z0-9-]{8,64}$`.
+- Journalisation des accès refusés (`/admin`, `/manage`) : une fois par requête, 20 / h / utilisateur au plus.
+- Jobs email (adresse + lien à jeton) supprimés de pg-boss 1 h après traitement.
+- Rôle `eparole_app` : ni `DELETE` sur `user` (suppression logique), ni écriture sur `_prisma_migrations` ;
+  clé étrangère de l'audit en `RESTRICT` (une action `SET NULL` contournerait l'append-only).
+- Comptes non `ACTIVE` : `getCurrentSession()` renvoie `null` (plus aucune lecture possible).
 
 ## Données sensibles
 Les convictions religieuses sont une **catégorie particulière de données** dans de nombreux droits (RGPD art. 9 ;

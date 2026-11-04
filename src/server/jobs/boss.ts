@@ -4,7 +4,15 @@ import { QUEUES } from "./queues";
 
 const globalForBoss = globalThis as unknown as { eparoleBoss?: Promise<PgBoss> };
 
-const QUEUE_OPTIONS = { retryLimit: 5, retryDelay: 30, retryBackoff: true, expireInSeconds: 300 } as const;
+/** Les jobs email contiennent une adresse et un lien à jeton : conservés 1 h au plus après traitement. */
+const QUEUE_OPTIONS = {
+  retryLimit: 5,
+  retryDelay: 30,
+  retryBackoff: true,
+  expireInSeconds: 300,
+  retentionSeconds: 3600,
+  deleteAfterSeconds: 3600,
+} as const;
 
 async function createBoss(role: "producer" | "worker"): Promise<PgBoss> {
   const connectionString = process.env["DATABASE_URL"];

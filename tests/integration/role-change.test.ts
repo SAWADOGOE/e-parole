@@ -30,10 +30,43 @@ describe("attribution des rôles globaux (runAdminAction + PostgreSQL)", () => {
 
   it("refuse à un ADMIN de retirer un rôle à un autre ADMIN (hiérarchie)", async () => {
     const admin = await createTestUser({ roles: ["ADMIN"] });
-    const other = await createTestUser({ roles: ["ADMIN"] });
+    const other = await createTestUser({ roles: ["ADMIN", "MODERATOR"] });
     const session = { sessionId: admin.session.id, reauthenticatedAt: new Date(), actor: admin.actor };
     await expectCode(
-      runAdminAction(roleChangeOptions("grant", "MODERATOR"), session, { userId: other.user.id, role: "MODERATOR" }, NO_REQUEST),
+      runAdminAction(roleChangeOptions("revoke", "MODERATOR"), session, { userId: other.user.id, role: "MODERATOR" }, NO_REQUEST),
+      "FORBIDDEN",
+    );
+    expect(await db.userRole.count({ where: { userId: other.user.id, role: "MODERATOR" } })).toBe(1);
+  });
+
+  it("retire un rôle, journalise et révoque les sessions de la cible", async () => {
+    const superAdmin = await createTestUser({ roles: ["SUPER_ADMIN"] });
+    const target = await createTestUser({ roles: ["MODERATOR"] });
+    const session = { sessionId: superAdmin.session.id, reauthenticatedAt: new Date(), actor: superAdmin.actor };
+    await runAdminAction(roleChangeOptions("revoke", "MODERATOR"), session, { userId: target.user.id, role: "MODERATOR" }, NO_REQUEST);
+    expect(await db.userRole.count({ where: { userId: target.user.id } })).toBe(0);
+    expect(await db.session.count({ where: { userId: target.user.id } })).toBe(0);
+    expect(await db.auditLog.count({ where: { action: "role.revoke", targetId: target.user.id } })).toBe(1);
+  });
+
+  it("n'a aucun effet (CONFLICT) si le rôle est déjà attribué : ni révocation de sessions, ni audit", async () => {
+    const superAdmin = await createTestUser({ roles: ["SUPER_ADMIN"] });
+    const target = await createTestUser({ roles: ["MODERATOR"] });
+    const session = { sessionId: superAdmin.session.id, reauthenticatedAt: new Date(), actor: superAdmin.actor };
+    await expectCode(
+      runAdminAction(roleChangeOptions("grant", "MODERATOR"), session, { userId: target.user.id, role: "MODERATOR" }, NO_REQUEST),
+      "CONFLICT",
+    );
+    expect(await db.session.count({ where: { userId: target.user.id } })).toBe(1);
+    expect(await db.auditLog.count()).toBe(0);
+  });
+
+  it("ne permet pas de retirer le rôle d'un SUPER_ADMIN par l'interface (procédure CLI)", async () => {
+    const superAdmin = await createTestUser({ roles: ["SUPER_ADMIN"] });
+    const other = await createTestUser({ roles: ["SUPER_ADMIN"] });
+    const session = { sessionId: superAdmin.session.id, reauthenticatedAt: new Date(), actor: superAdmin.actor };
+    await expectCode(
+      runAdminAction(roleChangeOptions("revoke", "SUPER_ADMIN"), session, { userId: other.user.id, role: "SUPER_ADMIN" }, NO_REQUEST),
       "FORBIDDEN",
     );
   });

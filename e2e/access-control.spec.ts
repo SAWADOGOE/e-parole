@@ -8,6 +8,7 @@ import {
   signUp,
   totp,
   uniqueEmail,
+  waitForEmailLink,
 } from "./support/helpers";
 
 const PASSWORD = "un-mot-de-passe-solide";
@@ -18,8 +19,12 @@ test.describe("contrôle d'accès", () => {
       const response = await page.goto(path);
       expect(response?.status(), path).toBe(404);
     }
-    await signUp(page, { name: "Daniel", email: uniqueEmail("daniel"), password: PASSWORD, birthYear: "1978" });
+    const daniel = uniqueEmail("daniel");
+    await signUp(page, { name: "Daniel", email: daniel, password: PASSWORD, birthYear: "1978" });
     await expect(page).toHaveURL(/\/verification/);
+    // L'inscription ne connecte pas automatiquement : la vérification de l'email ouvre la session.
+    await page.goto(await waitForEmailLink(daniel, "Confirmez votre adresse email"));
+    await expect(page.getByRole("status")).toContainText("Ton adresse email est confirmée");
     for (const path of ["/admin", "/admin/users", "/manage/communaute-inexistante"]) {
       const response = await page.goto(path);
       expect(response?.status(), path).toBe(404);

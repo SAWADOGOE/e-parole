@@ -13,8 +13,10 @@ export const RATE_LIMITS = {
   "admin.sanction": { window: 3600, max: 30 },
   "account.reauth": { window: 900, max: 5 },
   "account.export": { window: 86_400, max: 3 },
-  "auth.signin.account": { window: 900, max: 10 },
+  "auth.signin.failures.account_ip": { window: 900, max: 10 },
+  "auth.signin.failures.account": { window: 3600, max: 50 },
   "auth.reset.account": { window: 3600, max: 3 },
+  "audit.access_denied": { window: 3600, max: 20 },
   "auth.verification.account": { window: 3600, max: 3 },
 } as const satisfies Record<string, RateLimitRule>;
 
@@ -44,6 +46,22 @@ export async function consumeRateLimit(
   const allowed = row.count <= rule.max;
   const resetAt = Number(row.lastRequest) + rule.window * 1000;
   return { allowed, retryAfterSeconds: allowed ? 0 : Math.max(1, Math.ceil((resetAt - now) / 1000)) };
+}
+
+/** Lecture seule : la fenêtre courante a-t-elle atteint son maximum ? (ne consomme rien) */
+export async function isRateLimited(
+  name: RateLimitName,
+  subject: string,
+  now: number = Date.now(),
+): Promise<{ limited: boolean; retryAfterSeconds: number }> {
+  const rule = RATE_LIMITS[name];
+  const rows = await db.$queryRaw<{ count: number; lastRequest: bigint }[]>`
+    SELECT "count", "lastRequest" FROM "rate_limit" WHERE "key" = ${`app:${name}:${subject}`}`;
+  const row = rows[0];
+  if (!row) return { limited: false, retryAfterSeconds: 0 };
+  const resetAt = Number(row.lastRequest) + rule.window * 1000;
+  const limited = resetAt > now && row.count >= rule.max;
+  return { limited, retryAfterSeconds: limited ? Math.max(1, Math.ceil((resetAt - now) / 1000)) : 0 };
 }
 
 export async function enforceRateLimit(name: RateLimitName, subject: string): Promise<void> {

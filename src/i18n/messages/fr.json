@@ -129,7 +129,6 @@
     "tooYoung": "Il faut avoir au moins 13 ans pour créer un compte.",
     "rateLimited": "Trop de tentatives. Patiente quelques minutes avant de réessayer.",
     "genericError": "Une erreur est survenue. Réessaie dans un instant.",
-    "emailTaken": "Impossible de créer ce compte avec cette adresse. Si elle t'appartient, connecte-toi ou réinitialise ton mot de passe.",
     "passwordTooShort": "Le mot de passe doit contenir au moins {min} caractères.",
     "invalidEmail": "Saisis une adresse email valide.",
     "required": "Ce champ est requis.",
@@ -141,7 +140,6 @@
     "useBackupCode": "Utiliser un code de secours",
     "useTotp": "Utiliser l'application d'authentification",
     "backupCodeLabel": "Code de secours",
-    "trustDevice": "Faire confiance à cet appareil pendant 30 jours",
     "submitVerify": "Vérifier",
     "invalidCode": "Code incorrect ou expiré.",
     "forgotTitle": "Mot de passe oublié",
@@ -159,7 +157,9 @@
     "goHome": "Aller à l'accueil",
     "backToSignIn": "Retour à la connexion",
     "asideVerse": "« Que la parole de Christ habite parmi vous abondamment. »",
-    "asideReference": "Colossiens 3:16 · Louis Segond 1910"
+    "asideReference": "Colossiens 3:16 · Louis Segond 1910",
+    "wrongPassword": "Mot de passe incorrect.",
+    "adminMfaReverify": "Pour accéder à l'administration, reconnecte-toi en saisissant ton code de double authentification."
   },
   "security": {
     "metaTitle": "Sécurité du compte",
@@ -258,7 +258,8 @@
     },
     "roleHeld": "Attribué",
     "colHandle": "Identifiant",
-    "colEmail": "Email (masqué)"
+    "colEmail": "Email (masqué)",
+    "kpiBelowThreshold": "< 5"
   },
   "manage": {
     "metaTitle": "Espace responsable",
@@ -276,6 +277,18 @@
     "notFoundTitle": "Page introuvable",
     "notFoundBody": "Cette page n'existe pas ou n'est pas accessible.",
     "genericTitle": "Quelque chose s'est mal passé",
-    "genericBody": "Nous n'avons pas pu afficher cette page. Réessaie dans un instant."
+    "genericBody": "Nous n'avons pas pu afficher cette page. Réessaie dans un instant.",
+    "codes": {
+      "UNAUTHENTICATED": "Connecte-toi pour continuer.",
+      "EMAIL_NOT_VERIFIED": "Vérifie ton adresse email pour continuer.",
+      "MFA_REQUIRED": "La double authentification est requise pour cette action.",
+      "REAUTH_REQUIRED": "Confirme ton identité pour effectuer cette action.",
+      "FORBIDDEN": "Tu n'as pas l'autorisation d'effectuer cette action.",
+      "NOT_FOUND": "Élément introuvable ou déjà supprimé.",
+      "VALIDATION": "Certaines informations sont invalides.",
+      "CONFLICT": "Cette modification est déjà en place.",
+      "RATE_LIMITED": "Trop de tentatives. Patiente un instant avant de réessayer.",
+      "INTERNAL": "Une erreur inattendue est survenue. Réessaie dans un instant."
+    }
   }
 }

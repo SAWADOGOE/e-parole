@@ -40,7 +40,7 @@ export default async function AdminUserDetailPage(props: PageProps<"/admin/users
       />
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="font-serif text-display-md text-fg">{user.displayName}</h1>
-        <Badge tone={user.status === "ACTIVE" ? "neutral" : "danger"}>{t(`status.${user.status as "ACTIVE"}`)}</Badge>
+        <Badge tone={user.status === "ACTIVE" ? "neutral" : "danger"}>{t(`status.${user.status}`)}</Badge>
       </header>
       <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
         <dt className="text-muted">{t("colHandle")}</dt>

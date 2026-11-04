@@ -14,6 +14,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 - pg-boss et worker pour les emails ; next-intl (fr) ; CSP avec nonce et en-têtes de sécurité.
 - Tests : unitaires, d'intégration (PostgreSQL réel) et E2E (Playwright + axe) ; CI GitHub Actions.
 
+### Sécurité (revues `security-auditor` et `code-reviewer`)
+- MFA vérifiée par session pour `/admin`, révocation des autres sessions au changement de 2FA, pas d'appareil de confiance.
+- Anti-énumération à l'inscription, limites de connexion sur les seuls échecs, verrouillage 2FA à 5 échecs.
+- Redirection `retour` robuste, `x-request-id` validé, port web lié à 127.0.0.1, rétention des jobs email 1 h.
+- Droits PostgreSQL réduits (`DELETE user`, `_prisma_migrations`), clé d'audit en RESTRICT.
+
 ### Modifié
 - TypeScript 6, pnpm 11 et SeaweedFS remplacent TypeScript 7, pnpm 12 et MinIO ([ADR-009](docs/adr/ADR-009-PHASE1-TOOLING.md)).
 

@@ -7,6 +7,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { errorKey } from "@/lib/error-key";
+import type { Result } from "@/server/errors/result";
 import { describeDevice } from "../lib/device";
 import { revokeOtherSessionsAction, revokeSessionAction } from "../server/session-actions";
 
@@ -19,16 +21,23 @@ export interface SessionView {
 /** Sessions chargées côté serveur ; après révocation, la page est rechargée (router.refresh). */
 export function SessionsList({ sessions, currentSessionId }: { sessions: SessionView[]; currentSessionId: string }) {
   const t = useTranslations("security");
+  const tErrors = useTranslations("errors.codes");
   const format = useFormatter();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  async function run(task: () => Promise<unknown>) {
+  async function run(task: () => Promise<Result<unknown>>) {
     setBusy(true);
-    await task();
-    setBusy(false);
-    toast(t("revokedToast"));
-    router.refresh();
+    try {
+      const result = await task();
+      if (result.ok) toast(t("revokedToast"));
+      else toast.error(tErrors(errorKey(result.error.code)));
+    } catch {
+      toast.error(tErrors(errorKey("INTERNAL")));
+    } finally {
+      setBusy(false);
+      router.refresh();
+    }
   }
 
   return (

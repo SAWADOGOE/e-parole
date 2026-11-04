@@ -1,5 +1,5 @@
 import type { Metadata, Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Pagination } from "@/components/shared/pagination";
@@ -24,7 +24,9 @@ export default async function AuditLogsPage(props: PageProps<"/admin/audit-logs"
 
   const t = await getTranslations("admin");
   const format = await getFormatter();
-  const query = auditListQuerySchema.parse(await props.searchParams);
+  // URL invalide (page=0, page=abc, paramètre répété) : retour aux valeurs par défaut plutôt qu'une erreur 500.
+  const parsedQuery = auditListQuerySchema.safeParse(await props.searchParams);
+  const query = parsedQuery.success ? parsedQuery.data : auditListQuerySchema.parse({});
   const { rows, total } = await listAuditLogs(query, seesAll ? null : actor.userId);
   const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
   const hrefFor = (page: number) => {
@@ -33,6 +35,7 @@ export default async function AuditLogsPage(props: PageProps<"/admin/audit-logs"
     if (query.targetType) params.set("targetType", query.targetType);
     return `/admin/audit-logs?${params.toString()}` as Route;
   };
+  if (query.page > totalPages) redirect(hrefFor(totalPages));
 
   return (
     <>

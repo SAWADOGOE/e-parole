@@ -2,9 +2,8 @@
 
 import { z } from "zod";
 import { action } from "@/server/actions/action";
-import { recordAudit } from "@/server/audit/audit";
 import { getCurrentSession } from "@/server/auth/session";
-import { db } from "@/server/db";
+import { revokeSessionsAudited } from "@/server/auth/session-repository";
 import { AppError } from "@/server/errors/app-error";
 import type { Result } from "@/server/errors/result";
 
@@ -18,9 +17,8 @@ export async function revokeSessionAction(input: unknown): Promise<Result<{ revo
     handler: async (actor, { sessionId }) => {
       const current = await getCurrentSession();
       if (current?.sessionId === sessionId) throw new AppError("VALIDATION");
-      const { count } = await db.session.deleteMany({ where: { id: sessionId, userId: actor.userId } });
+      const count = await revokeSessionsAudited(actor, { id: sessionId });
       if (count === 0) throw new AppError("NOT_FOUND");
-      await recordAudit({ actor, action: "auth.session.revoked", targetType: "session", targetId: sessionId });
       return { revoked: count };
     },
   })(input);
@@ -32,9 +30,7 @@ export async function revokeOtherSessionsAction(): Promise<Result<{ revoked: num
     handler: async (actor) => {
       const current = await getCurrentSession();
       if (!current) throw new AppError("UNAUTHENTICATED");
-      const { count } = await db.session.deleteMany({ where: { userId: actor.userId, id: { not: current.sessionId } } });
-      await recordAudit({ actor, action: "auth.session.revoked", targetType: "user", targetId: actor.userId, metadata: { count } });
-      return { revoked: count };
+      return { revoked: await revokeSessionsAudited(actor, { notId: current.sessionId }) };
     },
   })({});
 }

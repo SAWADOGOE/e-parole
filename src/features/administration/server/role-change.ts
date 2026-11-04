@@ -2,7 +2,7 @@ import type { AdminActionOptions } from "@/server/actions/admin-action-core";
 import { AppError } from "@/server/errors/app-error";
 import type { GlobalRoleName, PolicyResource } from "@/server/policies";
 import { roleChangeSchema, type RoleChangeInput } from "../schemas";
-import { countSuperAdmins, findUserRoles, grantRole, revokeRole } from "./repository";
+import { findUserRoles, grantRole, hasRole, revokeRole } from "./repository";
 import { ROLE_GRANT_PERMISSION } from "./role-permissions";
 
 export type RoleChangeMode = "grant" | "revoke";
@@ -27,14 +27,12 @@ export function roleChangeOptions(
     resolveResource: resolveTarget,
     handler: async ({ actor, input, tx }) => {
       if (input.role !== role) throw new AppError("VALIDATION");
-      if (mode === "grant") {
-        await grantRole(tx, input.userId, input.role, actor.userId);
-      } else {
-        await revokeRole(tx, input.userId, input.role);
-        if (input.role === "SUPER_ADMIN" && (await countSuperAdmins(tx)) === 0) {
-          throw new AppError("CONFLICT", { message: "Impossible de retirer le dernier super administrateur." });
-        }
-      }
+      // Attribuer un rôle déjà détenu (ou retirer un rôle absent) ne fait rien : ni révocation de sessions, ni audit.
+      const held = await hasRole(tx, input.userId, input.role);
+      if (held === (mode === "grant")) throw new AppError("CONFLICT");
+      // Le retrait d'un SUPER_ADMIN est impossible ici (hiérarchie stricte) : procédure CLI documentée en Phase 8.
+      if (mode === "grant") await grantRole(tx, input.userId, input.role, actor.userId);
+      else await revokeRole(tx, input.userId, input.role);
       return {
         data: { userId: input.userId, role: input.role },
         audit: {

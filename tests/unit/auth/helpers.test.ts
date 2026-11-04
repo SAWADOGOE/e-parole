@@ -4,19 +4,20 @@ import { describeDevice } from "@/features/auth/lib/device";
 import { authErrorKey } from "@/features/auth/lib/error-codes";
 import { safeReturnTo } from "@/features/auth/lib/return-to";
 import { signUpSchema } from "@/features/auth/schemas";
-import { accountLimitFor } from "@/server/auth/account-limits";
+import { emailSendingLimit, signInFailureLimits } from "@/server/auth/account-limits";
 import { handleBaseFromName } from "@/server/auth/handle";
 import { renderEmail } from "@/server/email/templates";
 
 describe("safeReturnTo (redirection ouverte)", () => {
-  it.each(["https://evil.test", "//evil.test", "/\\evil.test", "javascript:alert(1)", "/x?u=https://a.b"])(
+  it.each(["https://evil.test", "//evil.test", "/\\evil.test", "javascript:alert(1)", "/\t/evil.test", "/\n/evil.test"])(
     "rejette %s",
     (value) => {
       expect(safeReturnTo(value)).toBe("/");
     },
   );
-  it("accepte un chemin interne", () => {
-    expect(safeReturnTo("/parametres/securite")).toBe("/parametres/securite");
+  it("accepte un chemin interne, requête comprise", () => {
+    expect(safeReturnTo("/parametres/securite?mfa=requis")).toBe("/parametres/securite?mfa=requis");
+    expect(safeReturnTo("/x?u=https://a.b")).toBe("/x?u=https://a.b");
   });
 });
 
@@ -35,15 +36,17 @@ describe("maskEmail", () => {
   });
 });
 
-describe("accountLimitFor", () => {
-  it("hache l'email normalisé (jamais en clair)", () => {
-    const limit = accountLimitFor("/sign-in/email", { email: " Ruth@Exemple.test " });
-    expect(limit?.name).toBe("auth.signin.account");
-    expect(limit?.subject).not.toContain("ruth");
-    expect(limit?.subject).toBe(accountLimitFor("/sign-in/email", { email: "ruth@exemple.test" })?.subject);
+describe("limites par compte", () => {
+  it("hache l'email normalisé (jamais en clair) et sépare les compteurs email+IP et email", () => {
+    const limits = signInFailureLimits({ email: " Ruth@Exemple.test " }, "198.51.100.7");
+    expect(limits.map((l) => l.name)).toEqual(["auth.signin.failures.account_ip", "auth.signin.failures.account"]);
+    expect(limits.every((l) => !l.subject.includes("ruth"))).toBe(true);
+    expect(limits[1]?.subject).toBe(signInFailureLimits({ email: "ruth@exemple.test" }, null)[1]?.subject);
+    expect(limits[0]?.subject).not.toBe(signInFailureLimits({ email: "ruth@exemple.test" }, "203.0.113.9")[0]?.subject);
   });
-  it("ignore les autres routes", () => {
-    expect(accountLimitFor("/get-session", { email: "a@b.c" })).toBeNull();
+  it("limite l'envoi d'emails de reset par destinataire, et ignore les autres routes", () => {
+    expect(emailSendingLimit("/request-password-reset", { email: "a@b.test" })?.name).toBe("auth.reset.account");
+    expect(emailSendingLimit("/get-session", { email: "a@b.test" })).toBeNull();
   });
 });
 

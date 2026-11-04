@@ -45,6 +45,13 @@ sequenceDiagram
 - Suspension : toutes les sessions sont révoquées ; la connexion affiche le motif et la voie de contestation.
 - Suppression de compte : statut `PENDING_DELETION`, sessions révoquées, restauration possible 30 jours, puis job d'anonymisation.
 
+## Implémenté en Phase 1 (écarts)
+- `autoSignIn: false` à l'inscription (anti-énumération) ; le lien de vérification connecte l'utilisateur.
+- Pas de vérification HaveIBeenPwned (appel réseau externe non validé) ⚠️ à décider.
+- Pas d'« appareil de confiance » pour la 2FA.
+- Session admin : 12 h depuis la connexion, second facteur vérifié pour la session (`mfaVerifiedAt`),
+  ré-authentification par mot de passe < 10 min pour les permissions de `REAUTH_PERMISSIONS`.
+
 ## Accès dans le code
 ```ts
 // src/server/auth/session.ts

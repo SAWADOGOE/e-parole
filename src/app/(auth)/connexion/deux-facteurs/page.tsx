@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 import { PageHeading } from "@/components/shared/page-heading";
 import { TwoFactorForm } from "@/features/auth/components/two-factor-form";
 
@@ -13,7 +14,9 @@ export default async function TwoFactorPage() {
   return (
     <>
       <PageHeading title={t("twoFactorTitle")} intro={t("twoFactorIntro")} />
-      <TwoFactorForm />
+      <Suspense>
+        <TwoFactorForm />
+      </Suspense>
     </>
   );
 }

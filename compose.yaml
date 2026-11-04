@@ -89,7 +89,8 @@ services:
       SMTP_HOST: mail
       SMTP_PORT: "1025"
     ports:
-      - "${WEB_PORT:-53000}:3000"
+      # Lié à 127.0.0.1 : seul le reverse proxy local doit joindre l'application (il écrase X-Real-IP).
+      - "127.0.0.1:${WEB_PORT:-53000}:3000"
     depends_on:
       migrate: { condition: service_completed_successfully }
       storage: { condition: service_healthy }

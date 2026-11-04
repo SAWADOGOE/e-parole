@@ -1,9 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
-import { recordAudit } from "@/server/audit/audit";
-import { getCurrentSession } from "@/server/auth/session";
+import { getCurrentSession, recordDeniedAccess } from "@/server/auth/session";
 import { evaluateCommunity, type Actor, type CommunityMembership } from "@/server/policies";
-import { getRequestContext } from "@/server/request-context";
 import { findCommunity, findMembership, type CommunitySummary } from "./repository";
 
 /**
@@ -24,15 +22,7 @@ export async function requireCommunityManager(communityId: string): Promise<Comm
   if (!community) notFound();
   const membership = await findMembership(community.id, session.actor.userId);
   if (!evaluateCommunity(session.actor, membership, "community:manage:access").allowed || !membership) {
-    const context = await getRequestContext();
-    await recordAudit({
-      actor: session.actor,
-      action: "security.cross_community_attempt",
-      targetType: "community",
-      targetId: community.id,
-      requestId: context.requestId,
-      ip: context.ip,
-    });
+    await recordDeniedAccess(session.actor, "security.cross_community_attempt", "community", community.id);
     notFound();
   }
   return { actor: session.actor, community, membership };

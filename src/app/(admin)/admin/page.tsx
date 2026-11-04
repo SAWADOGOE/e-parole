@@ -31,7 +31,10 @@ export default async function AdminDashboardPage() {
             {kpis.map((kpi) => (
               <div key={kpi.label} className="bg-bg-elevated p-5">
                 <dt className="text-sm text-muted">{kpi.label}</dt>
-                <dd className="mt-2 text-3xl font-semibold text-fg tabular-nums">{format.number(kpi.value)}</dd>
+                <dd className="mt-2 text-3xl font-semibold text-fg tabular-nums">
+                  {/* Seuil k ≥ 5 (docs/admin/ADMIN-DASHBOARD.md) : aucun petit effectif affiché exactement. */}
+                  {kpi.value > 0 && kpi.value < 5 ? t("kpiBelowThreshold") : format.number(kpi.value)}
+                </dd>
               </div>
             ))}
           </dl>

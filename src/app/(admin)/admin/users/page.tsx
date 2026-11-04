@@ -1,6 +1,6 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Pagination } from "@/components/shared/pagination";
@@ -21,11 +21,14 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
   if (!can(session.actor, "user:read:admin", { linkedToCase: false })) notFound();
   const t = await getTranslations("admin");
   const format = await getFormatter();
-  const query = userListQuerySchema.parse(await props.searchParams);
+  // URL invalide (page=0, page=abc, paramètre répété) : retour aux valeurs par défaut plutôt qu'une erreur 500.
+  const parsedQuery = userListQuerySchema.safeParse(await props.searchParams);
+  const query = parsedQuery.success ? parsedQuery.data : userListQuerySchema.parse({});
   const { rows, total } = await listUsers(query);
   const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
   const hrefFor = (page: number) =>
     `/admin/users?${new URLSearchParams({ ...(query.q ? { q: query.q } : {}), page: String(page) }).toString()}` as Route;
+  if (query.page > totalPages) redirect(hrefFor(totalPages));
 
   return (
     <>
@@ -46,7 +49,7 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
         <p className="mt-10 text-muted">{t("usersEmpty")}</p>
       ) : (
         <>
-          <div className="mt-6 hidden overflow-x-auto rounded-lg border md:block">
+          <div className="mt-6 hidden overflow-x-auto rounded-lg border lg:block">
             <table className="w-full text-left text-sm">
               <thead className="bg-bg-subtle text-muted">
                 <tr>
@@ -70,7 +73,7 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <Badge tone={user.status === "ACTIVE" ? "neutral" : "danger"}>{t(`status.${user.status as "ACTIVE"}`)}</Badge>
+                      <Badge tone={user.status === "ACTIVE" ? "neutral" : "danger"}>{t(`status.${user.status}`)}</Badge>
                     </td>
                     <td className="px-4 py-2">
                       {user.roles.length === 0 ? (
@@ -92,13 +95,13 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
               </tbody>
             </table>
           </div>
-          <ul className="mt-6 divide-y rounded-lg border bg-bg-elevated md:hidden">
+          <ul className="mt-6 divide-y rounded-lg border bg-bg-elevated lg:hidden">
             {rows.map((user) => (
               <li key={user.id}>
                 <Link href={`/admin/users/${user.id}`} className="flex flex-col gap-1 px-4 py-3">
                   <span className="font-medium text-accent">{user.displayName}</span>
                   <span className="text-xs text-muted">
-                    {t(`status.${user.status as "ACTIVE"}`)} · {user.roles.length === 0 ? t("member") : user.roles.map((r) => t(`roles.${r}`)).join(", ")}
+                    {t(`status.${user.status}`)} · {user.roles.length === 0 ? t("member") : user.roles.map((r) => t(`roles.${r}`)).join(", ")}
                   </span>
                 </Link>
               </li>

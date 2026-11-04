@@ -9,11 +9,14 @@ import { getRequestContext } from "../request-context";
 import type { Actor } from "../policies";
 import { ADMIN_SESSION_MAX_AGE_MS, ADULT_AGE, REAUTH_WINDOW_MS } from "./constants";
 import { getAuth } from "./auth";
+import { findSessionMarkers } from "./session-repository";
+import { consumeRateLimit } from "../rate-limit/rate-limit";
 
 export interface CurrentSession {
   sessionId: string;
   createdAt: Date;
   reauthenticatedAt: Date | null;
+  mfaVerifiedAt: Date | null;
   actor: Actor;
   displayName: string;
   handle: string | null;
@@ -40,12 +43,10 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
       profile: { select: { handle: true, displayName: true } },
     },
   });
-  if (!user || user.deletedAt) return null;
+  // Un compte non actif (suspendu, banni, en suppression) n'a plus de session utilisable.
+  if (!user || user.deletedAt || user.status !== "ACTIVE") return null;
 
-  const session = await db.session.findUnique({
-    where: { id: result.session.id },
-    select: { reauthenticatedAt: true, createdAt: true },
-  });
+  const session = await findSessionMarkers(result.session.id);
 
   const currentYear = new Date().getUTCFullYear();
   const actor: Actor = {
@@ -62,12 +63,31 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
     sessionId: result.session.id,
     createdAt: session?.createdAt ?? new Date(result.session.createdAt),
     reauthenticatedAt: session?.reauthenticatedAt ?? null,
+    mfaVerifiedAt: session?.mfaVerifiedAt ?? null,
     actor,
     displayName: user.profile?.displayName ?? user.name,
     handle: user.profile?.handle ?? null,
     email: user.email,
   };
 });
+
+/**
+ * Journalise un accès refusé, une seule fois par requête (layout + page) et au plus 20 fois par heure et par
+ * utilisateur, pour qu'un compte ne puisse pas remplir le journal append-only.
+ */
+export const recordDeniedAccess = cache(
+  async (
+    actor: Actor,
+    action: "security.admin_access_denied" | "security.cross_community_attempt",
+    targetType: string,
+    targetId: string,
+  ): Promise<void> => {
+    const { allowed } = await consumeRateLimit("audit.access_denied", actor.userId);
+    if (!allowed) return;
+    const context = await getRequestContext();
+    await recordAudit({ actor, action, targetType, targetId, requestId: context.requestId, ip: context.ip });
+  },
+);
 
 export async function getActor(): Promise<Actor | null> {
   return (await getCurrentSession())?.actor ?? null;
@@ -98,6 +118,7 @@ export type AdminGateResult =
   | { kind: "ok"; session: CurrentSession }
   | { kind: "not_found" }
   | { kind: "mfa_required" }
+  | { kind: "mfa_reverify" }
   | { kind: "session_expired" };
 
 /** Décision pure d'accès à /admin (testée unitairement). */
@@ -106,6 +127,8 @@ export function evaluateAdminGate(session: CurrentSession | null, now = Date.now
     return { kind: "not_found" };
   }
   if (!session.actor.twoFactorEnabled) return { kind: "mfa_required" };
+  // La MFA doit avoir été vérifiée pour CETTE session (une session ouverte avant l'activation ne suffit pas).
+  if (session.mfaVerifiedAt === null) return { kind: "mfa_reverify" };
   if (isAdminSessionExpired(session, now)) return { kind: "session_expired" };
   return { kind: "ok", session };
 }
@@ -118,20 +141,12 @@ export async function requireAdminPage(): Promise<CurrentSession> {
     case "ok":
       return gate.session;
     case "not_found":
-      if (current) {
-        const context = await getRequestContext();
-        await recordAudit({
-          actor: current.actor,
-          action: "security.admin_access_denied",
-          targetType: "route",
-          targetId: "/admin",
-          requestId: context.requestId,
-          ip: context.ip,
-        });
-      }
+      if (current) await recordDeniedAccess(current.actor, "security.admin_access_denied", "route", "/admin");
       notFound();
     case "mfa_required":
       redirect("/parametres/securite?mfa=requis");
+    case "mfa_reverify":
+      redirect("/connexion?raison=mfa-admin");
     case "session_expired":
       redirect("/connexion?raison=session-admin-expiree");
   }
@@ -146,6 +161,7 @@ export async function requireAdminActor(): Promise<CurrentSession> {
     case "not_found":
       throw new AppError("NOT_FOUND");
     case "mfa_required":
+    case "mfa_reverify":
       throw new AppError("MFA_REQUIRED");
     case "session_expired":
       throw new AppError("UNAUTHENTICATED", { message: "Session d'administration expirée : reconnecte-toi." });

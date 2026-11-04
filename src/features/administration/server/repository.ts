@@ -1,5 +1,5 @@
 import { db, type TransactionClient } from "@/server/db";
-import type { GlobalRoleName } from "@/server/policies";
+import type { AccountStatusName, GlobalRoleName } from "@/server/policies";
 import { maskEmail } from "../lib/mask-email";
 import { ADMIN_PAGE_SIZE, type AuditListQuery, type UserListQuery } from "../schemas";
 
@@ -8,7 +8,7 @@ export interface AdminUserRow {
   displayName: string;
   handle: string | null;
   maskedEmail: string;
-  status: string;
+  status: AccountStatusName;
   roles: GlobalRoleName[];
   emailVerified: boolean;
   twoFactorEnabled: boolean;
@@ -118,8 +118,8 @@ export async function revokeRole(tx: TransactionClient, userId: string, role: Gl
   await tx.session.deleteMany({ where: { userId } });
 }
 
-export async function countSuperAdmins(tx: TransactionClient): Promise<number> {
-  return tx.userRole.count({ where: { role: "SUPER_ADMIN", user: { status: "ACTIVE", deletedAt: null } } });
+export async function hasRole(tx: TransactionClient, userId: string, role: GlobalRoleName): Promise<boolean> {
+  return (await tx.userRole.count({ where: { userId, role } })) > 0;
 }
 
 export interface AuditRow {

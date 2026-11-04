@@ -123,7 +123,8 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
           <div className="flex flex-col gap-4">
             <h3 className="font-semibold">{t("scanTitle")}</h3>
             <p className="text-muted">{t("scanIntro")}</p>
-            {/* QR code généré localement (data URL), aucun service tiers. */}
+            {/* QR code généré localement (data URL), aucun service tiers. Fond blanc volontaire en mode sombre :
+                les applications d'authentification lisent mal un QR code sans contraste clair. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={step.qr} alt={t("qrAlt")} width={220} height={220} className="rounded-md border bg-white p-2" />
             <p className="text-sm break-all text-muted">{t("manualKey", { secret: step.secret })}</p>
