@@ -1,0 +1,12 @@
+export {
+  findAdminUser,
+  getDashboardCounts,
+  listAuditLogs,
+  listUsers,
+  maskEmail,
+  type AdminUserRow,
+  type AuditRow,
+  type DashboardCounts,
+} from "./server/repository";
+export { auditListQuerySchema, userListQuerySchema, ADMIN_PAGE_SIZE } from "./schemas";
+export { ROLE_GRANT_PERMISSION } from "./server/role-permissions";
