@@ -46,7 +46,7 @@ export function SignUpForm() {
   const err = (field: string) => (errors[field] ? t(errors[field], { min: PASSWORD_MIN }) : undefined);
 
   return (
-    <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
+    <form method="post" noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
       <FormAlert message={formError} />
       <FormField name="name" label={t("nameLabel")} hint={t("nameHint")} autoComplete="name" required error={err("name")} />
       <FormField name="email" type="email" label={t("emailLabel")} autoComplete="email" inputMode="email" required error={err("email")} />

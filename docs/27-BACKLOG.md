@@ -3,6 +3,8 @@
 Estimation en points (1 = demi-journée). `US` → [06-USER-STORIES](06-USER-STORIES.md), `REQ` → [04](04-PRODUCT-REQUIREMENTS.md).
 
 ## Phase 1 — Fondations
+
+**Statut : F-1 à F-15 livrés le 2026-11-04** (détails et écarts : [CHANGELOG](../CHANGELOG.md), [ADR-009](adr/ADR-009-PHASE1-TOOLING.md)).
 | ID | Tâche | Pts | Dépend de |
 |---|---|---|---|
 | F-1 | Réparer Corepack/pnpm, init Next.js 16 + TS strict, scripts pnpm | 1 | Validation Phase 0 |

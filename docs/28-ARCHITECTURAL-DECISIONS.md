@@ -14,6 +14,7 @@ Synthèse. Le détail et les alternatives sont dans [docs/adr/](adr/README.md).
 | 8 | RBAC : rôles en base, permissions en code, rôles locaux séparés | Validé | [ADR-008](adr/ADR-008-ADMIN-RBAC.md) |
 | 9 | pg-boss pour les jobs, pas de Redis au MVP | Validé | ADR-001 |
 | 10 | pnpm comme unique gestionnaire | Validé | [09](09-TECH-STACK.md#gestionnaire-de-paquets--pnpm) |
+| 11 | TypeScript 6.0.3, pnpm 11.28.9, SeaweedFS en dev, versions publiées depuis au moins 7 jours | Validé (Phase 1) | [ADR-009](adr/ADR-009-PHASE1-TOOLING.md) |
 
 ## Hypothèses (à confirmer)
 - H1 : le pilote ne dépasse pas ~2 000 utilisateurs et 10 communautés → un VPS suffit.

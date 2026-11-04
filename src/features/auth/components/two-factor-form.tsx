@@ -42,7 +42,7 @@ export function TwoFactorForm() {
   }
 
   return (
-    <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
+    <form method="post" noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
       <FormAlert message={formError} />
       <FormField
         key={mode}

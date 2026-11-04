@@ -36,7 +36,7 @@ export function ForgotPasswordForm() {
   if (status === "sent") return <FormAlert tone="success" message={t("forgotSent")} />;
 
   return (
-    <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
+    <form method="post" noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
       <FormAlert message={error} />
       <FormField name="email" type="email" label={t("emailLabel")} autoComplete="email" inputMode="email" required />
       <Button type="submit" size="lg" disabled={status === "pending"}>
@@ -85,7 +85,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
   }
 
   return (
-    <form noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
+    <form method="post" noValidate onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5">
       <FormAlert message={error} />
       <FormField
         name="password"

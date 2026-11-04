@@ -1,5 +1,6 @@
 import { db, type TransactionClient } from "@/server/db";
 import type { GlobalRoleName } from "@/server/policies";
+import { maskEmail } from "../lib/mask-email";
 import { ADMIN_PAGE_SIZE, type AuditListQuery, type UserListQuery } from "../schemas";
 
 export interface AdminUserRow {
@@ -14,11 +15,6 @@ export interface AdminUserRow {
   createdAt: Date;
 }
 
-/** Masque l'email par défaut (docs/admin/ADMIN-USER-MANAGEMENT.md) : a***@domaine. */
-export function maskEmail(email: string): string {
-  const [local = "", domain = ""] = email.split("@");
-  return `${local.slice(0, 1)}***@${domain}`;
-}
 
 export async function listUsers(query: UserListQuery): Promise<{ rows: AdminUserRow[]; total: number }> {
   const q = query.q;

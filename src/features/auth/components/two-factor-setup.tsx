@@ -99,7 +99,7 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
         ) : null}
 
         {step.kind === "password" ? (
-          <form onSubmit={(e) => void submitPassword(e, step.mode)} className="flex max-w-sm flex-col gap-4">
+          <form method="post" onSubmit={(e) => void submitPassword(e, step.mode)} className="flex max-w-sm flex-col gap-4">
             <FormField
               name="password"
               type="password"
@@ -127,7 +127,7 @@ export function TwoFactorSetup({ enabled }: { enabled: boolean }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={step.qr} alt={t("qrAlt")} width={220} height={220} className="rounded-md border bg-white p-2" />
             <p className="text-sm break-all text-muted">{t("manualKey", { secret: step.secret })}</p>
-            <form onSubmit={(e) => void submitCode(e, step.backupCodes)} className="flex max-w-sm flex-col gap-4">
+            <form method="post" onSubmit={(e) => void submitCode(e, step.backupCodes)} className="flex max-w-sm flex-col gap-4">
               <FormField name="code" label={tAuth("totpLabel")} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
               <Button type="submit" disabled={pending} className="self-start">
                 {pending ? tAuth("pending") : t("confirmCode")}

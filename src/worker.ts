@@ -1,10 +1,10 @@
-process.env["EPAROLE_PROCESS"] ??= "worker";
-
 import "dotenv/config";
 import { deliverEmail } from "./server/email/mailer";
 import { startWorkerBoss } from "./server/jobs/boss";
 import { emailJobSchema, QUEUES } from "./server/jobs/queues";
-import { logger } from "./server/logger";
+import { logger as baseLogger } from "./server/logger";
+
+const logger = baseLogger.child({ service: "worker" });
 
 async function main(): Promise<void> {
   const boss = await startWorkerBoss();

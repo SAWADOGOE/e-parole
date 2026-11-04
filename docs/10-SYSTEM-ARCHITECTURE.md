@@ -39,7 +39,8 @@ flowchart LR
 
 Règles de dépendance (vérifiées par `eslint-plugin-boundaries` ou règle `no-restricted-imports`) :
 - `app` → `features` → `server` / `lib`. Jamais l'inverse.
-- Un module n'importe d'un autre module que son `index.ts` public (ex. `features/bible` expose `getVerses`, `formatReference`).
+- La logique serveur d'un module (`features/<m>/server/*`) ne s'importe que via son `index.ts` public (règle ESLint).
+  Les composants (`components/`) et utilitaires purs (`lib/`) d'un module peuvent être importés par les pages.
 - Prisma n'est importé que dans `src/server/db` et les `repository.ts`.
 
 ## Arborescence cible

@@ -32,6 +32,7 @@ type Pending = { mode: "grant" | "revoke"; role: GlobalRoleName } | null;
 export function RoleManager({ userId, userName, roles }: { userId: string; userName: string; roles: RoleState[] }) {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
+  const tAuth = useTranslations("auth");
   const router = useRouter();
   const [confirming, setConfirming] = useState<Pending>(null);
   const [reauthFor, setReauthFor] = useState<Pending>(null);
@@ -132,8 +133,8 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
         <AlertDialogContent>
           <AlertDialogTitle>{t("reauthTitle")}</AlertDialogTitle>
           <AlertDialogDescription>{t("reauthIntro")}</AlertDialogDescription>
-          <form onSubmit={(e) => void submitReauth(e)} className="flex flex-col gap-4">
-            <FormField name="password" type="password" label={t("reauthTitle")} autoComplete="current-password" required />
+          <form method="post" onSubmit={(e) => void submitReauth(e)} className="flex flex-col gap-4">
+            <FormField name="password" type="password" label={tAuth("passwordLabel")} autoComplete="current-password" required />
             <AlertDialogFooter>
               <AlertDialogCancel type="button">{tCommon("cancel")}</AlertDialogCancel>
               <Button type="submit" disabled={busy}>

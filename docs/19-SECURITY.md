@@ -32,6 +32,18 @@
 - **Dépendances** : `pnpm audit` en CI, Dependabot/Renovate, lockfile obligatoire, `onlyBuiltDependencies` explicite.
 - **Logs** : pas de corps de requête, pas de contenu de prière/message, emails hachés dans les logs applicatifs.
 
+## Implémenté en Phase 1
+- **IP client** : seul l'en-tête `X-Real-IP` est pris en compte (`TRUSTED_IP_HEADER`), jamais `X-Forwarded-For`.
+  ⚠️ **Prérequis de déploiement** : le reverse proxy doit écraser `X-Real-IP` (Caddy : `header_up X-Real-IP {remote_host}`).
+  Sans lui, Better Auth utilise **un compteur partagé par route** : 5 connexions / 15 min pour toute la plateforme.
+- **Limites par compte** (email haché SHA-256, indépendant de l'IP) : connexion 10 / 15 min, reset 3 / h, renvoi de vérification 3 / h.
+  Le verrouillage du TOTP après échecs répétés est fourni par Better Auth (`failedVerificationCount`, `lockedUntil`).
+- **CSP** : nonce par requête pour les scripts (`'strict-dynamic'`) ; `style-src 'unsafe-inline'` accepté pour les attributs `style`
+  de Radix et Sonner (risque limité : aucune exécution de script).
+- **Formulaires d'authentification** en `method="post"` : une soumission avant hydratation ne place jamais le mot de passe dans l'URL.
+- **Sessions** : la liste n'expose jamais les jetons au navigateur ; révocation par identifiant de session, filtrée sur l'utilisateur.
+- `birthYear` n'est pas modifiable après l'inscription (hook `user.update.before`).
+
 ## Données sensibles
 Les convictions religieuses sont une **catégorie particulière de données** dans de nombreux droits (RGPD art. 9 ;
 loi burkinabè n° 001-2021/AN sur la protection des données personnelles, contrôlée par la CIL) ⚠️ **à faire valider par

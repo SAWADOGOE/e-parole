@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
@@ -7,7 +7,9 @@ import { db } from "../db";
 import { getEnv } from "../env";
 import { enqueueEmail } from "../jobs/enqueue";
 import { logger } from "../logger";
-import { AUTH_LIMITS, MINIMUM_AGE, SESSION_MAX_AGE_SECONDS } from "./constants";
+import { consumeRateLimit } from "../rate-limit/rate-limit";
+import { AUTH_LIMITS, MINIMUM_AGE, SESSION_MAX_AGE_SECONDS, TRUSTED_IP_HEADER } from "./constants";
+import { accountLimitFor } from "./account-limits";
 import { createProfileForUser } from "./profile-bootstrap";
 
 function isTooYoung(birthYear: unknown): boolean {
@@ -72,7 +74,20 @@ function buildAuth() {
         "/two-factor/verify-backup-code": { window: 5 * 60, max: 5 },
       },
     },
+    // Limite par compte (email), indépendante de l'IP : complète la limite par IP ci-dessus.
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        const limit = accountLimitFor(ctx.path, ctx.body);
+        if (!limit) return;
+        const { allowed, retryAfterSeconds } = await consumeRateLimit(limit.name, limit.subject);
+        if (!allowed) {
+          throw new APIError("TOO_MANY_REQUESTS", { message: "RATE_LIMITED", headers: { "Retry-After": String(retryAfterSeconds) } });
+        }
+      }),
+    },
     advanced: {
+      // Seul l'en-tête posé (et écrasé) par le reverse proxy est pris en compte ; X-Forwarded-For est ignoré.
+      ipAddress: { ipAddressHeaders: [TRUSTED_IP_HEADER] },
       cookiePrefix: "eparole",
       useSecureCookies: env.NODE_ENV === "production",
       database: { generateId: false },
@@ -88,6 +103,14 @@ function buildAuth() {
           },
           after: async (user) => {
             await createProfileForUser(user.id, user.name);
+          },
+        },
+        update: {
+          // L'année de naissance n'est fixée qu'à l'inscription : toute modification ultérieure est ignorée.
+          before: (data) => {
+            const rest: Record<string, unknown> = { ...data };
+            delete rest["birthYear"];
+            return Promise.resolve({ data: rest });
           },
         },
       },

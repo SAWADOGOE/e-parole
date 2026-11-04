@@ -13,6 +13,9 @@ export const RATE_LIMITS = {
   "admin.sanction": { window: 3600, max: 30 },
   "account.reauth": { window: 900, max: 5 },
   "account.export": { window: 86_400, max: 3 },
+  "auth.signin.account": { window: 900, max: 10 },
+  "auth.reset.account": { window: 3600, max: 3 },
+  "auth.verification.account": { window: 3600, max: 3 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;

@@ -26,7 +26,7 @@ export async function AppShell({ account, aside, children }: AppShellProps) {
         {t("common.skipToContent")}
       </a>
       <header className="sticky top-0 z-30 border-b bg-bg/95 backdrop-blur">
-        <div className="mx-auto flex h-(--header-height) max-w-6xl items-center justify-between gap-4 px-4">
+        <div className="mx-auto flex h-(--header-height) max-w-6xl items-center justify-between gap-2 px-4">
           <Link href="/" className="rounded-md">
             <Wordmark />
             <span className="sr-only">{t("nav.home")}</span>
@@ -45,7 +45,7 @@ export async function AppShell({ account, aside, children }: AppShellProps) {
                 <Button asChild variant="ghost" size="sm">
                   <Link href="/connexion">{t("nav.signIn")}</Link>
                 </Button>
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="hidden min-[400px]:inline-flex">
                   <Link href="/inscription">{t("nav.signUp")}</Link>
                 </Button>
               </>

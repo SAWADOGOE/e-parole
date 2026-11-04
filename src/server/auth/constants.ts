@@ -15,3 +15,9 @@ export const ADMIN_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 /** Ré-authentification exigée pour les actions sensibles. */
 export const REAUTH_WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * En-tête d'IP client de confiance, posé et écrasé par le reverse proxy (Caddy : header_up X-Real-IP {remote_host}).
+ * X-Forwarded-For n'est jamais utilisé tel quel : il est falsifiable par le client.
+ */
+export const TRUSTED_IP_HEADER = "x-real-ip";
