@@ -15,6 +15,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 - ADR-010 : rendu et cache sous CSP à nonce.
 - Errata tracés : coquilles de la source corrigées par une nouvelle version (Gn 50:10, Éz 21:32), sur décision du propriétaire.
 
+### Décisions et dettes traitées après la Phase 2 (2026-11-05)
+- Sélection de versets : le motif listbox est remplacé par un bouton bascule sur le numéro de verset ; le chapitre reste un texte.
+- Budget JS du lecteur révisé à 175 Ko gzip ; ADR-010 accepté.
+- `prisma migrate dev` réparé : migration de Phase 1 tolérante à la base fantôme, colonne générée décrite dans le schéma.
+- Rôle applicatif imposé (`eparole_app`) et droits vérifiés au démarrage du web et du worker.
+
 ### Revues de la Phase 2 (`security-auditor`, `accessibility-reviewer`, `code-reviewer`)
 - Texte : vérification dans la transaction d'import, SHA-256 recalculés à l'activation, trigger d'immutabilité, retour arrière de version, styles de paragraphe inconnus refusés.
 - Sécurité : limite de recherche sans IP de confiance, curseur et caractère NUL bornés, refus admin journalisés.

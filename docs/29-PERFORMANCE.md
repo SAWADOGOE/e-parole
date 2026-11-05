@@ -8,7 +8,7 @@ Contexte : Android d'entrée de gamme, 3G/4G instable, data coûteuse. La perfor
 | LCP p75 (Slow 4G, Moto G Power) | < 2,5 s | `/`, `/bible/lsg/jean/3`, `/prieres` |
 | INP p75 | < 200 ms | Toutes |
 | CLS | < 0,1 | Toutes |
-| JS initial (gzip) | < 170 Ko `/` ; < 120 Ko lecteur ⚠️ | Lecteur mesuré : 171,3 Ko, dont 129,7 Ko de runtime Next + React (ADR-010) : budget à réviser |
+| JS initial (gzip) | < 170 Ko `/` ; < 175 Ko lecteur | Budget lecteur révisé le 2026-11-05 (ADR-010) : runtime Next + React 129,7 Ko + 45 Ko pour le code e-Parole. Mesuré : 171,3 Ko |
 | Poids page lecteur (HTML + CSS + polices) | < 120 Ko hors JS | |
 | Image de fil | ≤ 200 Ko (mobile), ≤ 60 Ko en mode économie | |
 | TTFB lecteur (cache) | < 200 ms | |

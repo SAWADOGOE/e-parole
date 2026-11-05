@@ -51,7 +51,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
   const t = useTranslations("bible");
   const router = useRouter();
   const reference = `${bookName} ${chapter}`;
-  const { selected, hasSelected, clear } = useVerseSelection(HELP_ID, t("versesLabel", { reference }));
+  const { selected, hasSelected, clear } = useVerseSelection(HELP_ID);
   const { prefs, changePrefs } = useReaderPrefs(serverPrefs, canPersist);
   const [storedShortcuts, setStoredShortcuts] = useStoredPreference(READER_SHORTCUTS_KEY);
   const [panel, setPanel] = useState<Panel>(null);

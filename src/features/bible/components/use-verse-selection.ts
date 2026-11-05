@@ -4,10 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const verseElements = (): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>("#verses [data-v]"));
 const verseNumber = (element: HTMLElement): number => Number(element.dataset["v"]);
+const controlOf = (verse: HTMLElement): HTMLElement | null => verse.querySelector<HTMLElement>(".verse-number");
 
-/** Un seul point d'entrée au clavier dans la liste : le verset actif. */
+/** Un seul point d'entrée au clavier dans le chapitre : le bouton du verset actif. */
 function setActive(verses: readonly HTMLElement[], target: HTMLElement): void {
-  for (const element of verses) element.tabIndex = element === target ? 0 : -1;
+  for (const verse of verses) {
+    const control = controlOf(verse);
+    if (control) control.tabIndex = verse === target ? 0 : -1;
+  }
 }
 
 export interface VerseSelection {
@@ -18,10 +22,11 @@ export interface VerseSelection {
 }
 
 /**
- * Sélection au toucher et au clavier sur le texte rendu par le serveur : motif listbox multisélection,
- * posé après hydratation pour que la lecture sans JavaScript reste un simple article.
+ * Sélection au toucher et au clavier sur le texte rendu par le serveur. Le chapitre reste un texte (un paragraphe par
+ * verset) que les lecteurs d'écran lisent d'un trait ; seul le numéro de chaque verset devient un bouton bascule.
+ * Le motif listbox, qui transformait tout le chapitre en liste de choix, a été écarté (revue d'accessibilité, E6).
  */
-export function useVerseSelection(helpId: string, label: string): VerseSelection {
+export function useVerseSelection(helpId: string): VerseSelection {
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set());
   const [hasSelected, setHasSelected] = useState(false);
   const anchor = useRef<number | null>(null);
@@ -61,16 +66,16 @@ export function useVerseSelection(helpId: string, label: string): VerseSelection
     const list = document.getElementById("verses");
     if (!list) return;
     const verses = verseElements();
-    list.setAttribute("role", "listbox");
-    list.setAttribute("aria-multiselectable", "true");
-    list.setAttribute("aria-describedby", helpId);
-    list.setAttribute("aria-label", label);
-    const target = document.getElementById(window.location.hash.slice(1));
-    const active = verses.find((element) => element === target) ?? verses[0];
-    for (const element of verses) {
-      element.setAttribute("role", "option");
-      element.setAttribute("aria-selected", "false");
+    list.dataset["selectable"] = "";
+    for (const verse of verses) {
+      const control = controlOf(verse);
+      if (!control) continue;
+      control.setAttribute("role", "button");
+      control.setAttribute("aria-pressed", "false");
+      control.setAttribute("aria-describedby", helpId);
     }
+    const target = document.getElementById(window.location.hash.slice(1));
+    const active = verses.find((verse) => verse === target) ?? verses[0];
     if (active) setActive(verses, active);
 
     const onMouseDown = (event: MouseEvent): void => {
@@ -78,6 +83,7 @@ export function useVerseSelection(helpId: string, label: string): VerseSelection
       if (event.shiftKey) event.preventDefault();
     };
 
+    // Un lecteur d'écran active le bouton par un clic simulé : ce même gestionnaire le traite.
     const onClick = (event: MouseEvent): void => {
       const verse = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-v]") : null;
       // Un glissé de sélection de texte natif reste une sélection de texte.
@@ -88,13 +94,14 @@ export function useVerseSelection(helpId: string, label: string): VerseSelection
     };
 
     const onKeyDown = (event: KeyboardEvent): void => {
-      const current = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>("[data-v]") : null;
+      if (!(event.target instanceof HTMLElement) || !event.target.matches(".verse-number")) return;
+      const current = event.target.closest<HTMLElement>("[data-v]");
       if (!current) return;
       const index = verses.indexOf(current);
       const moveTo = (next: HTMLElement | undefined): void => {
         if (!next) return;
         setActive(verses, next);
-        next.focus();
+        controlOf(next)?.focus();
       };
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
@@ -118,10 +125,15 @@ export function useVerseSelection(helpId: string, label: string): VerseSelection
       list.removeEventListener("click", onClick);
       list.removeEventListener("keydown", onKeyDown);
     };
-  }, [toggle, extendTo, helpId, label]);
+  }, [toggle, extendTo, helpId]);
 
   useEffect(() => {
-    for (const element of verseElements()) element.setAttribute("aria-selected", String(selected.has(verseNumber(element))));
+    for (const verse of verseElements()) {
+      const isSelected = selected.has(verseNumber(verse));
+      if (isSelected) verse.dataset["selected"] = "";
+      else delete verse.dataset["selected"];
+      controlOf(verse)?.setAttribute("aria-pressed", String(isSelected));
+    }
     if (selected.size > 0) document.documentElement.dataset["readerSelecting"] = "";
     else delete document.documentElement.dataset["readerSelecting"];
   }, [selected]);

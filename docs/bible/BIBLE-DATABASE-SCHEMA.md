@@ -122,10 +122,9 @@ signale les références orphelines.
 - Trigger `bible_verse_guard` : aucun `UPDATE` d'un verset, même par le propriétaire ; aucun ajout dans une version sortie de `STAGED`.
 - `bible_activate_version` recalcule chaque SHA-256 et refuse une version altérée ; elle accepte une version `RETIRED`, ce qui offre un retour arrière ; `pnpm bible:activate` refuse aussi de publier si le rôle de `DATABASE_URL` peut écrire dans `bible_verse`.
 - Aucune clé étrangère du texte vers `user` (`importedBy` est un libellé) : un `TRUNCATE` ou une purge de comptes ne peut pas atteindre le texte.
-- La colonne `search` est générée : `prisma migrate diff` la voit comme un défaut à retirer, ce qu'il faut ignorer.
-- ⚠️ `prisma migrate dev` échoue sur la base fantôme à cause de la migration `20261104193121_security_hardening` (Phase 1), qui suppose
-  `_prisma_migrations` présente. Elle est déjà appliquée, donc non modifiable sans casser sa somme de contrôle. Générer le SQL avec
-  `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`, puis appliquer avec `prisma migrate deploy`.
+- La colonne `search` est générée ; `@default(dbgenerated("bible_fts_vector(text)"))` la décrit à Prisma, sans quoi chaque migration tenterait d'en retirer le défaut.
+- Le rôle applicatif doit s'appeler `eparole_app` : la migration `20261105180000_require_app_role` échoue sinon, et le web comme le worker refusent de
+  démarrer si leur rôle peut écrire dans les tables de référence ou réécrire l'audit (`src/server/db/privileges.ts`).
 
 ## Import réel (2026-11-05)
 Deux versions existent. La version 1 reproduit la source à l'identique (`RETIRED`). La version 2 (`ACTIVE`) lui applique les 2 errata de

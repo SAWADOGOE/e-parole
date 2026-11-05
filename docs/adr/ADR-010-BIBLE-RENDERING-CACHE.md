@@ -1,6 +1,6 @@
 # ADR-010 — Rendu et cache du lecteur biblique sous CSP à nonce
 
-- **Statut** : Proposé (Phase 2), en attente de validation
+- **Statut** : Accepté le 2026-11-05 par le propriétaire du projet
 - **Date** : 2026-11-05
 - **Complète** : [ADR-006](ADR-006-BIBLE-INTEGRATION.md) ; **modifie** le levier « HTML pré-rendu » de [docs/29](../29-PERFORMANCE.md)
 
@@ -37,7 +37,7 @@ Script : `node scripts/bible/measure.mjs` et `measure-lcp.mjs`. Serveur et navig
 
 | Indicateur | Budget | Mesuré | Verdict |
 |---|---|---|---|
-| JS initial lecteur (gzip) | < 120 Ko | **171,3 Ko** (brotli 148,3 Ko) | ❌ **non atteint** |
+| JS initial lecteur (gzip) | < 175 Ko (révisé, voir Conséquences) | 171,3 Ko (brotli 148,3 Ko) | ✅ |
 | dont runtime Next 16 + React 19 (`rootMainFiles`) | — | 129,7 Ko | incompressible |
 | dont code e-Parole + next-intl + icônes | — | ≈ 42 Ko | 66 Ko avant optimisation |
 | HTML + CSS + police préchargée (gzip) | < 120 Ko | 50,9 Ko (≈ 99 Ko avec Inter latin, chargée à l'usage) | ✅ |
@@ -55,6 +55,7 @@ Lighthouse n'a pas été exécuté (non installé) ; le LCP vient d'une émulati
 - ➖ Pas de cache CDN du HTML : chaque page passe par le serveur (hors-ligne et CDN à revoir en Phase 7).
 - ➖ **Le budget de 120 Ko est inatteignable avec cette pile** : le runtime seul le dépasse. Il date de la Phase 0, avant toute mesure.
   Pistes restantes : retirer `next-intl` du client du lecteur (−12 Ko, refonte du fournisseur racine) ; aucune ne ramène sous 120 Ko.
-  **Décision attendue** : réviser le budget (proposition : runtime + 45 Ko, soit 175 Ko gzip) ou reconsidérer la pile du lecteur.
+  **Décision (2026-11-05)** : budget révisé à **175 Ko gzip** (runtime 129,7 Ko + 45 Ko pour le code e-Parole). Il garde la croissance du code sous contrôle :
+  toute dépendance client nouvelle doit tenir dans la marge restante, ou être chargée à la demande.
 - ➖ Le cache de données est local à chaque instance ; à plusieurs instances, une invalidation admin n'atteint que la sienne.
   L'identifiant de version dans les clés et le TTL de 60 s bornent cet écart à une minute.
