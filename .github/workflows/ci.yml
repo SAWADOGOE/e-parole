@@ -30,6 +30,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec prisma generate
+      # PageProps et LayoutProps sont des types générés par Next : sans build préalable, ils doivent être créés ici.
+      - run: pnpm exec next typegen
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
