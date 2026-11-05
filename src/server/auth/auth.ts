@@ -7,9 +7,9 @@ import { db } from "../db";
 import { getEnv } from "../env";
 import { enqueueEmail } from "../jobs/enqueue";
 import { logger } from "../logger";
-import { consumeRateLimit, isRateLimited } from "../rate-limit/rate-limit";
+import { consumeRateLimit, refundRateLimit } from "../rate-limit/rate-limit";
 import { AUTH_LIMITS, MINIMUM_AGE, SESSION_MAX_AGE_SECONDS, TRUSTED_IP_HEADER } from "./constants";
-import { emailSendingLimit, SIGN_IN_PATH, signInFailureLimits } from "./account-limits";
+import { accountSubject, emailSendingLimit, SIGN_IN_PATH, signInFailureLimits } from "./account-limits";
 import { createProfileForUser } from "./profile-bootstrap";
 import { markSessionMfaVerified, revokeOtherSessions } from "./session-repository";
 
@@ -48,6 +48,9 @@ function buildAuth() {
       // (pas d'énumération). La vérification de l'email connecte ensuite l'utilisateur.
       autoSignIn: false,
       onExistingUserSignUp: async ({ user }) => {
+        // Limite par destinataire : empêche d'inonder la boîte d'un membre existant.
+        const { allowed } = await consumeRateLimit("auth.account_exists.account", accountSubject(user.email));
+        if (!allowed) return;
         await enqueueEmail({ to: user.email, template: "account-exists", url: `${getEnv().APP_URL}/connexion` });
       },
       minPasswordLength: AUTH_LIMITS.minPasswordLength,
@@ -93,9 +96,16 @@ function buildAuth() {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === SIGN_IN_PATH) {
           const ip = ctx.request?.headers.get(TRUSTED_IP_HEADER) ?? null;
-          for (const limit of signInFailureLimits(ctx.body, ip)) {
-            const { limited, retryAfterSeconds } = await isRateLimited(limit.name, limit.subject);
-            if (limited) throw tooManyRequests(retryAfterSeconds);
+          // Réservation atomique d'un créneau AVANT la vérification (pas de course entre tentatives simultanées).
+          const reserved: { name: (typeof limits)[number]["name"]; subject: string }[] = [];
+          const limits = signInFailureLimits(ctx.body, ip);
+          for (const limit of limits) {
+            const { allowed, retryAfterSeconds } = await consumeRateLimit(limit.name, limit.subject);
+            reserved.push(limit);
+            if (!allowed) {
+              for (const r of reserved) await refundRateLimit(r.name, r.subject);
+              throw tooManyRequests(retryAfterSeconds);
+            }
           }
           return;
         }
@@ -108,10 +118,11 @@ function buildAuth() {
       // et le compteur email+IP n'affecte pas l'utilisateur légitime connecté depuis une autre adresse.
       after: createAuthMiddleware(async (ctx) => {
         const failed = isAPIError(ctx.context.returned);
-        if (ctx.path === SIGN_IN_PATH && failed) {
-          const ip = ctx.request?.headers.get(TRUSTED_IP_HEADER) ?? null;
-          for (const limit of signInFailureLimits(ctx.body, ip)) {
-            await consumeRateLimit(limit.name, limit.subject);
+        if (ctx.path === SIGN_IN_PATH) {
+          // Succès : le créneau réservé est rendu. Échec : il reste compté.
+          if (!failed) {
+            const ip = ctx.request?.headers.get(TRUSTED_IP_HEADER) ?? null;
+            for (const limit of signInFailureLimits(ctx.body, ip)) await refundRateLimit(limit.name, limit.subject);
           }
           return;
         }

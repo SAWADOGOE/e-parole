@@ -14,10 +14,15 @@ const EMAIL_SENDING_LIMITS: Record<string, RateLimitName> = {
   "/send-verification-email": "auth.verification.account",
 };
 
+/** Sujet de limitation dérivé d'un email : normalisé puis haché (jamais stocké en clair). */
+export function accountSubject(email: string): string {
+  return createHash("sha256").update(email.trim().toLowerCase()).digest("hex").slice(0, 32);
+}
+
 function hashedEmail(body: unknown): string | null {
   const email = (body as { email?: unknown } | null)?.email;
   if (typeof email !== "string" || email.trim().length === 0) return null;
-  return createHash("sha256").update(email.trim().toLowerCase()).digest("hex").slice(0, 32);
+  return accountSubject(email);
 }
 
 /**

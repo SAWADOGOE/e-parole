@@ -17,6 +17,7 @@ export const RATE_LIMITS = {
   "auth.signin.failures.account": { window: 3600, max: 50 },
   "auth.reset.account": { window: 3600, max: 3 },
   "audit.access_denied": { window: 3600, max: 20 },
+  "auth.account_exists.account": { window: 86_400, max: 2 },
   "auth.verification.account": { window: 3600, max: 3 },
 } as const satisfies Record<string, RateLimitRule>;
 
@@ -62,6 +63,15 @@ export async function isRateLimited(
   const resetAt = Number(row.lastRequest) + rule.window * 1000;
   const limited = resetAt > now && row.count >= rule.max;
   return { limited, retryAfterSeconds: limited ? Math.max(1, Math.ceil((resetAt - now) / 1000)) : 0 };
+}
+
+/**
+ * Rend un créneau consommé (ex. connexion réussie) : le créneau est réservé atomiquement AVANT la vérification
+ * du mot de passe, puis rendu en cas de succès — seuls les échecs restent comptés, sans course possible.
+ */
+export async function refundRateLimit(name: RateLimitName, subject: string): Promise<void> {
+  await db.$executeRaw`
+    UPDATE "rate_limit" SET "count" = GREATEST("count" - 1, 0) WHERE "key" = ${`app:${name}:${subject}`}`;
 }
 
 export async function enforceRateLimit(name: RateLimitName, subject: string): Promise<void> {

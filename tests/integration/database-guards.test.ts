@@ -4,7 +4,7 @@ import { recordAudit } from "@/server/audit/audit";
 import { createProfileForUser } from "@/server/auth/profile-bootstrap";
 import { db } from "@/server/db";
 import { evaluateCommunity } from "@/server/policies";
-import { consumeRateLimit } from "@/server/rate-limit/rate-limit";
+import { consumeRateLimit, refundRateLimit } from "@/server/rate-limit/rate-limit";
 import { queryAsApp, resetDatabase } from "../support/db";
 import { createTestUser } from "../factories/db-users";
 
@@ -50,6 +50,14 @@ describe("garde-fous PostgreSQL", () => {
     const profile = await db.profile.findUniqueOrThrow({ where: { userId: user.id } });
     expect(profile.handle).toMatch(/^aicha_ouedraogo_\d{4,5}$/);
     expect(profile.displayName).toBe("Aïcha Ouédraogo");
+  });
+
+  it("un créneau rendu (connexion réussie) libère une place", async () => {
+    for (let i = 0; i < 5; i += 1) await consumeRateLimit("account.reauth", "sujet-refund");
+    expect((await consumeRateLimit("account.reauth", "sujet-refund")).allowed).toBe(false);
+    await refundRateLimit("account.reauth", "sujet-refund");
+    await refundRateLimit("account.reauth", "sujet-refund");
+    expect((await consumeRateLimit("account.reauth", "sujet-refund")).allowed).toBe(true);
   });
 
   it("la limite de débit est atomique : exactement `max` requêtes passent", async () => {

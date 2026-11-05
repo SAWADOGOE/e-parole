@@ -9,7 +9,7 @@ import { handleBaseFromName } from "@/server/auth/handle";
 import { renderEmail } from "@/server/email/templates";
 
 describe("safeReturnTo (redirection ouverte)", () => {
-  it.each(["https://evil.test", "//evil.test", "/\\evil.test", "javascript:alert(1)", "/\t/evil.test", "/\n/evil.test"])(
+  it.each(["https://evil.test", "//evil.test", "/\\evil.test", "javascript:alert(1)", "/\t/evil.test", "/\n/evil.test", "/.//evil.test", "/a/..//evil.test", "/%2e//evil.test", "/./x"])(
     "rejette %s",
     (value) => {
       expect(safeReturnTo(value)).toBe("/");
