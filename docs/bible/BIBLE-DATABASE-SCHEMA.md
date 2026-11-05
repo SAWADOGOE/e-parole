@@ -144,8 +144,8 @@ Malachie en 4 chapitres ; Romains 16 compte 27 versets ; 3 Jean compte 15 verset
 
 ### Contrôle croisé
 - **HelloAO `fra_lsg`, 31 170 versets comparés, espaces ignorés** : mêmes coordonnées pour tous (0 absent de chaque côté), 31 145 identiques, 25 écarts :
-  16 titres ou références qu'HelloAO fait fuir dans le verset (notre extraction est propre) ; 9 différences de texte, dont les coquilles
-  « audelà » et « n’aua » et 7 différences de casse. HelloAO provient de la même source, il ne vaut pas confirmation indépendante.
+  15 titres ou références qu'HelloAO fait fuir dans le verset (notre extraction est propre) ; 10 différences de texte, dont les coquilles
+  « audelà » et « n’aua » et 8 différences de casse. HelloAO provient de la même source, il ne vaut pas confirmation indépendante.
 - **Midvash `lsg`, 998 versets (un sur 31), lignée de saisie indépendante** : 632 identiques, 307 différences typographiques seules,
   33 décalages de versification, 26 à relire. Ces 26 sont surtout une même phrase placée de part et d'autre d'une frontière de verset, ou une numérotation
   différente des psaumes ; aucun ne montre de substitution de mots suggérant une révision, mais leur relecture humaine reste à faire.
