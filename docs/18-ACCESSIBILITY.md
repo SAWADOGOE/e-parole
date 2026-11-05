@@ -21,7 +21,10 @@ Cible : **WCAG 2.2 niveau AA** sur les trois espaces.
 - Structure : `<article lang="fr">` → `<h1>Jean 3</h1>` → un `<p>` par verset, numéro dans `<sup>` accompagné d'un texte
   visuellement masqué « verset 16 ».
 - Les titres de péricopes (si présents dans la source) sont des `<h2>`.
-- La sélection de versets expose `role="listbox"` avec `aria-multiselectable="true"`, posé après hydratation : sans JavaScript, le chapitre reste un simple article. ⚠️ Toujours à valider avec NVDA et TalkBack (non testé en Phase 2).
+- La sélection de versets ne transforme jamais le chapitre : chaque verset reste un paragraphe, que les lecteurs d'écran lisent d'un trait.
+  Après hydratation, seul le numéro de verset devient un bouton bascule (`role="button"`, `aria-pressed`), avec un point d'entrée unique au clavier
+  (flèches entre les versets, Espace ou Entrée pour sélectionner). Le motif `listbox` a été écarté sur décision du propriétaire (revue E6, 2026-11-05) :
+  il faisait lire le chapitre comme une liste de choix. Test NVDA et TalkBack recommandé avant le lancement public.
 - Les surlignages ne sont pas signalés uniquement par la couleur : un indicateur (icône ou motif) est disponible et annoncé.
 
 ## Langue

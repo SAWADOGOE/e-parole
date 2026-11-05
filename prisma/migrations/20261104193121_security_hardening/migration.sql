@@ -16,7 +16,10 @@ BEGIN
     -- Suppression des comptes : logique (deletedAt) ; la purge physique passera par un job dédié avec le rôle propriétaire.
     REVOKE DELETE, TRUNCATE ON "user" FROM eparole_app;
     -- L'application n'a pas à modifier l'historique des migrations.
-    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON "_prisma_migrations" FROM eparole_app;
+    -- Absente de la base fantôme de `prisma migrate dev` : sans ce test, la commande échouait.
+    IF to_regclass('public._prisma_migrations') IS NOT NULL THEN
+      REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON "_prisma_migrations" FROM eparole_app;
+    END IF;
   END IF;
 END
 $$;

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { ensureAutomaticDailyVerse } from "./features/bible/server/daily-verse";
 import { deliverEmail } from "./server/email/mailer";
+import { verifyDatabaseRoles } from "./server/db/startup-check";
 import { startWorkerBoss } from "./server/jobs/boss";
 import { emailJobSchema, QUEUES } from "./server/jobs/queues";
 import { logger as baseLogger } from "./server/logger";
@@ -8,6 +9,7 @@ import { logger as baseLogger } from "./server/logger";
 const logger = baseLogger.child({ service: "worker" });
 
 async function main(): Promise<void> {
+  await verifyDatabaseRoles("worker");
   const boss = await startWorkerBoss();
 
   await boss.work(QUEUES.emailSend, async (jobs) => {

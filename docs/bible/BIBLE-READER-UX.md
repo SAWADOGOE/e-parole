@@ -36,7 +36,7 @@ Les slugs sont résolus via `BibleBookName` ; `/bible/lsg/JHN/3` redirige vers l
 ## Interactions
 | Action | Mobile | Desktop / clavier |
 |---|---|---|
-| Sélectionner un verset | Tap | Clic ; flèches ↑↓ pour se déplacer, Espace pour (dé)sélectionner |
+| Sélectionner un verset | Tap sur le verset | Clic, ou bouton du numéro de verset : flèches ↑↓ pour se déplacer, Espace ou Entrée pour (dé)sélectionner |
 | Étendre la sélection | Tap sur d'autres versets (contigus ou non) | Maj + clic / Maj + flèches |
 | Effacer la sélection | Tap hors texte, bouton ✕ | Échap |
 | Chapitre suivant / précédent | Boutons de fin (swipe non livré) | `→` / `←` (hors champ de saisie) |

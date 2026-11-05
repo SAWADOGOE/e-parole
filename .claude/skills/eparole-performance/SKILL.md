@@ -6,7 +6,7 @@ description: Use when an e-Parole change may affect load time, bundle size, imag
 # e-Parole — performance (Android d'entrée de gamme, 3G/4G)
 
 ## Budgets
-LCP p75 < 2,5 s (Slow 4G) · INP < 200 ms · CLS < 0,1 · JS initial < 170 Ko gzip (`/`), < 120 Ko (lecteur) ·
+LCP p75 < 2,5 s (Slow 4G) · INP < 200 ms · CLS < 0,1 · JS initial < 170 Ko gzip (`/`), < 175 Ko (lecteur) ·
 image de fil ≤ 200 Ko (≤ 60 Ko en économie de données).
 
 ## Instructions

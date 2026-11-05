@@ -71,7 +71,6 @@
     "emptyTitle": "La Bible n'est pas encore disponible",
     "emptyBody": "La Bible Louis Segond 1910 sera bientôt accessible ici : lecture chapitre par chapitre, recherche, surlignages et notes personnelles.",
     "emptyVerse": "« Ta parole est une lampe à mes pieds, et une lumière sur mon sentier. » — Psaume 119:105",
-    "versesLabel": "Versets de {reference}",
     "verseLabel": "verset {verse}",
     "highlightedLabel": "surligné en {color}",
     "noteMarker": "note personnelle sur ce verset",
@@ -148,7 +147,7 @@
       "bookmarkAdded": "Ajouté aux favoris",
       "bookmarkRemoved": "Retiré des favoris",
       "signInRequired": "Connecte-toi pour garder tes surlignages, notes et favoris.",
-      "help": "Flèches pour parcourir les versets, Espace pour sélectionner, Maj et flèches pour étendre. Tabulation pour atteindre les actions.",
+      "help": "Le numéro de chaque verset est un bouton de sélection : Entrée ou Espace pour sélectionner, flèches pour passer au verset voisin, Maj et flèches pour étendre. Tabulation pour atteindre les actions.",
       "cleared": "Sélection effacée"
     },
     "colors": {

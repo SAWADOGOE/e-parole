@@ -10,7 +10,7 @@ const ATTRIBUTION = "Louis Segond 1910 — domaine public";
 
 /** L'îlot client a pris la main : le texte reste lisible avant, mais la sélection n'existe qu'après. */
 async function readerReady(page: Page): Promise<void> {
-  await expect(page.locator("#verses")).toHaveAttribute("role", "listbox");
+  await expect(page.locator("#verses")).toHaveAttribute("data-selectable", "");
 }
 
 async function createVerifiedMember(page: Page, name: string): Promise<string> {
@@ -58,7 +58,7 @@ test.describe("US-1 lire un chapitre", () => {
     // toBeVisible et non toHaveText seul : un texte présent mais caché par Suspense passerait à tort.
     await expect(page.locator("#v16 .verse-text")).toBeVisible();
     await expect(page.locator("#v16 .verse-text")).toHaveText(/^Car Dieu a tant aimé le monde/);
-    await expect(page.locator("#verses")).not.toHaveAttribute("role", "listbox");
+    await expect(page.locator("#verses")).not.toHaveAttribute("data-selectable", "");
     await expect(page.getByRole("link", { name: /Chapitre suivant/ })).toHaveAttribute("href", "/bible/lsg/jean/4");
     await context.close();
   });
@@ -196,28 +196,41 @@ test.describe("US-3 rechercher", () => {
 });
 
 test.describe("sélection au clavier", () => {
+  test("le chapitre reste un texte : seul le numéro de verset devient un bouton de sélection", async ({ page }) => {
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await expect(page.locator("#verses")).not.toHaveAttribute("role");
+    await expect(page.locator("#v16")).not.toHaveAttribute("role");
+    const button = page.getByRole("button", { name: "verset 16", exact: true });
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("option")).toHaveCount(0);
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+  });
+
   test("flèches, Espace et Échap, avec annonce", async ({ page }) => {
     await page.goto(JOHN_3);
     await readerReady(page);
-    await page.locator("#v1").focus();
+    await page.locator("#v1 .verse-number").focus();
     await page.keyboard.press("ArrowDown");
-    await expect(page.locator("#v2")).toBeFocused();
+    await expect(page.locator("#v2 .verse-number")).toBeFocused();
     await page.keyboard.press("Space");
-    await expect(page.locator("#v2")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#v2")).toHaveAttribute("data-selected", "");
     await expect(page.getByText("1 verset sélectionné")).toBeAttached();
     await page.keyboard.press("Shift+ArrowDown");
-    await expect(page.locator("#v3")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#v3")).toHaveAttribute("data-selected", "");
     await expect(page.getByRole("group", { name: "Actions sur la sélection" })).toContainText("Jean 3:2-3");
     await expectAccessible(page);
     await page.keyboard.press("Escape");
-    await expect(page.locator("#v2")).toHaveAttribute("aria-selected", "false");
+    await expect(page.locator("#v2")).not.toHaveAttribute("data-selected", "");
     await expect(page.getByRole("group", { name: "Actions sur la sélection" })).toHaveCount(0);
   });
 
   test("le focus ne se perd jamais : barre, panneaux, changement de chapitre", async ({ page }) => {
     await page.goto(JOHN_3);
     await readerReady(page);
-    await page.locator("#v1").focus();
+    await page.locator("#v1 .verse-number").focus();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Space");
     await expect(page.getByRole("group", { name: "Actions sur la sélection" })).toBeVisible();
@@ -228,7 +241,7 @@ test.describe("sélection au clavier", () => {
 
     // Fermer la barre rend le focus au verset, et l'effacement est annoncé.
     await page.keyboard.press("Enter");
-    await expect(page.locator("#v2")).toBeFocused();
+    await expect(page.locator("#v2 .verse-number")).toBeFocused();
     await expect(page.getByText("Sélection effacée")).toBeAttached();
 
     // Échap dans un panneau rend le focus à son déclencheur et ne touche pas à la sélection.
@@ -240,7 +253,7 @@ test.describe("sélection au clavier", () => {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(settings).toBeFocused();
-    await expect(page.locator("#v2")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#v2")).toHaveAttribute("data-selected", "");
 
     // Après un changement de chapitre, le focus rejoint le titre.
     await page.getByRole("link", { name: "Chapitre suivant : Jean 4" }).click();
@@ -264,11 +277,11 @@ test.describe("sélection au clavier", () => {
     await readerReady(page);
     await page.locator("#v2").click();
     await page.locator("#v5").click({ modifiers: ["Shift"] });
-    await expect(page.locator("#v4")).toHaveAttribute("aria-selected", "true");
-    await page.locator("#v5").focus();
+    await expect(page.locator("#v4")).toHaveAttribute("data-selected", "");
+    await page.locator("#v5 .verse-number").focus();
     await page.keyboard.press("Shift+ArrowUp");
-    await expect(page.locator("#v5")).toHaveAttribute("aria-selected", "false");
-    await expect(page.locator("#v4")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#v5")).not.toHaveAttribute("data-selected", "");
+    await expect(page.locator("#v4")).toHaveAttribute("data-selected", "");
   });
 
   test("les raccourcis à une touche se désactivent (WCAG 2.1.4)", async ({ page }) => {

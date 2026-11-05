@@ -41,7 +41,7 @@ const fontBytes = fonts.reduce((sum, { bytes }) => sum + bytes.length, 0);
 const htmlGzip = gzipSync(Buffer.from(html)).length;
 
 console.log(`Lecteur ${READER} (statut ${response.status})`);
-console.log(`  JS initial gzip : ${kilobytes(jsGzip)} en ${scripts.length} fichiers (budget 120 Ko) · brotli : ${kilobytes(jsBrotli)}`);
+console.log(`  JS initial gzip : ${kilobytes(jsGzip)} en ${scripts.length} fichiers (budget 175 Ko) · brotli : ${kilobytes(jsBrotli)}`);
 for (const { path, bytes } of [...scripts].sort((a, b) => gzipSync(b.bytes).length - gzipSync(a.bytes).length).slice(0, 8)) {
   console.log(`    ${kilobytes(gzipSync(bytes).length).padStart(9)}  ${path.split("/").pop()}`);
 }

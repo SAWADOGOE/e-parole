@@ -289,7 +289,7 @@ html[data-reader-font="sans"] .reader-text {
   transition: background-color var(--motion-fast) ease-out;
 }
 
-#verses[role="listbox"] .verse {
+#verses[data-selectable] .verse {
   cursor: pointer;
 }
 
@@ -298,9 +298,20 @@ html[data-reader-font="sans"] .reader-text {
   border-inline-start-color: var(--accent);
 }
 
-.verse[aria-selected="true"] {
+.verse[data-selected] {
   border-inline-start-color: var(--accent);
   background-color: var(--selection);
+}
+
+/* Le numéro devient le bouton de sélection du verset : sa zone est élargie sans déplacer la ligne. */
+.verse-number[role="button"] {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-inline: -0.25em 0;
+  padding: 0.35em 0.25em;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
 }
 
 .verse-number {
@@ -389,7 +400,7 @@ html[data-reader-focus] [data-reader-nav] {
   .verse {
     border-inline-start-color: Canvas;
   }
-  .verse[aria-selected="true"] {
+  .verse[data-selected] {
     border-inline-start-color: Highlight;
     outline: 2px solid Highlight;
   }

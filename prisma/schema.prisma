@@ -525,8 +525,8 @@ model BibleVerse {
   text      String
   /// SHA-256 du texte normalisé.
   checksum  String
-  /// Colonne générée (migration SQL) : bible_fts_vector(text).
-  search    Unsupported("tsvector")?
+  /// Colonne générée (migration SQL). dbgenerated décrit son expression pour que Prisma ne la voie pas comme un écart.
+  search    Unsupported("tsvector")? @default(dbgenerated("bible_fts_vector(text)"))
 
   version BibleTranslationVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
   book    BibleBook               @relation(fields: [bookId], references: [id], onDelete: Restrict)
