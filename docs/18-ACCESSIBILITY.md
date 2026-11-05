@@ -33,5 +33,5 @@ Cible : **WCAG 2.2 niveau AA** sur les trois espaces.
 ## Tests
 - Automatisés : `@axe-core/playwright` sur chaque page des E2E (échec CI si violation `serious` ou `critical`).
 - Unitaires : `jest-axe`/équivalent Vitest sur les composants métier ⚠️ choix de la lib à confirmer en Phase 1.
-- Manuels à chaque phase : NVDA + Firefox (Windows), TalkBack (Android), clavier seul, zoom 200 %, mode sombre, `prefers-reduced-motion`.
+- Manuels à chaque phase : clavier seul, zoom 200 %, mode sombre, `prefers-reduced-motion`. Lecteurs d'écran (NVDA, TalkBack) : reportés avant le lancement public (backlog R-1).
 - Agent `accessibility-reviewer` en revue des PR UI.
