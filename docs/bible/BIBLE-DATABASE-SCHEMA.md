@@ -128,6 +128,9 @@ signale les références orphelines.
   `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`, puis appliquer avec `prisma migrate deploy`.
 
 ## Import réel (2026-11-05)
+Deux versions existent. La version 1 reproduit la source à l'identique (`RETIRED`). La version 2 (`ACTIVE`) lui applique les 2 errata de
+[BIBLE-LICENSING.md](BIBLE-LICENSING.md#vérification-de-la-phase-2-2026-11-05) ; son SHA-256 global est relevé dans `/admin/bible/translations`. Le tableau décrit la source.
+
 | Mesure | Valeur |
 |---|---|
 | Source | eBible.org `fraLSG_usfx.zip`, fichiers datés du 2026-10-30 |

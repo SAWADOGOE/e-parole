@@ -10,6 +10,7 @@ import { userInfo } from "node:os";
 import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
 import { seedBibleCatalog } from "../../prisma/seed/bible-catalog";
+import { ERRATA } from "./lib/errata";
 import { sha256 } from "./lib/normalize";
 import { renderIntegrityReport } from "./lib/report";
 import { parseSource } from "./lib/run-import";
@@ -45,18 +46,19 @@ async function main(): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(retrievedAt)) throw new Error("--retrieved-at doit être au format AAAA-MM-JJ");
 
   const dryRun = values["dry-run"];
-  const parsed = await parseSource(values.source, file);
-  const { integrity, ignored, sourceSha256, provider, verses } = parsed;
+  const parsed = await parseSource(values.source, file, { errata: ERRATA[code] ?? [] });
+  const { integrity, ignored, sourceSha256, provider, verses, appliedErrata } = parsed;
 
   await mkdir(REPORT_DIR, { recursive: true });
   const reportPath = join(REPORT_DIR, `integrite-${code}-${dryRun ? "dry-run" : "import"}-${retrievedAt}.md`);
   await writeFile(
     reportPath,
-    renderIntegrityReport({ translation, sourceFile: basename(file), sourceSha256, retrievedAt, integrity, ignored, dryRun }),
+    renderIntegrityReport({ translation, sourceFile: basename(file), sourceSha256, retrievedAt, integrity, ignored, appliedErrata, dryRun }),
   );
 
   console.log(`Livres ${integrity.bookCount} · chapitres ${integrity.chapterCount} · versets ${integrity.verseCount}`);
   console.log(`SHA-256 global ${integrity.checksum}`);
+  console.log(`Errata appliqués : ${appliedErrata.length}`);
   console.log(`Erreurs ${integrity.errors.length} · avertissements ${integrity.warnings.length} · rapport ${reportPath}`);
   if (integrity.errors.length > 0) {
     console.error(integrity.errors.slice(0, 20).join("\n"));
@@ -84,6 +86,7 @@ async function main(): Promise<void> {
       verses,
       integrity,
       ignored,
+      appliedErrata,
     });
     console.log(`Version ${versionId} créée (STAGED) · relus ${verified.verseCount} · écarts de checksum ${verified.checksumMismatches}`);
     console.log(`Activation : pnpm bible:activate --translation ${code} --version ${versionId}`);

@@ -1,3 +1,4 @@
+import type { Erratum } from "./errata";
 import type { IgnoredCounts, IntegrityReport, TranslationRecord } from "./types";
 
 interface ReportInput {
@@ -7,6 +8,7 @@ interface ReportInput {
   retrievedAt: string;
   integrity: IntegrityReport;
   ignored: IgnoredCounts;
+  appliedErrata: readonly Erratum[];
   dryRun: boolean;
 }
 
@@ -49,6 +51,8 @@ export function renderIntegrityReport(input: ReportInput): string {
 ${list(integrity.errors)}
 ## Avertissements
 ${list(integrity.warnings)}
+## Errata appliqués (écarts assumés avec la source)
+${list(input.appliedErrata.map((e) => `${e.book} ${e.chapter}:${e.verse} : « ${e.from} » → « ${e.to} » (${e.evidence})`))}
 ## Éléments de la source écartés
 | Élément | Occurrences |
 |---|---|

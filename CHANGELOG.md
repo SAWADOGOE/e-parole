@@ -13,6 +13,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 - Surlignages, notes privées, favoris, `/bible/mes-notes`, copie et partage de lien, `VerseQuote`.
 - Verset du jour : affichage, `/admin/bible/daily-verses`, sélection automatique ; `/admin/bible/translations`.
 - ADR-010 : rendu et cache sous CSP à nonce.
+- Errata tracés : coquilles de la source corrigées par une nouvelle version (Gn 50:10, Éz 21:32), sur décision du propriétaire.
 
 ### Revues de la Phase 2 (`security-auditor`, `accessibility-reviewer`, `code-reviewer`)
 - Texte : vérification dans la transaction d'import, SHA-256 recalculés à l'activation, trigger d'immutabilité, retour arrière de version, styles de paragraphe inconnus refusés.

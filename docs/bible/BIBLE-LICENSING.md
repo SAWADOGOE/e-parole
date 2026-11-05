@@ -47,8 +47,14 @@ eBible écrit que la première édition de la Bible Segond date de 1910 : c'est 
 La signature PGP de l'archive est valide et ses SHA-256 concordent, mais la clé provient de la même archive et n'est certifiée par aucun tiers :
 cela prouve l'intégrité du téléchargement, pas l'authenticité de l'éditeur.
 
-**Coquilles de la source, conservées telles quelles** (jamais corrigées, règle 4) : Gn 50:10 « audelà » ; Éz 21:32 « n’aua ». HelloAO, instantané plus
-ancien, portait « au-delà » et « n’aura » ; Midvash « au delà ». Correction possible uniquement par une nouvelle version de la source.
+**Coquilles de la source, corrigées par errata** (décision du propriétaire, 2026-11-05, règle 4) :
+
+| Verset | Source | Corrigé | Preuve |
+|---|---|---|---|
+| Gn 50:10 | « audelà » | « au-delà » | 54 occurrences de « au-delà » dans la même source (2 de « au delà ») ; HelloAO « au-delà », Midvash « au delà » |
+| Éz 21:32 | « n’aua » | « n’aura » | HelloAO et Midvash (Éz 21:27) |
+
+Le propriétaire signale ces coquilles à eBible. Une fois la source corrigée, l'import échouera volontairement : l'entrée d'errata devra alors être retirée.
 
 ⚠️ Ceci n'est pas un avis juridique : une validation par un juriste reste recommandée avant le lancement public.
 
@@ -64,8 +70,9 @@ archivée. Attention aux éditions « LSG » révisées ou annotées postérieur
 2. Le statut `isPublished` ne peut passer à `true` qu'après validation d'un `SUPER_ADMIN` (auditée).
 3. Les notes, titres de péricopes et introductions des éditions sources ne sont importés que si leur licence est identique
    au texte (sinon ignorés).
-4. Le texte n'est jamais réécrit, corrigé, modernisé ou complété par une IA ou un humain dans l'application. Les corrections
-   éventuelles passent par une nouvelle version d'import depuis la source.
+4. Le texte n'est jamais réécrit, modernisé ou complété, ni par une IA ni par un humain, et jamais modifié en base. Seule exception : une
+   coquille typographique avérée, sur décision explicite du propriétaire du projet, listée dans `scripts/bible/lib/errata.ts` avec sa preuve et
+   appliquée par un nouvel import (nouvelle version, tracée). Une leçon, une tournure ou un choix de traduction n'est jamais un erratum.
 5. Le canon affiché est de 66 livres ; les livres deutérocanoniques présents dans une source sont exclus.
 6. L'attribution est affichée dans le lecteur (pied de chapitre) et dans chaque `VerseQuote`.
 

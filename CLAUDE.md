@@ -44,6 +44,7 @@ Versions publiées depuis au moins 7 jours (`minimumReleaseAge`). Jamais d'alpha
 
 ## Bible
 - Le texte biblique est une **donnée de référence immuable** : import contrôlé avec checksum, aucune écriture applicative.
+  Coquille avérée : erratum tracé dans `scripts/bible/lib/errata.ts`, sur décision du propriétaire, par un nouvel import.
 - Toujours conserver référence + traduction + attribution. Une IA ne modifie jamais un verset.
 - Séparer texte, notes, méditations et commentaires. Vérifier la licence avant toute traduction (`docs/bible/BIBLE-LICENSING.md`).
 - Lecteur : pas de `loading.tsx` sur le chapitre, il casserait la lecture sans JavaScript et les statuts 404/308 (ADR-010).

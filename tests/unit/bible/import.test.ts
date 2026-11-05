@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { EbibleUsfxProvider } from "../../../scripts/bible/lib/ebible-usfx-provider";
+import { applyErrata, ERRATA, type Erratum } from "../../../scripts/bible/lib/errata";
 import { checkIntegrity, globalChecksum } from "../../../scripts/bible/lib/integrity";
 import { foldForComparison, normalizeVerseText, sha256 } from "../../../scripts/bible/lib/normalize";
 import type { SourceVerse } from "../../../scripts/bible/lib/types";
@@ -84,6 +85,45 @@ describe("EbibleUsfxProvider", () => {
 
   it("refuse un verset groupé", async () => {
     await expect(read(`<book id="JHN"><c id="1" /><p style="p"><v id="1-2" />texte<ve /></p></book>`)).rejects.toThrow(/invalide/);
+  });
+});
+
+describe("errata", () => {
+  const erratum: Erratum = { book: "GEN", chapter: 50, verse: 10, from: "audelà", to: "au-delà", evidence: "test" };
+  const verse = (text: string): SourceVerse => ({ book: "GEN", chapter: 50, verse: 10, text });
+
+  it("ne remplace que le mot visé et garde le reste du verset", () => {
+    const { verses, applied } = applyErrata([verse("qui est audelà du Jourdain")], [erratum]);
+    expect(verses[0]?.text).toBe("qui est au-delà du Jourdain");
+    expect(applied).toEqual([erratum]);
+  });
+
+  it("échoue si la source a changé, pour obliger à retirer l'entrée", () => {
+    expect(() => applyErrata([verse("qui est au-delà du Jourdain")], [erratum])).toThrow(/La source a changé/);
+  });
+
+  it("échoue si le mot apparaît deux fois : le remplacement serait ambigu", () => {
+    expect(() => applyErrata([verse("audelà et audelà")], [erratum])).toThrow(/répété/);
+  });
+
+  it("échoue si le verset manque, sauf dans un échantillon de test", () => {
+    expect(() => applyErrata([], [erratum])).toThrow(/absent/);
+    expect(applyErrata([], [erratum], { partial: true }).applied).toEqual([]);
+  });
+
+  it("n'altère pas les versets reçus", () => {
+    const source = [verse("qui est audelà")];
+    applyErrata(source, [erratum]);
+    expect(source[0]?.text).toBe("qui est audelà");
+  });
+
+  it("la liste de la LSG reste limitée à des coquilles documentées", () => {
+    const list = ERRATA["lsg"] ?? [];
+    expect(list.map((e) => `${e.book} ${e.chapter}:${e.verse}`)).toEqual(["GEN 50:10", "EZK 21:32"]);
+    for (const entry of list) {
+      expect(entry.evidence.length).toBeGreaterThan(0);
+      expect(entry.from).not.toBe(entry.to);
+    }
   });
 });
 

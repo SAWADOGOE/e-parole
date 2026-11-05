@@ -8,7 +8,7 @@ paths:
 
 # Bible
 
-- Le texte biblique est immuable : jamais modifié, corrigé, modernisé ou généré (humain ou IA). Correction = nouvel import.
+- Le texte biblique est immuable : jamais modifié, modernisé ou généré (humain ou IA). Correction = nouvel import ; seule une coquille avérée, validée par le propriétaire, passe par `scripts/bible/lib/errata.ts`.
 - Toujours afficher référence + traduction + attribution.
 - Séparer strictement texte biblique, notes, méditations, commentaires (données et rendu).
 - Canon protestant de 66 livres ; codes USFM (`GEN`…`REV`) ; deutérocanoniques exclus à l'import.

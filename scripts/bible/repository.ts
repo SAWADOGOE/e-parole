@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client";
+import type { Erratum } from "./lib/errata";
 import type { IgnoredCounts, IntegrityReport, SourceVerse, TranslationRecord } from "./lib/types";
 import { sha256 } from "./lib/normalize";
 
@@ -22,6 +23,7 @@ export interface StageInput {
   verses: readonly SourceVerse[];
   integrity: IntegrityReport;
   ignored: IgnoredCounts;
+  appliedErrata?: readonly Erratum[];
 }
 
 /** Crée une version STAGED en une transaction : tout le texte est écrit, ou rien. */
@@ -56,7 +58,11 @@ export async function stageVersion(db: PrismaClient, input: StageInput): Promise
           chapterCount: integrity.chapterCount,
           verseCount: integrity.verseCount,
           importedBy: input.importedBy,
-          report: { ignored: input.ignored, warnings: integrity.warnings },
+          report: {
+            ignored: input.ignored,
+            warnings: integrity.warnings,
+            errata: (input.appliedErrata ?? []).map(({ book, chapter, verse, from, to }) => ({ book, chapter, verse, from, to })),
+          },
         },
         select: { id: true },
       });
@@ -95,6 +101,7 @@ export async function stageVersion(db: PrismaClient, input: StageInput): Promise
             checksum: integrity.checksum,
             verseCount: integrity.verseCount,
             importedBy: input.importedBy,
+            errataCount: input.appliedErrata?.length ?? 0,
           },
         },
       });
