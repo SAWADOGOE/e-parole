@@ -2,7 +2,7 @@
 
 | Contrôle | Détail |
 |---|---|
-| MFA | TOTP obligatoire pour tout rôle global ; codes de secours ; perte de MFA → procédure `SUPER_ADMIN` auditée |
+| MFA | TOTP obligatoire pour tout rôle global, **vérifiée pour la session** (`mfaVerifiedAt`) ; codes de secours ; verrouillage après 5 échecs ; perte de MFA → procédure `SUPER_ADMIN` auditée |
 | Sessions | 12 h max, liées à l'appareil ; révocation à tout changement de rôle |
 | Ré-authentification | Mot de passe + TOTP < 10 min avant : suspension, bannissement, attribution de rôle, publication de traduction, paramètres critiques, révélation de PII |
 | Autorisation | `adminAction` revérifie permission + hiérarchie à chaque appel ; layout = confort seulement |

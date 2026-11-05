@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Mode sombre par classe (préférence système appliquée par le script de thème du layout racine). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * 1. Primitifs — docs/15-DESIGN-SYSTEM.md (contrastes calculés en Phase 0)
+ * ------------------------------------------------------------------------- */
+:root {
+  --green-50: #eef6f4;
+  --green-100: #d5eae5;
+  --green-200: #a9d3ca;
+  --green-300: #78b9ab;
+  --green-400: #5fb8a6;
+  --green-500: #2c8273;
+  --green-600: #256f62;
+  --green-700: #1b5650;
+  --green-800: #154844;
+  --green-900: #103b39;
+  --green-950: #0a2624;
+
+  --gold-100: #f6ebd3;
+  --gold-300: #e5c88c;
+  --gold-400: #d5af64;
+  --gold-600: #9c7a34;
+  --gold-700: #7a5c22;
+
+  --ivory-50: #fbfaf6;
+  --ivory-100: #f7f5ef;
+  --ivory-200: #ece8dd;
+  --ivory-300: #ddd7c8;
+
+  --ink-400: #9aa6aa;
+  --ink-500: #6b777c;
+  --ink-600: #5e6b70;
+  --ink-700: #4f5b60;
+  --ink-800: #2e3a3f;
+  --ink-900: #202b30;
+  --ink-950: #121a1d;
+
+  --red-600: #b42318;
+  --red-400: #f97066;
+  --amber-600: #b54708;
+  --amber-400: #fdb022;
+  --blue-600: #1d5fa8;
+  --blue-400: #6aa8f0;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. Sémantiques — clair (par défaut)
+ * ------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --bg: var(--ivory-100);
+  --bg-elevated: var(--ivory-50);
+  --bg-subtle: var(--ivory-200);
+  --fg: var(--ink-900);
+  --fg-muted: var(--ink-600);
+  --border: var(--ivory-300);
+  --border-strong: var(--ink-500);
+  --brand: var(--green-900);
+  --brand-fg: var(--ivory-100);
+  --accent: var(--green-600);
+  --accent-fg-on: #ffffff;
+  --accent-subtle: var(--green-100);
+  --primary-bg: var(--green-500);
+  --primary-bg-hover: var(--green-600);
+  --primary-fg: #ffffff;
+  --gold: var(--gold-400);
+  --gold-fg: var(--gold-700);
+  --danger: var(--red-600);
+  --danger-fg-on: #ffffff;
+  --warning: var(--amber-600);
+  --info: var(--blue-600);
+  --focus-ring: var(--green-600);
+  --selection: var(--green-100);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgb(16 59 57 / 0.06), 0 2px 8px rgb(16 59 57 / 0.06);
+  --shadow-lg: 0 12px 32px rgb(16 59 57 / 0.14);
+
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --header-height: 56px;
+  --bottom-nav-height: 64px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. Sémantiques — sombre
+ * ------------------------------------------------------------------------- */
+.dark {
+  color-scheme: dark;
+  --bg: var(--ink-950);
+  --bg-elevated: #18232a;
+  --bg-subtle: #1f2c33;
+  --fg: var(--ivory-200);
+  --fg-muted: var(--ink-400);
+  --border: #2a3840;
+  --border-strong: var(--ink-500);
+  --brand: var(--green-400);
+  --brand-fg: var(--ink-950);
+  --accent: var(--green-400);
+  --accent-fg-on: var(--ink-950);
+  --accent-subtle: #1b3a37;
+  --primary-bg: var(--green-400);
+  --primary-bg-hover: var(--green-300);
+  --primary-fg: var(--ink-950);
+  --gold: var(--gold-400);
+  --gold-fg: var(--gold-400);
+  --danger: var(--red-400);
+  --danger-fg-on: var(--ink-950);
+  --warning: var(--amber-400);
+  --info: var(--blue-400);
+  --focus-ring: var(--gold-400);
+  --selection: #1b3a37;
+  --shadow-sm: none;
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Mapping Tailwind 4
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg-on);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-primary: var(--primary-bg);
+  --color-primary-hover: var(--primary-bg-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-gold: var(--gold);
+  --color-gold-fg: var(--gold-fg);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg-on);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-ring: var(--focus-ring);
+  --color-scrim: rgb(18 26 29 / 0.45);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-lg: var(--shadow-lg);
+
+  --text-reading-md: 1.1875rem;
+  --text-reading-md--line-height: 2rem;
+  --text-display-sm: 1.5rem;
+  --text-display-sm--line-height: 2rem;
+  --text-display-md: 1.875rem;
+  --text-display-md--line-height: 2.375rem;
+  --text-display-lg: 2.5rem;
+  --text-display-lg--line-height: 3rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. Base
+ * ------------------------------------------------------------------------- */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--header-height) + 16px);
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background-color: var(--selection);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  * {
+    border-color: var(--border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

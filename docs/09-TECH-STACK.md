@@ -13,7 +13,37 @@ Versions relevées le **2026-11-04** avec `npm view <paquet> dist-tags` (registr
 | Git | 2.56.0 | |
 | Claude Code | 2.1.318 | |
 
-## Versions stables retenues
+## Installé en Phase 1 (2026-11-04) — état réel
+
+Versions **exactes** dans `package.json` (lockfile `pnpm-lock.yaml`). Règle : dernière stable publiée depuis
+au moins 7 jours, imposée par `minimumReleaseAge: 10080` ([ADR-009](adr/ADR-009-PHASE1-TOOLING.md)).
+
+| Paquet | Version installée | Écart vs Phase 0 |
+|---|---|---|
+| `next` / `eslint-config-next` | 16.4.3 | 16.4.5 trop récente (< 7 j) |
+| `react`, `react-dom` | 19.3.1 | — |
+| `typescript` | **6.0.3** | TS 7 incompatible (pas d'API JS, typescript-eslint < 6.1) |
+| `prisma`, `@prisma/client`, `@prisma/adapter-pg` | 7.10.1 | — |
+| `better-auth` | 1.7.14 | 1.7.16/1.7.17 trop récentes |
+| `zod` | 4.6.7 | — |
+| `next-intl` | 4.14.9 | — |
+| `pg-boss` | 12.38.0 | — |
+| `tailwindcss`, `@tailwindcss/postcss` | 4.3.3 | 4.3.4 trop récente |
+| `radix-ui` (primitives shadcn) | 1.8.1 | — |
+| `lucide-react` | 1.62.0 | — |
+| `motion` | 14.7.1 | installé, pas encore utilisé |
+| `pino` | 10.4.0 | — |
+| `nodemailer` | 10.2.1 | — |
+| `vitest` | 5.0.5 | — |
+| `@playwright/test` / `@axe-core/playwright` | 1.64.1 / 4.14.0 | — |
+| `eslint` / `typescript-eslint` | 10.13.0 / 8.72.1 | — |
+| pnpm | **11.28.9** | pnpm 12 non exécutable par Corepack 0.34 |
+| Images | `postgres:17.11-alpine`, `chrislusf/seaweedfs:4.48`, `axllent/mailpit:v1.32.0`, `node:22.23.4-alpine` | **SeaweedFS** remplace MinIO (images plus publiées) |
+
+Non installés en Phase 1 (pas encore utilisés) : `@aws-sdk/client-s3`, `sharp`, `@tanstack/react-table`, `recharts`,
+`react-hook-form`. Ils seront ajoutés avec la phase qui en a besoin.
+
+## Versions stables retenues (relevé Phase 0)
 
 | Catégorie | Paquet | `latest` relevé | Choix | Note |
 |---|---|---|---|---|

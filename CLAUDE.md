@@ -4,8 +4,7 @@ Plateforme sociale **protestante évangélique** (pas catholique) : Bible intég
 prières + enseignements + administration. Signature : « Grandir dans la foi, ensemble. » Français par défaut,
 i18n prévue. Cible : Afrique francophone, mobile, réseau lent.
 
-**État : Phase 0 terminée, aucun code applicatif. Ne pas installer de dépendances, lancer Docker,
-migrer une base ou créer des pages sans validation explicite de l'utilisateur.**
+**État : Phase 1 (fondations) livrée, en attente de validation. Ne pas commencer la Phase 2 (Bible) sans accord explicite.**
 
 ## Identité (non négociable)
 - Centralité du Christ, autorité des Écritures, salut par grâce par la foi. Accueil des pentecôtistes,
@@ -21,10 +20,10 @@ migrer une base ou créer des pages sans validation explicite de l'utilisateur.*
 - Références : `docs/10-SYSTEM-ARCHITECTURE.md`, `docs/adr/`.
 
 ## Stack (versions figées dans `docs/09-TECH-STACK.md`)
-Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · shadcn/ui · lucide-react · Motion · PostgreSQL 17 ·
-Prisma **7.x** (ne jamais faire `pnpm add prisma@latest` : le tag `latest` pointe sur une RC 8) · Better Auth ·
-Zod 4 · pg-boss · S3 via `@aws-sdk/client-s3` (MinIO en dev) · next-intl · Vitest · Playwright · pnpm uniquement.
-Jamais d'alpha, beta, RC ou canary sans accord explicite.
+Next.js 16.4.3 · React 19 · **TypeScript 6.0.3** (TS 7 incompatible, ADR-009) · Tailwind 4 · primitives Radix (shadcn) ·
+PostgreSQL 17 · Prisma **7.10.1** (jamais `pnpm add prisma@latest` : RC 8) · Better Auth 1.7.14 · Zod 4 · pg-boss ·
+S3 (**SeaweedFS** en dev) · next-intl · Vitest · Playwright · **pnpm 11.28.9** uniquement.
+Versions publiées depuis au moins 7 jours (`minimumReleaseAge`). Jamais d'alpha, beta, RC ou canary sans accord explicite.
 
 ## Conventions
 - TypeScript : `strict`, `noUncheckedIndexedAccess`, pas de `any`, pas de `as` non justifié. Types de domaine dans `types.ts` du module.
@@ -32,6 +31,7 @@ Jamais d'alpha, beta, RC ou canary sans accord explicite.
   de formulaires, Route Handlers pour uploads, webhooks, SSE et API consommées hors React. Toute entrée validée par Zod côté serveur.
 - Prisma : accès DB uniquement via `src/server/db` et les repositories des modules. Migrations versionnées,
   jamais `db push` hors local. Ids `cuid2`, `createdAt/updatedAt`, soft delete (`deletedAt`) seulement là où `docs/11` le prévoit.
+- Admin : `adminAction()` (Next) délègue à `runAdminAction()` (cœur testable). Pages : `requireAdminPage()`, `requireCommunityManager()`.
 - Erreurs : `AppError` typées (`NOT_FOUND`, `FORBIDDEN`, `VALIDATION`, `RATE_LIMITED`, `CONFLICT`) mappées vers une UI soignée.
 
 ## Sécurité (toujours)
@@ -57,11 +57,14 @@ Branches `feat/…`, `fix/…`, `docs/…`, `chore/…`. Conventional Commits. P
 déploiement sans demande explicite. Voir `docs/26-GIT-WORKFLOW.md`.
 
 ## Ports locaux
-Port standard précédé d'un 5 : web 53000, PostgreSQL 55432, MinIO 59000/59001, Mailpit 58025/51025, Redis 56379.
+Port standard précédé d'un 5 : web 53000 (E2E 53100), PostgreSQL 55432, SeaweedFS S3 58333, Mailpit 58025/51025, Redis 56379.
+Utiliser `127.0.0.1` dans les URL de services.
 Tout nouveau service suit cette règle (`docs/22-DOCKER-SETUP.md`).
 
-## Commandes (Phase 1, pas encore disponibles)
-`pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:e2e` · `pnpm db:migrate` · `docker compose up -d`
+## Commandes
+`docker compose up -d --wait db storage mail` · `pnpm dev` · `pnpm worker` · `pnpm lint` · `pnpm typecheck` · `pnpm test` ·
+`pnpm test:integration` · `pnpm build && pnpm test:e2e` · `pnpm db:migrate` / `db:deploy` / `db:seed`.
+Premier démarrage : `docs/22-DOCKER-SETUP.md`.
 
 ## Où chercher
 Produit `docs/04`, MVP `docs/07`, données `docs/11`, RBAC `docs/admin/ADMIN-ROLES-PERMISSIONS.md`,

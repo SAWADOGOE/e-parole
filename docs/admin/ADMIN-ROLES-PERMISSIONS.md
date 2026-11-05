@@ -90,9 +90,18 @@ automatiquement de rôle local : un `MODERATOR` global agit via `/admin/moderati
 | `community:transfer_ownership` / `community:delete` | — | — | — | ✅ (ré-auth) |
 | `community:prayer:read_anonymous_author` | — | — | — | — (**jamais**) |
 
+## Permissions techniques ajoutées en Phase 1
+| Permission | Usage | Rôles |
+|---|---|---|
+| `admin:access` | Accès au shell `/admin` | Tout rôle global (MFA exigée par la garde de page) |
+| `community:read` | Lecture interne d'une communauté | Tout membre actif |
+| `community:manage:access` | Accès à `/manage/[id]` | `COMMUNITY_MODERATOR` et plus |
+
 ## Règles transverses
 1. **Hiérarchie** : nul ne peut agir sur un compte de rôle égal ou supérieur au sien (un `ADMIN` ne suspend pas un `ADMIN`).
-2. **Pas d'auto-élévation** : on ne peut ni s'attribuer un rôle ni retirer le dernier `SUPER_ADMIN`.
+2. **Pas d'auto-élévation** : on ne peut pas s'attribuer un rôle. Le rôle `SUPER_ADMIN` ne peut être retiré par
+   personne depuis l'interface (hiérarchie stricte) : son retrait passe par une procédure CLI auditée (à écrire en Phase 8),
+   ce qui garantit qu'il reste toujours au moins un `SUPER_ADMIN`.
 3. **Statut du compte** : un compte `SUSPENDED` perd toutes ses permissions d'écriture, rôles inclus.
 4. **Communauté suspendue** : lecture seule pour tous ses membres ; `/manage` en lecture seule.
 5. **Visibilité avant permission** : une ressource invisible pour l'acteur renvoie `NOT_FOUND` avant tout test de permission.

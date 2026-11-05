@@ -6,6 +6,7 @@ signalements reçus (30 j). Email masqué (`a***@gmail.com`).
 Recherche : handle, nom (trigrammes), email exact (correspondance exacte uniquement, pas de recherche partielle).
 Filtres : statut, rôle, badge, date d'inscription, « avec signalements ». Tri : inscription, activité. Pagination 50.
 Actions groupées : aucune action destructive groupée au MVP (export de la sélection seulement, `SUPER_ADMIN`).
+Phase 1 : pagination par page (offset) acceptée pour l'admin ; passage au curseur si la volumétrie l'exige.
 
 ## Fiche `/admin/users/[id]`
 Onglets :

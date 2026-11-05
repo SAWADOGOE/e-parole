@@ -12,3 +12,6 @@ test-results/
 .DS_Store
 .claude/settings.local.json
 backups/
+generated/
+next-env.d.ts
+*.tsbuildinfo
