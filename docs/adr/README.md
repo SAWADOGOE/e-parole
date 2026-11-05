@@ -14,6 +14,7 @@ ADR qui le déclare `Remplacé par ADR-xxx`.
 | [007](ADR-007-DESIGN-SYSTEM.md) | Design system : tokens, Tailwind 4, shadcn, Inter + Literata | Accepté | 2026-11-04 |
 | [008](ADR-008-ADMIN-RBAC.md) | RBAC hybride : rôles en base, permissions en code | Accepté | 2026-11-04 |
 | [009](ADR-009-PHASE1-TOOLING.md) | TypeScript 6, pnpm 11, SeaweedFS en dev, délai de publication de 7 jours | Accepté | 2026-11-04 |
+| [010](ADR-010-BIBLE-RENDERING-CACHE.md) | Rendu et cache du lecteur biblique sous CSP à nonce | Proposé | 2026-11-05 |
 
 « Accepté » signifie validé par la conception de Phase 0, **sous réserve de la validation de l'utilisateur**.
 

@@ -69,7 +69,7 @@ model BibleVerse {
   versionId Int    bookId String  chapter Int  verse Int
   text      String
   checksum  String                      // SHA-256 du texte
-  // search  tsvector GENERATED ALWAYS AS (to_tsvector('french_unaccent', text)) STORED  (SQL brut)
+  // search  tsvector GENERATED ALWAYS AS (bible_fts_vector(text)) STORED  (SQL brut)
   @@unique([versionId, bookId, chapter, verse])
   @@index([versionId, bookId, chapter])
 }
@@ -112,6 +112,44 @@ Les données utilisateur référencent les versets par **coordonnées** (livre, 
 pour survivre à une réimport de version. Si la versification d'une nouvelle version diffère, un job de rapprochement
 signale les références orphelines.
 
+## Rôles et immutabilité (implémenté)
+- `eparole_app` : SELECT seul sur `bible_translation`, `bible_translation_version`, `bible_book`, `bible_book_name`, `bible_chapter_meta`,
+  `bible_verse`, `daily_verse_pool`. Testé dans `tests/integration/bible-text.test.ts`.
+- `eparole_bible_import` : `NOLOGIN`, sans mot de passe. La CLI s'y place par `SET LOCAL ROLE` depuis le rôle propriétaire. INSERT sur le texte,
+  jamais UPDATE ni DELETE d'un verset ; aucun droit sur les données utilisateur.
+- Activation et publication depuis l'application : fonctions `SECURITY DEFINER` `bible_activate_version` et `bible_set_published`, limitées à une
+  bascule d'état (`search_path` fixé, `EXECUTE` retiré de PUBLIC). Écart assumé au `REVOKE` strict : sans elles, l'activation serait impossible depuis `/admin`.
+- Trigger `bible_verse_guard` : aucun `UPDATE` d'un verset, même par le propriétaire ; aucun ajout dans une version sortie de `STAGED`.
+- `bible_activate_version` recalcule chaque SHA-256 et refuse une version altérée ; `pnpm bible:activate` refuse aussi de publier si le rôle de `DATABASE_URL` peut écrire dans `bible_verse`.
+- Aucune clé étrangère du texte vers `user` (`importedBy` est un libellé) : un `TRUNCATE` ou une purge de comptes ne peut pas atteindre le texte.
+- La colonne `search` est générée : `prisma migrate diff` la voit comme un défaut à retirer, ce qu'il faut ignorer.
+- ⚠️ `prisma migrate dev` échoue sur la base fantôme à cause de la migration `20261104193121_security_hardening` (Phase 1), qui suppose
+  `_prisma_migrations` présente. Elle est déjà appliquée, donc non modifiable sans casser sa somme de contrôle. Générer le SQL avec
+  `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`, puis appliquer avec `prisma migrate deploy`.
+
+## Import réel (2026-11-05)
+| Mesure | Valeur |
+|---|---|
+| Source | eBible.org `fraLSG_usfx.zip`, fichiers datés du 2026-10-30 |
+| SHA-256 du fichier USFX | `90a53c3a61f0c07a329d8fc19c593b8c353f2b3e5a6830dbf4c53d2b08fd2141` |
+| Livres / chapitres / versets | 66 / 1 189 / **31 170** (AT 39 livres, 23 211 versets ; NT 27 livres, 7 959 versets) |
+| SHA-256 global | `c6cd8389aa31773c5abded901bdb96753a890e7adc991c66f37e4058504b5cbf` |
+| Erreurs / avertissements du contrôle | 0 / 0 |
+| Relecture après écriture | 31 170 versets, 0 écart de checksum, dans `eparole` et `eparole_test` |
+
+### Versification
+Versification de la source conservée telle quelle : 31 170 versets, sans verset vide, sans verset groupé, sans trou de numérotation.
+Particularités relevées : titres de nombreux psaumes numérotés comme verset 1 (Ps 3 compte 9 versets) ; Joël en 3 chapitres (le chapitre 3 compte 21 versets) ;
+Malachie en 4 chapitres ; Romains 16 compte 27 versets ; 3 Jean compte 15 versets.
+
+### Contrôle croisé
+- **HelloAO `fra_lsg`, 31 170 versets comparés, espaces ignorés** : mêmes coordonnées pour tous (0 absent de chaque côté), 31 145 identiques, 25 écarts :
+  16 titres ou références qu'HelloAO fait fuir dans le verset (notre extraction est propre) ; 9 différences de texte, dont les coquilles
+  « audelà » et « n’aua » et 7 différences de casse. HelloAO provient de la même source, il ne vaut pas confirmation indépendante.
+- **Midvash `lsg`, 998 versets (un sur 31), lignée de saisie indépendante** : 632 identiques, 307 différences typographiques seules,
+  33 décalages de versification, 26 à relire. Ces 26 sont surtout une même phrase placée de part et d'autre d'une frontière de verset, ou une numérotation
+  différente des psaumes ; aucun ne montre de substitution de mots suggérant une révision, mais leur relecture humaine reste à faire.
+- Le rapport complet est local : `data/bible-sources/reports/controle-croise-lsg.md`.
+
 ## Volumétrie
-~31 000 versets par traduction (le compte exact de la source sera vérifié à l'import), ~5 Mo de texte, index GIN ~10 Mo.
-Négligeable pour PostgreSQL.
+31 170 versets pour la LSG, 4,07 millions de caractères. `bible_verse` pèse 20 Mo au total, index GIN 5,2 Mo. Négligeable pour PostgreSQL.

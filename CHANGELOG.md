@@ -4,6 +4,16 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 
 ## [Non publié]
 
+### Ajouté — Phase 2 : Bible intégrée (2026-11-05)
+- Louis Segond 1910 importée depuis eBible.org : 66 livres, 1 189 chapitres, 31 170 versets, checksums par verset et global, licence documentée.
+- Import contrôlé : `pnpm bible:import` (dry-run, rapport d'intégrité, version STAGED), `bible:activate`, `bible:crosscheck`.
+- Immutabilité du texte par droits PostgreSQL : rôle `eparole_bible_import`, `REVOKE` du rôle applicatif.
+- Lecteur `/bible/lsg/[livre]/[chapitre]` lisible sans JavaScript, sélecteur, raccourcis clavier, réglages de lecture, thème sépia, reprise de lecture.
+- Parseur de références françaises, recherche plein texte (accents, expressions, filtres, facettes, curseur).
+- Surlignages, notes privées, favoris, `/bible/mes-notes`, copie et partage de lien, `VerseQuote`.
+- Verset du jour : affichage, `/admin/bible/daily-verses`, sélection automatique ; `/admin/bible/translations`.
+- ADR-010 : rendu et cache sous CSP à nonce.
+
 ### Ajouté — Phase 1 : fondations (2026-11-04)
 - Next.js 16.4.3 (App Router), TypeScript 6.0.3 strict, Tailwind 4 avec les tokens du design system, primitives Radix.
 - Docker Compose (PostgreSQL 17, SeaweedFS S3, Mailpit) sur les ports 5xxxx ; Dockerfile multi-stage non root.

@@ -132,6 +132,11 @@ describe("recherche plein texte", () => {
     expect(none.tooCommon).toBe(false);
   });
 
+  it("un curseur hors limites des types PostgreSQL revient à la première page", async () => {
+    const [first, huge] = await Promise.all([search("Dieu"), search("Dieu", { cursor: Buffer.from("1e999:1").toString("base64url") })]);
+    expect(huge.hits[0]?.id).toBe(first.hits[0]?.id);
+  });
+
   it("traite une saisie hostile comme du texte", async () => {
     for (const query of ["'; DROP TABLE bible_verse; --", "<script>alert(1)</script>", '"""', "& | ! ( ) :*"]) {
       await expect(search(query)).resolves.toBeDefined();

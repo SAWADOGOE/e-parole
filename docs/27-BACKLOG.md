@@ -24,6 +24,8 @@ Estimation en points (1 = demi-journée). `US` → [06-USER-STORIES](06-USER-STO
 | F-15 | Vitest, Playwright, axe, factories ; CI GitHub Actions | 3 | F-1 |
 
 ## Phase 2 — Bible
+
+**Statut : B-1 à B-10 livrés le 2026-11-05 sur `phase-2/bible`, en attente de validation.** B-9 partiel : l'insertion dans une publication arrive en Phase 3.
 | ID | Tâche | Pts |
 |---|---|---|
 | B-1 | Modèles Bible + migration + extensions `unaccent`, `pg_trgm` | 2 |

@@ -176,8 +176,8 @@ export default async function BibleSearchPage({ searchParams }: { searchParams: 
   let page: SearchPage | null = null;
   if (isFullText) {
     const [actor, context] = await Promise.all([getActor(), getRequestContext()]);
-    const subject = actor?.userId ?? context.ip;
-    rateLimited = subject ? !(await consumeRateLimit("bible.search", subject)).allowed : false;
+    // Sans IP de confiance (proxy mal configuré), tous les anonymes partagent un compartiment : la limite ne disparaît jamais.
+    rateLimited = !(await consumeRateLimit("bible.search", actor?.userId ?? context.ip ?? "anonymous")).allowed;
     if (!rateLimited) page = await searchBible(translation, books, { query: q, testament, bookId: livre, cursor: curseur });
   }
 
@@ -195,7 +195,7 @@ export default async function BibleSearchPage({ searchParams }: { searchParams: 
         </p>
       </form>
 
-      {referenceError ? <ReferenceHelp error={referenceError} books={books} /> : null}
+      {referenceError && !rateLimited ? <ReferenceHelp error={referenceError} books={books} /> : null}
       {rateLimited ? (
         <p role="alert" className="mt-6 text-danger">
           {t("rateLimited")}

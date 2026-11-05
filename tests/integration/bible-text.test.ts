@@ -1,7 +1,7 @@
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseSource } from "../../scripts/bible/lib/run-import";
-import { activateVersion, createImportClient, stageVersion, verifyStoredVersion } from "../../scripts/bible/repository";
+import { activateVersion, assertReadOnlyAppRole, createImportClient, stageVersion, verifyStoredVersion } from "../../scripts/bible/repository";
 import { queryAsApp } from "../support/db";
 import { testOwnerUrl } from "../support/integration-env";
 
@@ -113,8 +113,25 @@ describe("import contrôlé", () => {
     expect(await db.bibleTranslationVersion.count()).toBe(before);
   });
 
-  it("active explicitement, une seule fois, et audite", async () => {
+  it("refuse d'activer une version altérée après son import", async () => {
+    const original = await db.bibleVerse.findFirstOrThrow({ where: { versionId }, select: { id: true, text: true } });
+    const rewrite = (text: string) =>
+      ownerQuery(`ALTER TABLE "bible_verse" DISABLE TRIGGER "bible_verse_guard";
+        UPDATE "bible_verse" SET "text" = $q$${text}$q$ WHERE "id" = ${original.id};
+        ALTER TABLE "bible_verse" ENABLE TRIGGER "bible_verse_guard";`);
+    await rewrite("Texte falsifié.");
+    await expect(activateVersion(db, versionId, { publish: false, operator: "test" })).rejects.toThrow(/altérée/);
+    await rewrite(original.text);
+  });
+
+  it("une version activée est figée, même pour le rôle d'import", async () => {
     await activateVersion(db, versionId, { publish: true, operator: "test" });
+    const insert = `INSERT INTO "bible_verse" ("versionId", "bookId", "chapter", "verse", "text", "checksum") VALUES (${versionId}, 'JHN', 99, 1, 'ajout', '${"0".repeat(64)}')`;
+    await expect(ownerQuery(`BEGIN; SET LOCAL ROLE eparole_bible_import; ${insert}; ROLLBACK;`)).rejects.toThrow(/figée/);
+    await ownerQuery("ROLLBACK");
+  });
+
+  it("active explicitement, une seule fois, et audite", async () => {
     const translation = await db.bibleTranslation.findUniqueOrThrow({ where: { code: CODE } });
     expect(translation.activeVersionId).toBe(versionId);
     expect(translation.isPublished).toBe(true);
@@ -141,6 +158,15 @@ describe("immutabilité du texte biblique", () => {
   it("le rôle applicatif ne peut pas falsifier un checksum ou un statut de version", async () => {
     await expect(queryAsApp(`UPDATE "bible_translation_version" SET "checksum" = 'x'`)).rejects.toThrow(/permission denied/i);
     await expect(queryAsApp(`UPDATE "bible_translation_version" SET "status" = 'ACTIVE'`)).rejects.toThrow(/permission denied/i);
+  });
+
+  it("même le rôle propriétaire ne peut pas réécrire un verset", async () => {
+    await expect(ownerQuery(`UPDATE "bible_verse" SET "text" = 'falsifié' WHERE "id" = (SELECT min("id") FROM "bible_verse")`)).rejects.toThrow(/immuable/);
+  });
+
+  it("le rôle applicatif est bien détecté comme lecteur seul, et un rôle en écriture bloque l'activation", async () => {
+    await expect(assertReadOnlyAppRole(db, "eparole_app")).resolves.toBeUndefined();
+    await expect(assertReadOnlyAppRole(db, "eparole_owner")).rejects.toThrow(/activation refusée/);
   });
 
   it("le rôle applicatif conserve la lecture", async () => {

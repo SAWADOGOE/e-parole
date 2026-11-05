@@ -3,7 +3,7 @@
 La Bible est la **fonctionnalité centrale** d'e-Parole : lecture intégrée (jamais de redirection vers un site tiers),
 citée partout dans la plateforme.
 
-**Statut : conçu, non implémenté.**
+**Statut : implémenté (Phase 2, 2026-11-05), en attente de validation.** LSG 1910 importée : 66 livres, 1 189 chapitres, 31 170 versets.
 
 | Document | Contenu |
 |---|---|

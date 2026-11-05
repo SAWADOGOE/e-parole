@@ -2,6 +2,9 @@
 export const HEADLINE_START = "\u0001";
 export const HEADLINE_STOP = "\u0002";
 
+const MAX_REAL = 3e38;
+const MAX_INT4 = 2_147_483_647;
+
 export function splitHeadline(headline: string): { text: string; match: boolean }[] {
   const segments: { text: string; match: boolean }[] = [];
   for (const [index, part] of headline.split(HEADLINE_START).entries()) {
@@ -25,5 +28,8 @@ export function decodeCursor(cursor: string | undefined): { rank: string; id: nu
   if (!cursor) return null;
   const match = /^(\d+(?:\.\d+)?(?:e-?\d+)?):(\d{1,10})$/.exec(Buffer.from(cursor, "base64url").toString("utf8"));
   if (!match?.[1] || !match[2]) return null;
-  return { rank: match[1], id: Number(match[2]) };
+  const id = Number(match[2]);
+  // Au-delà, PostgreSQL rejetterait le paramètre : un curseur forgé doit donner la première page, pas une erreur.
+  if (Number(match[1]) > MAX_REAL || id > MAX_INT4) return null;
+  return { rank: match[1], id };
 }

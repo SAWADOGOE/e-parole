@@ -33,7 +33,9 @@ export const highlightInputSchema = z.object({
 
 export const bookmarkInputSchema = z.object({ ...passageFields, ranges: z.array(rangeSchema).min(1).max(MAX_SELECTION_RANGES) });
 
-const noteBody = z.string().trim().min(1).max(NOTE_MAX_LENGTH);
+const noNul = (value: string): boolean => !value.includes("\u0000");
+
+const noteBody = z.string().trim().min(1).max(NOTE_MAX_LENGTH).refine(noNul);
 
 export const createNoteSchema = z.object({ ...passageFields, range: rangeSchema, body: noteBody });
 export const updateNoteSchema = z.object({ id: entityId, body: noteBody });
@@ -50,7 +52,7 @@ export const readerPrefsSchema = z.object({
 });
 
 export const searchQuerySchema = z.object({
-  q: z.string().trim().max(SEARCH_QUERY_MAX_LENGTH).catch(""),
+  q: z.string().trim().max(SEARCH_QUERY_MAX_LENGTH).refine(noNul).catch(""),
   testament: z.enum(["OT", "NT"]).optional().catch(undefined),
   livre: bookId.optional().catch(undefined),
   curseur: z.string().max(120).optional().catch(undefined),
@@ -63,10 +65,10 @@ export const annotationListQuerySchema = z.object({
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-export const dailyVerseReferenceSchema = z.object({ date: isoDate, reference: z.string().trim().min(1).max(80) });
+export const dailyVerseReferenceSchema = z.object({ date: isoDate, reference: z.string().trim().min(1).max(80).refine(noNul) });
 
 export const scheduleDailyVerseSchema = dailyVerseReferenceSchema.extend({
-  reflection: z.string().trim().max(REFLECTION_MAX_LENGTH).optional(),
+  reflection: z.string().trim().max(REFLECTION_MAX_LENGTH).refine(noNul).optional(),
   /** Le doublon sur 30 jours est un avertissement : l'éditeur peut confirmer en connaissance de cause. */
   acknowledgeDuplicate: z.boolean().default(false),
 });

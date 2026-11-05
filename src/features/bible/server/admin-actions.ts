@@ -7,6 +7,7 @@ import { adminAction } from "@/server/actions/admin-action";
 import { requireAdminActor } from "@/server/auth/session";
 import type { Result } from "@/server/errors/result";
 import { authorize } from "@/server/policies";
+import { enforceRateLimit } from "@/server/rate-limit/rate-limit";
 import { bibleTag, DAILY_VERSE_TAG } from "../constants";
 import { dailyVerseReferenceSchema } from "../schemas";
 import type { Passage } from "../types";
@@ -40,6 +41,7 @@ export interface DailyVersePreview {
 export async function previewDailyVerseAction(input: unknown): Promise<Result<DailyVersePreview | null>> {
   return toResult(async () => {
     const session = await requireAdminActor();
+    await enforceRateLimit("admin.action", session.actor.userId);
     authorize(session.actor, "daily_verse:manage");
     const { date, reference } = parseInput(dailyVerseReferenceSchema, input);
     const { translation, books, coordinates } = await resolveVerseReference(reference);

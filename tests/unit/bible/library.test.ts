@@ -132,6 +132,8 @@ describe("recherche", () => {
     expect(decodeCursor(undefined)).toBeNull();
     expect(decodeCursor("n'importe-quoi")).toBeNull();
     expect(decodeCursor(Buffer.from("0; DROP TABLE:1").toString("base64url"))).toBeNull();
+    expect(decodeCursor(encodeCursor("1e999", 1))).toBeNull();
+    expect(decodeCursor(encodeCursor("0.1", 9_999_999_999))).toBeNull();
   });
 });
 

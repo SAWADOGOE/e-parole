@@ -21,7 +21,7 @@ Cible : **WCAG 2.2 niveau AA** sur les trois espaces.
 - Structure : `<article lang="fr">` → `<h1>Jean 3</h1>` → un `<p>` par verset, numéro dans `<sup>` accompagné d'un texte
   visuellement masqué « verset 16 ».
 - Les titres de péricopes (si présents dans la source) sont des `<h2>`.
-- La sélection de versets expose `role="listbox"` avec `aria-multiselectable="true"` ⚠️ à valider avec NVDA et TalkBack.
+- La sélection de versets expose `role="listbox"` avec `aria-multiselectable="true"`, posé après hydratation : sans JavaScript, le chapitre reste un simple article. ⚠️ Toujours à valider avec NVDA et TalkBack (non testé en Phase 2).
 - Les surlignages ne sont pas signalés uniquement par la couleur : un indicateur (icône ou motif) est disponible et annoncé.
 
 ## Langue

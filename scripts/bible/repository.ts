@@ -25,7 +25,7 @@ export interface StageInput {
 }
 
 /** Crée une version STAGED en une transaction : tout le texte est écrit, ou rien. */
-export async function stageVersion(db: PrismaClient, input: StageInput): Promise<{ versionId: number }> {
+export async function stageVersion(db: PrismaClient, input: StageInput): Promise<{ versionId: number; verified: VerifyResult }> {
   const { translation, integrity } = input;
   return db.$transaction(
     async (tx) => {
@@ -85,6 +85,11 @@ export async function stageVersion(db: PrismaClient, input: StageInput): Promise
         });
       }
 
+      const verified = await verifyStoredVersion(tx, version.id, input.verses);
+      if (verified.verseCount !== integrity.verseCount || verified.checksumMismatches > 0) {
+        throw new Error(`Contrôle après écriture en échec : ${verified.checksumMismatches} écarts, ${verified.verseCount} versets relus`);
+      }
+
       // L'audit s'écrit sous le rôle propriétaire : le rôle d'import n'a aucun droit sur audit_log.
       await tx.$executeRawUnsafe("RESET ROLE");
       await tx.auditLog.create({
@@ -100,7 +105,7 @@ export async function stageVersion(db: PrismaClient, input: StageInput): Promise
           },
         },
       });
-      return { versionId: version.id };
+      return { versionId: version.id, verified };
     },
     { timeout: TRANSACTION_TIMEOUT_MS, maxWait: 30_000 },
   );
@@ -112,7 +117,7 @@ export interface VerifyResult {
 }
 
 /** Relit la base et recalcule chaque SHA-256 : prouve que le texte stocké est bien celui de la source. */
-export async function verifyStoredVersion(db: PrismaClient, versionId: number, expected: readonly SourceVerse[]): Promise<VerifyResult> {
+export async function verifyStoredVersion(db: Pick<PrismaClient, "bibleVerse">, versionId: number, expected: readonly SourceVerse[]): Promise<VerifyResult> {
   const stored = await db.bibleVerse.findMany({
     where: { versionId },
     select: { bookId: true, chapter: true, verse: true, text: true, checksum: true },
@@ -124,6 +129,13 @@ export async function verifyStoredVersion(db: PrismaClient, versionId: number, e
     if (text !== row.text || sha256(row.text) !== row.checksum) checksumMismatches += 1;
   }
   return { verseCount: stored.length, checksumMismatches };
+}
+
+/** M2 de l'audit : un rôle applicatif mal nommé échappe au REVOKE de la migration. Mieux vaut refuser de publier. */
+export async function assertReadOnlyAppRole(db: PrismaClient, role: string): Promise<void> {
+  const rows = await db.$queryRaw<{ writable: boolean }[]>`
+    SELECT has_table_privilege(${role}, 'bible_verse', 'INSERT, UPDATE, DELETE, TRUNCATE') AS writable`;
+  if (rows[0]?.writable !== false) throw new Error(`Le rôle ${role} peut écrire dans bible_verse : activation refusée.`);
 }
 
 /** Bascule atomique STAGED → ACTIVE, publication facultative, audit dans la même transaction. */

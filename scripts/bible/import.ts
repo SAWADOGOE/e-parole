@@ -14,7 +14,7 @@ import { sha256 } from "./lib/normalize";
 import { renderIntegrityReport } from "./lib/report";
 import { parseSource } from "./lib/run-import";
 import { TRANSLATIONS } from "./lib/translations";
-import { createImportClient, stageVersion, verifyStoredVersion } from "./repository";
+import { createImportClient, stageVersion } from "./repository";
 
 const REPORT_DIR = join("data", "bible-sources", "reports");
 
@@ -74,7 +74,7 @@ async function main(): Promise<void> {
   try {
     await seedBibleCatalog(db);
     const evidenceHash = sha256(await readFile(evidencePath));
-    const { versionId } = await stageVersion(db, {
+    const { versionId, verified } = await stageVersion(db, {
       translation,
       sourceProvider: provider.id,
       sourceSha256,
@@ -85,11 +85,7 @@ async function main(): Promise<void> {
       integrity,
       ignored,
     });
-    const verified = await verifyStoredVersion(db, versionId, verses);
     console.log(`Version ${versionId} créée (STAGED) · relus ${verified.verseCount} · écarts de checksum ${verified.checksumMismatches}`);
-    if (verified.verseCount !== integrity.verseCount || verified.checksumMismatches > 0) {
-      throw new Error("Contrôle après écriture en échec : ne pas activer cette version.");
-    }
     console.log(`Activation : pnpm bible:activate --translation ${code} --version ${versionId}`);
   } finally {
     await db.$disconnect();

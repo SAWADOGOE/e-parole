@@ -6,7 +6,7 @@
 import "dotenv/config";
 import { userInfo } from "node:os";
 import { parseArgs } from "node:util";
-import { activateVersion, createImportClient, findLatestStagedVersion } from "./repository";
+import { activateVersion, assertReadOnlyAppRole, createImportClient, findLatestStagedVersion } from "./repository";
 
 const { values } = parseArgs({
   options: {
@@ -23,6 +23,9 @@ async function main(): Promise<void> {
   if (!connectionString) throw new Error("MIGRATION_DATABASE_URL manquant");
   const db = createImportClient(connectionString);
   try {
+    const appUrl = process.env["DATABASE_URL"];
+    if (!appUrl) throw new Error("DATABASE_URL manquant : le rôle applicatif ne peut pas être contrôlé");
+    await assertReadOnlyAppRole(db, decodeURIComponent(new URL(appUrl).username));
     const versionId = values.version ? Number(values.version) : await findLatestStagedVersion(db, code);
     if (versionId === null || !Number.isInteger(versionId)) throw new Error("Aucune version STAGED à activer");
     await activateVersion(db, versionId, { publish: values.publish, operator: userInfo().username });
