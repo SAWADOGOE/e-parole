@@ -253,8 +253,19 @@ html[data-reader-theme="sepia"] {
   --highlight-purple: #dccfe6;
 }
 
+/* Un élément focalisé ne passe jamais sous la navigation ni sous la barre d'actions (WCAG 2.4.11). */
+@media (max-width: 767px) {
+  html:has([data-reader-header]) {
+    scroll-padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  }
+}
+
 html[data-reader-selecting] {
-  scroll-padding-bottom: calc(var(--bottom-nav-height) + 160px);
+  scroll-padding-bottom: calc(var(--reader-bar-height, 160px) + var(--bottom-nav-height) + 24px);
+}
+
+html[data-reader-selecting] #contenu {
+  padding-bottom: calc(var(--reader-bar-height, 160px) + var(--bottom-nav-height) + 48px);
 }
 
 .reader-text {
@@ -284,7 +295,7 @@ html[data-reader-font="sans"] .reader-text {
 
 .verse:target,
 .verse[data-focus] {
-  border-inline-start-color: var(--gold);
+  border-inline-start-color: var(--accent);
 }
 
 .verse[aria-selected="true"] {
@@ -307,11 +318,15 @@ html[data-reader-numbers="off"] .verse-number > [aria-hidden="true"] {
 }
 
 /* Jamais la couleur seule : chaque teinte a son propre trait, repris dans la légende annoncée. */
+.verse[data-highlight] .verse-text,
+[class*="highlight-swatch-"] {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
 .verse[data-highlight] .verse-text {
   border-radius: 2px;
-  text-decoration-line: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -338,18 +353,23 @@ html[data-reader-numbers="off"] .verse-number > [aria-hidden="true"] {
 
 .highlight-swatch-YELLOW {
   background-color: var(--highlight-yellow);
+  text-decoration-style: solid;
 }
 .highlight-swatch-GREEN {
   background-color: var(--highlight-green);
+  text-decoration-style: dashed;
 }
 .highlight-swatch-BLUE {
   background-color: var(--highlight-blue);
+  text-decoration-style: dotted;
 }
 .highlight-swatch-PINK {
   background-color: var(--highlight-pink);
+  text-decoration-style: double;
 }
 .highlight-swatch-PURPLE {
   background-color: var(--highlight-purple);
+  text-decoration-style: wavy;
 }
 
 [data-reader-header] {
@@ -359,14 +379,18 @@ html[data-reader-numbers="off"] .verse-number > [aria-hidden="true"] {
   transform: translateY(-100%);
 }
 
-html[data-reader-focus] [data-reader-nav],
-html[data-reader-focus] [data-reader-footer] {
+/* L'attribution reste visible en mode focus : elle accompagne toujours le texte. */
+html[data-reader-focus] [data-reader-nav] {
   display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  [data-reader-header][data-hidden="true"]:not(:focus-within) {
-    transform: none;
-    opacity: 0;
+/* Contraste forcé : les fonds disparaissent, la sélection doit rester visible autrement. */
+@media (forced-colors: active) {
+  .verse {
+    border-inline-start-color: Canvas;
+  }
+  .verse[aria-selected="true"] {
+    border-inline-start-color: Highlight;
+    outline: 2px solid Highlight;
   }
 }

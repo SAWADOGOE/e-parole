@@ -78,6 +78,10 @@ describe("EbibleUsfxProvider", () => {
     await expect(read(`<book id="JHN"><c id="1" /><p style="p"><v id="1" /><nouveau>texte</nouveau><ve /></p></book>`)).rejects.toThrow(/inconnu/);
   });
 
+  it("échoue sur un style de paragraphe inconnu : il pourrait porter du texte biblique", async () => {
+    await expect(read(`<book id="JHN"><c id="1" /><p style="nb"><v id="1" />texte<ve /></p></book>`)).rejects.toThrow(/Style de paragraphe inconnu/);
+  });
+
   it("refuse un verset groupé", async () => {
     await expect(read(`<book id="JHN"><c id="1" /><p style="p"><v id="1-2" />texte<ve /></p></book>`)).rejects.toThrow(/invalide/);
   });

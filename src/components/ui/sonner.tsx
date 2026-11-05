@@ -8,6 +8,7 @@ export function Toaster() {
       position="bottom-center"
       duration={3000}
       offset={{ bottom: "calc(var(--bottom-nav-height) + 16px)" }}
+      mobileOffset={{ bottom: "calc(var(--bottom-nav-height) + 16px)" }}
       toastOptions={{
         classNames: {
           toast: "!rounded-md !border !border-border !bg-bg-elevated !text-fg !shadow-sm !font-sans",

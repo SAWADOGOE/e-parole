@@ -31,9 +31,12 @@ export default function NoteSheet({ reference, initialBody = "", onClose, onSubm
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const result = await onSubmit(body).finally(() => setBusy(false));
-    if (!result.ok) {
-      setError(tErrors(errorKey(result.error.code)));
+    // Une Server Action rejette si le réseau tombe : le texte saisi reste dans le champ.
+    const result = await onSubmit(body)
+      .catch(() => null)
+      .finally(() => setBusy(false));
+    if (!result?.ok) {
+      setError(tErrors(result ? errorKey(result.error.code) : "INTERNAL"));
       return;
     }
     notify(t("saved"));

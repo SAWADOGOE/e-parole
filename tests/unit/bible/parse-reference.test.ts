@@ -39,7 +39,8 @@ const VALID: readonly (readonly [string, ParsedReference])[] = [
   ["jn3:16", ref("JHN", 3, 16)],
   ["jn. 3:16", ref("JHN", 3, 16)],
   ["Jean 3", ref("JHN", 3)],
-  ["Jean", ref("JHN", 1)],
+  ["Jean", { ...ref("JHN", 1), wholeBook: true }],
+  ["Actes des Apôtres 2:38", ref("ACT", 2, 38)],
   ["1 Co 13:4-7", ref("1CO", 13, 4, 7)],
   ["1Co 13:4-7", ref("1CO", 13, 4, 7)],
   ["1co13:4-7", ref("1CO", 13, 4, 7)],
@@ -66,7 +67,7 @@ const VALID: readonly (readonly [string, ParsedReference])[] = [
   ["ps23", ref("PSA", 23)],
   ["Ps 23:1", ref("PSA", 23, 1)],
   ["ps 119:105", ref("PSA", 119, 105)],
-  ["Psaume", ref("PSA", 1)],
+  ["Psaume", { ...ref("PSA", 1), wholeBook: true }],
   ["Romains 8", ref("ROM", 8)],
   ["Rm 8:28", ref("ROM", 8, 28)],
   ["Ro 8:28", ref("ROM", 8, 28)],
@@ -138,9 +139,7 @@ describe("parseReference — erreurs avec suggestion", () => {
   });
 
   it("chapitre 0 propose le chapitre 1", () => {
-    const result = parseReference("Jean 0", BOOKS);
-    expect(result.ok).toBe(false);
-    if (!result.ok && result.error.code === "CHAPTER_OUT_OF_RANGE") expect(result.error.suggestion).toEqual(ref("JHN", 1));
+    expect(parseReference("Jean 0", BOOKS)).toMatchObject({ ok: false, error: { code: "CHAPTER_OUT_OF_RANGE", suggestion: ref("JHN", 1) } });
   });
 
   it("verset hors limites : Jean 3:99 propose le dernier verset", () => {

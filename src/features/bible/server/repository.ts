@@ -1,13 +1,11 @@
 import { db, Prisma, type TransactionClient } from "@/server/db";
 import { BIBLE_LANGUAGE } from "../constants";
 import { HEADLINE_START, HEADLINE_STOP } from "../lib/search-text";
-import type { ColoredRange } from "../lib/highlight-ranges";
+import { toggleVerseRanges, type ColoredRange } from "../lib/highlight-ranges";
 import type {
-  BookmarkMark,
   CatalogBook,
   ChapterAnnotations,
   ChapterVerse,
-  HighlightColorName,
   HighlightMark,
   NoteMark,
   ReaderPrefs,
@@ -192,29 +190,44 @@ export async function findChapterAnnotations(scope: ChapterScope): Promise<Chapt
   return { highlights, notes, bookmarks };
 }
 
+/** Sérialise les écritures d'un même chapitre pour un même utilisateur : deux appareils ne peuvent pas se piétiner. */
+async function lockChapter(tx: TransactionClient, scope: ChapterScope): Promise<void> {
+  const key = `${scope.userId}:${scope.translationId}:${scope.bookId}:${scope.chapter}`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+}
+
+const rangeKey = (range: VerseRange & { color?: string }): string => `${range.verseStart}-${range.verseEnd}-${range.color ?? ""}`;
+
 export async function replaceChapterHighlights(
   scope: ChapterScope,
   compute: (existing: readonly ColoredRange[]) => readonly ColoredRange[],
 ): Promise<void> {
   await db.$transaction(async (tx) => {
-    const existing = await tx.bibleHighlight.findMany({ where: scope, select: { verseStart: true, verseEnd: true, color: true } });
+    await lockChapter(tx, scope);
+    const existing = await tx.bibleHighlight.findMany({ where: scope, select: { id: true, verseStart: true, verseEnd: true, color: true } });
     const next = compute(existing);
-    await tx.bibleHighlight.deleteMany({ where: scope });
-    await tx.bibleHighlight.createMany({ data: next.map((range) => ({ ...scope, ...range })) });
+    // Seule la différence est écrite : les lignes intactes gardent leur id et leur date.
+    const wanted = new Set(next.map(rangeKey));
+    const kept = new Set(existing.map(rangeKey));
+    const removed = existing.filter((row) => !wanted.has(rangeKey(row))).map((row) => row.id);
+    await tx.bibleHighlight.deleteMany({ where: { ...scope, id: { in: removed } } });
+    await tx.bibleHighlight.createMany({
+      data: next.filter((range) => !kept.has(rangeKey(range))).map(({ verseStart, verseEnd, color }) => ({ ...scope, verseStart, verseEnd, color })),
+    });
   });
 }
 
 export async function toggleBookmarks(scope: ChapterScope, ranges: readonly VerseRange[]): Promise<{ added: boolean }> {
   return db.$transaction(async (tx) => {
-    const where = { ...scope, OR: ranges.map(({ verseStart, verseEnd }) => ({ verseStart, verseEnd })) };
-    const found = await tx.bibleBookmark.count({ where });
-    // Tout est déjà en favori : le geste retire. Sinon il complète.
-    if (found === ranges.length) {
-      await tx.bibleBookmark.deleteMany({ where });
-      return { added: false };
-    }
-    await tx.bibleBookmark.createMany({ data: ranges.map((range) => ({ ...scope, ...range })), skipDuplicates: true });
-    return { added: true };
+    await lockChapter(tx, scope);
+    const existing = await tx.bibleBookmark.findMany({ where: scope, select: { id: true, verseStart: true, verseEnd: true } });
+    const { next, added } = toggleVerseRanges(existing, ranges);
+    const wanted = new Set(next.map(rangeKey));
+    const kept = new Set(existing.map(rangeKey));
+    const removed = existing.filter((row) => !wanted.has(rangeKey(row))).map((row) => row.id);
+    await tx.bibleBookmark.deleteMany({ where: { ...scope, id: { in: removed } } });
+    await tx.bibleBookmark.createMany({ data: next.filter((range) => !kept.has(rangeKey(range))).map((range) => ({ ...scope, ...range })) });
+    return { added };
   });
 }
 
@@ -263,7 +276,7 @@ interface ListedAnnotation extends VerseCoordinates {
 
 export type ListedHighlight = ListedAnnotation & Pick<HighlightMark, "color">;
 export type ListedNote = ListedAnnotation & Pick<NoteMark, "body"> & { updatedAt: Date };
-export type ListedBookmark = ListedAnnotation & Pick<BookmarkMark, "id">;
+export type ListedBookmark = ListedAnnotation;
 
 const coordinates = { id: true, bookId: true, chapter: true, verseStart: true, verseEnd: true } as const;
 const newestFirst = [{ createdAt: "desc" }, { id: "desc" }] as const;
@@ -289,12 +302,14 @@ export async function listBookmarks(userId: string, cursor: string | undefined, 
 export interface ReadingState extends ReaderPrefs {
   bookId: string | null;
   chapter: number | null;
+  /** null : aucun réglage choisi, la ligne n'existe que pour la position de lecture. */
+  prefsSetAt: Date | null;
 }
 
 export async function findReadingState(userId: string): Promise<ReadingState | null> {
   return db.bibleReadingState.findUnique({
     where: { userId },
-    select: { bookId: true, chapter: true, fontSize: true, lineHeight: true, theme: true, font: true, showVerseNumbers: true },
+    select: { bookId: true, chapter: true, fontSize: true, lineHeight: true, theme: true, font: true, showVerseNumbers: true, prefsSetAt: true },
   });
 }
 
@@ -304,7 +319,8 @@ export async function saveReadingPosition(userId: string, translationId: number,
 }
 
 export async function saveReaderPrefs(userId: string, prefs: ReaderPrefs): Promise<void> {
-  await db.bibleReadingState.upsert({ where: { userId }, create: { userId, ...prefs }, update: prefs });
+  const values = { ...prefs, prefsSetAt: new Date() };
+  await db.bibleReadingState.upsert({ where: { userId }, create: { userId, ...values }, update: values });
 }
 
 // --- Verset du jour ---------------------------------------------------------
@@ -455,4 +471,3 @@ export async function setTranslationPublished(tx: TransactionClient, translation
   await tx.$executeRaw`SELECT public.bible_set_published(${translationId}::integer, ${published}::boolean)`;
 }
 
-export type { HighlightColorName };

@@ -9,6 +9,9 @@ const CANON = new Set(BIBLE_BOOKS.map((book) => book.id));
 /** Paragraphes qui portent le texte biblique ; tout autre style (introductions, références, titres) est écarté. */
 const VERSE_PARAGRAPH_STYLES = new Set(["p", "m", "pi1"]);
 
+/** Paragraphes écartés, recensés un à un : un style inconnu pourrait porter du texte biblique et fait échouer l'import. */
+const SKIPPED_PARAGRAPH_STYLES = new Set(["ib", "ie", "imt1", "imt2", "imt3", "io1", "io2", "ip", "ipi", "is1", "mr", "ms1", "ms2", "mt1", "mt2", "r"]);
+
 /**
  * Éléments écartés avec leur contenu. La licence des notes, titres et introductions n'est pas établie
  * comme identique à celle du texte de 1910 (docs/bible/BIBLE-LICENSING.md) : ils ne sont jamais importés.
@@ -109,6 +112,7 @@ export class EbibleUsfxProvider implements BibleSourceProvider {
         case "p": {
           const style = (tag).attributes["style"] ?? "p";
           const keep = VERSE_PARAGRAPH_STYLES.has(style);
+          if (!keep && !SKIPPED_PARAGRAPH_STYLES.has(style)) throw new Error(`Style de paragraphe inconnu : ${style}`);
           if (!keep) this.count(`paragraph:${style}`);
           if (!tag.isSelfClosing) paragraphs.push(keep);
           return;

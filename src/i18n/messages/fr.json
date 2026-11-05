@@ -124,7 +124,10 @@
       "numbers": "Numéros de versets",
       "numbersOn": "Affichés",
       "numbersOff": "Masqués",
-      "localOnly": "Ces réglages sont gardés sur cet appareil."
+      "localOnly": "Ces réglages sont gardés sur cet appareil.",
+      "shortcuts": "Raccourcis à une touche (G, F)",
+      "shortcutsOn": "Activés",
+      "shortcutsOff": "Désactivés"
     },
     "actions": {
       "toolbar": "Actions sur la sélection",
@@ -144,7 +147,9 @@
       "highlightRemoved": "Surlignage retiré",
       "bookmarkAdded": "Ajouté aux favoris",
       "bookmarkRemoved": "Retiré des favoris",
-      "signInRequired": "Connecte-toi pour garder tes surlignages, notes et favoris."
+      "signInRequired": "Connecte-toi pour garder tes surlignages, notes et favoris.",
+      "help": "Flèches pour parcourir les versets, Espace pour sélectionner, Maj et flèches pour étendre. Tabulation pour atteindre les actions.",
+      "cleared": "Sélection effacée"
     },
     "colors": {
       "YELLOW": "jaune",
@@ -195,7 +200,8 @@
       "verseError": "{book} {chapter} compte {count, plural, one {# verset} other {# versets}}.",
       "rangeError": "Cette plage de versets est inversée.",
       "bookError": "Nous ne reconnaissons pas le livre « {input} ».",
-      "suggestion": "Aller à {reference} ?"
+      "suggestion": "Aller à {reference} ?",
+      "openBook": "Ouvrir le livre : {book}"
     },
     "annotations": {
       "metaTitle": "Mes notes bibliques",
@@ -499,6 +505,7 @@
     "historyEmpty": "Aucun verset n'a encore été publié.",
     "remove": "Supprimer le verset du {date}",
     "removed": "Programmation supprimée",
-    "formTitle": "Programmer un verset"
+    "formTitle": "Programmer un verset",
+    "removeConfirmBody": "{reference} ne sera plus programmé ce jour-là : une sélection automatique prendra sa place."
   }
 }

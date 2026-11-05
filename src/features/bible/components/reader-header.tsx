@@ -56,7 +56,7 @@ export function ReaderHeader({ reference, translationShortName, focusMode, onTog
           <Link href="/bible/recherche" aria-label={t("openSearch")} className={ICON}>
             <Search aria-hidden="true" className="size-5" />
           </Link>
-          <button type="button" aria-pressed={focusMode} aria-label={t(focusMode ? "exitFocusMode" : "focusMode")} onClick={onToggleFocus} className={`${ICON} max-[359px]:hidden`}>
+          <button type="button" aria-pressed={focusMode} aria-label={t(focusMode ? "exitFocusMode" : "focusMode")} onClick={onToggleFocus} className={ICON}>
             {focusMode ? <Minimize aria-hidden="true" className="size-5" /> : <Maximize aria-hidden="true" className="size-5" />}
           </button>
           <button type="button" aria-label={t("openSettings")} aria-haspopup="dialog" onClick={onOpenSettings} className={ICON}>

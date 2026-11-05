@@ -44,6 +44,9 @@ Les slugs sont résolus via `BibleBookName` ; `/bible/lsg/JHN/3` redirige vers l
 | Aller à une référence | Champ en tête du sheet | `G` ou `Ctrl/⌘ K` |
 | Mode focus | Icône plein écran | `F` |
 
+Les raccourcis à une touche (`G`, `F`) se désactivent dans le panneau « Aa » (WCAG 2.1.4). `Ctrl/⌘ K` et les boutons restent disponibles.
+Le mode focus masque la navigation, jamais l'attribution.
+
 Copier produit : `« Car Dieu a tant aimé le monde… » — Jean 3:16 (Louis Segond 1910)`.
 Partager : feuille avec « Publier », « Envoyer à une communauté », « Copier le lien », et partage natif (`navigator.share`).
 Une image de verset (carte légère générée côté serveur, < 80 Ko) est prévue en Phase 3 pour WhatsApp.
@@ -56,6 +59,7 @@ Une image de verset (carte légère générée côté serveur, < 80 Ko) est pré
 | Thème | Système · Clair · Sépia · Sombre | Système |
 | Police | Serif (Literata) · Sans (Inter) | Serif |
 | Numéros de versets | Affichés · Masqués | Affichés |
+| Raccourcis à une touche | Activés · Désactivés | Activés (préférence locale) |
 
 Persistance : `BibleReadingState` si connecté ; `localStorage` sinon (avec `try/catch`).
 

@@ -174,6 +174,14 @@ test.describe("US-3 rechercher", () => {
     await expect(page.getByRole("link", { name: "Jean 10:11" })).toBeVisible();
   });
 
+  test("un nom de livre seul garde sa recherche, avec un lien vers le livre", async ({ page }) => {
+    await page.goto("/bible/recherche?q=Nombres");
+    await expect(page).toHaveURL(/\/bible\/recherche/);
+    await expect(page.getByRole("link", { name: "Ouvrir le livre : Nombres" })).toBeVisible();
+    await page.goto("/bible/recherche?q=Jean");
+    await expect(page.getByRole("link", { name: "Ouvrir le livre : Jean" })).toHaveAttribute("href", "/bible/lsg/jean/1");
+  });
+
   test("la saisie d'une référence ouvre le passage ; aucun résultat donne un état vide", async ({ page }) => {
     await page.goto("/bible/recherche?q=jn+3+16");
     await expect(page).toHaveURL(/\/bible\/lsg\/jean\/3\?v=16#v16$/);
@@ -204,6 +212,86 @@ test.describe("sélection au clavier", () => {
     await page.keyboard.press("Escape");
     await expect(page.locator("#v2")).toHaveAttribute("aria-selected", "false");
     await expect(page.getByRole("group", { name: "Actions sur la sélection" })).toHaveCount(0);
+  });
+
+  test("le focus ne se perd jamais : barre, panneaux, changement de chapitre", async ({ page }) => {
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await page.locator("#v1").focus();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("group", { name: "Actions sur la sélection" })).toBeVisible();
+
+    // Tab depuis le texte atteint la barre, placée juste après lui.
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Effacer la sélection" })).toBeFocused();
+
+    // Fermer la barre rend le focus au verset, et l'effacement est annoncé.
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#v2")).toBeFocused();
+    await expect(page.getByText("Sélection effacée")).toBeAttached();
+
+    // Échap dans un panneau rend le focus à son déclencheur et ne touche pas à la sélection.
+    await page.keyboard.press("Space");
+    const settings = page.getByRole("button", { name: "Réglages de lecture" });
+    await settings.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(settings).toBeFocused();
+    await expect(page.locator("#v2")).toHaveAttribute("aria-selected", "true");
+
+    // Après un changement de chapitre, le focus rejoint le titre.
+    await page.getByRole("link", { name: "Chapitre suivant : Jean 4" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Jean 4" })).toBeFocused();
+  });
+
+  test("un élément focalisé ne passe pas sous la barre d'actions", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await page.locator("#v36").click();
+    await page.getByRole("button", { name: "Surligner" }).click();
+    await page.getByRole("link", { name: /Chapitre suivant/ }).focus();
+    const link = await page.getByRole("link", { name: /Chapitre suivant/ }).boundingBox();
+    const bar = await page.getByRole("group", { name: "Actions sur la sélection" }).boundingBox();
+    expect((link?.y ?? 0) + (link?.height ?? 0)).toBeLessThanOrEqual(bar?.y ?? 0);
+  });
+
+  test("Maj+clic étend la sélection et Maj+flèche la réduit", async ({ page }) => {
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await page.locator("#v2").click();
+    await page.locator("#v5").click({ modifiers: ["Shift"] });
+    await expect(page.locator("#v4")).toHaveAttribute("aria-selected", "true");
+    await page.locator("#v5").focus();
+    await page.keyboard.press("Shift+ArrowUp");
+    await expect(page.locator("#v5")).toHaveAttribute("aria-selected", "false");
+    await expect(page.locator("#v4")).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("les raccourcis à une touche se désactivent (WCAG 2.1.4)", async ({ page }) => {
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await page.getByRole("button", { name: "Réglages de lecture" }).click();
+    await page.getByRole("dialog").getByText("Désactivés", { exact: true }).click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("g");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.keyboard.press("f");
+    await expect(page.locator("html")).not.toHaveAttribute("data-reader-focus", "");
+    await page.keyboard.press("Control+k");
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
+
+  test("le mode focus garde l'attribution, et Maj+G ne déclenche rien", async ({ page }) => {
+    await page.goto(JOHN_3);
+    await readerReady(page);
+    await page.keyboard.press("Shift+G");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.keyboard.press("f");
+    await expect(page.locator("#contenu").getByText(ATTRIBUTION)).toBeVisible();
   });
 
   test("copie au format attendu", async ({ page, context }) => {
@@ -400,6 +488,7 @@ test.describe("US-42 verset du jour", () => {
     await page.getByLabel("Référence", { exact: true }).fill("Jean 3");
     await page.getByRole("button", { name: "Aperçu" }).click();
     await expect(page.getByText("Cette référence n'est pas valide")).toBeVisible();
+    await expect(page.getByLabel("Référence", { exact: true })).toHaveAttribute("aria-invalid", "true");
 
     await page.getByLabel("Référence", { exact: true }).fill("Psaume 23:1");
     await page.getByLabel("Phrase éditoriale (facultative)").fill("Une promesse pour aujourd'hui.");
@@ -409,6 +498,7 @@ test.describe("US-42 verset du jour", () => {
     await expect(page.getByText(ATTRIBUTION)).toBeVisible();
     await page.getByRole("button", { name: "Programmer" }).click();
     await expect(page.getByText(/Verset du jour programmé/)).toBeVisible();
+    await expect(page.getByLabel("Référence", { exact: true })).toBeFocused();
 
     await page.goto("/admin/bible/translations");
     await expect(page.getByRole("heading", { name: /Louis Segond 1910/ })).toBeVisible();
@@ -427,7 +517,7 @@ test.describe("US-42 verset du jour", () => {
     await visitor.close();
   });
 
-  test("un membre ne voit pas l'administration Bible", async ({ page }) => {
+  test("un visiteur ne voit pas l'administration Bible", async ({ page }) => {
     for (const path of ["/admin/bible/daily-verses", "/admin/bible/translations"]) {
       expect((await page.goto(path))?.status(), path).toBe(404);
     }

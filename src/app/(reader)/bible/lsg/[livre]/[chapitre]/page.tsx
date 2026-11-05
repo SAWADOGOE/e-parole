@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BookOpen } from "lucide-react";
 import { findChapterAnnotations, findReadingState, getChapterVerses, resolveChapter } from "@/features/bible";
+import { ACTIONS_SLOT_ID } from "@/features/bible/constants";
 import { ChapterLinkPending } from "@/features/bible/components/chapter-skeleton";
 import { ChapterText } from "@/features/bible/components/chapter-text";
 import { LazyNoteList } from "@/features/bible/components/lazy-note-list";
@@ -55,6 +56,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   if (!resolved) {
     return (
       <main id="contenu" tabIndex={-1} className="mx-auto max-w-[38rem] px-4 py-12">
+        <h1 className="sr-only">{t("title")}</h1>
         <EmptyState icon={BookOpen} title={t("emptyTitle")} body={t("emptyBody")} verse={t("emptyVerse")} />
       </main>
     );
@@ -74,7 +76,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { previous, next } = chapterNeighbours(books, book.id, chapter);
   const reference = formatReference(book.name, chapter);
   const focus = parseFocus(typeof query.v === "string" ? query.v : undefined);
-  const serverPrefs: ReaderPrefs | null = state
+  const serverPrefs: ReaderPrefs | null = state?.prefsSetAt
     ? { fontSize: state.fontSize, lineHeight: state.lineHeight, theme: state.theme, font: state.font, showVerseNumbers: state.showVerseNumbers }
     : null;
 
@@ -97,12 +99,13 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
       />
       <main id="contenu" tabIndex={-1} className="mx-auto max-w-[38rem] px-4 pt-6 pb-[calc(var(--bottom-nav-height)+48px)] md:pb-16">
         <article lang="fr" className="reader-text text-fg">
-          <h1 className="mb-6 font-serif text-display-md text-fg">{reference}</h1>
-          <ChapterText reference={reference} verses={verses} annotations={annotations} focus={focus} />
+          <h1 tabIndex={-1} className="mb-6 font-serif text-display-md text-fg">{reference}</h1>
+          <ChapterText verses={verses} annotations={annotations} focus={focus} />
           <footer data-reader-footer="" className="mt-10 border-t pt-4 font-sans text-sm text-muted">
             <p>{translation.attribution}</p>
           </footer>
         </article>
+        <div id={ACTIONS_SLOT_ID} />
         <nav aria-label={t("chapterNavLabel")} className="mt-4 flex items-center justify-between gap-2">
           {previous ? (
             <ChapterNavLink link={previous} direction="previous" label={t("previousChapter", { reference: formatReference(previous.bookName, previous.chapter) })} />

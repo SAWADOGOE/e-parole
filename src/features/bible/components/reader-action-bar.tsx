@@ -2,7 +2,7 @@
 
 import { Bookmark, Copy, Highlighter, NotebookPen, Share2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HIGHLIGHT_COLORS } from "../constants";
 import type { HighlightColorName } from "../types";
 
@@ -17,17 +17,34 @@ interface ReaderActionBarProps {
   onShare: () => void;
 }
 
-const ACTION = "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-xs font-medium text-fg hover:bg-bg-subtle disabled:opacity-50";
+const ACTION = "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-0.5 text-center text-xs font-medium [overflow-wrap:anywhere] text-fg hover:bg-bg-subtle disabled:opacity-50";
 
 /** Barre d'actions de la sélection : au-dessus de la navigation sur mobile, libellés toujours visibles. */
 export default function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight, onNote, onBookmark, onShare }: ReaderActionBarProps) {
   const t = useTranslations("bible");
   const [colorsOpen, setColorsOpen] = useState(false);
+  const bar = useRef<HTMLDivElement>(null);
+
+  // Sa hauteur varie (couleurs, zoom) : le défilement doit la connaître pour qu'aucun élément focalisé ne passe dessous.
+  useEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => root.style.setProperty("--reader-bar-height", `${element.offsetHeight}px`));
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--reader-bar-height");
+    };
+  }, []);
+
   return (
     <div
+      ref={bar}
       role="group"
       aria-label={t("actions.toolbar")}
-      className="fixed inset-x-2 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+8px)] z-40 mx-auto max-w-lg rounded-lg border bg-bg-elevated p-1 shadow-lg md:bottom-4"
+      data-reader-actions=""
+      className="fixed inset-x-2 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+8px)] z-40 mx-auto max-h-[calc(100dvh-var(--bottom-nav-height)-16px)] max-w-lg overflow-y-auto rounded-lg border bg-bg-elevated p-1 font-sans shadow-lg md:bottom-4"
     >
       <p className="flex items-center justify-between gap-2 px-2 text-sm font-medium text-fg">
         <span className="min-w-0 truncate">{reference}</span>

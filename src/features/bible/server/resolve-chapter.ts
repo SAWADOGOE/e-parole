@@ -13,7 +13,13 @@ export interface ResolvedChapter {
 }
 
 export function findBookBySegment(books: readonly CatalogBook[], segment: string): CatalogBook | undefined {
-  const key = foldText(decodeURIComponent(segment)).replace(/[\s-]+/g, "");
+  let decoded = segment;
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch {
+    // URL mal encodée : le segment brut ne correspondra simplement à aucun livre.
+  }
+  const key = foldText(decoded).replace(/[\s-]+/g, "");
   return books.find((book) => book.slug === segment) ?? books.find((book) => book.id.toLowerCase() === key || book.abbreviations.includes(key));
 }
 

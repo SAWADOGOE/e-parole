@@ -120,7 +120,7 @@ signale les références orphelines.
 - Activation et publication depuis l'application : fonctions `SECURITY DEFINER` `bible_activate_version` et `bible_set_published`, limitées à une
   bascule d'état (`search_path` fixé, `EXECUTE` retiré de PUBLIC). Écart assumé au `REVOKE` strict : sans elles, l'activation serait impossible depuis `/admin`.
 - Trigger `bible_verse_guard` : aucun `UPDATE` d'un verset, même par le propriétaire ; aucun ajout dans une version sortie de `STAGED`.
-- `bible_activate_version` recalcule chaque SHA-256 et refuse une version altérée ; `pnpm bible:activate` refuse aussi de publier si le rôle de `DATABASE_URL` peut écrire dans `bible_verse`.
+- `bible_activate_version` recalcule chaque SHA-256 et refuse une version altérée ; elle accepte une version `RETIRED`, ce qui offre un retour arrière ; `pnpm bible:activate` refuse aussi de publier si le rôle de `DATABASE_URL` peut écrire dans `bible_verse`.
 - Aucune clé étrangère du texte vers `user` (`importedBy` est un libellé) : un `TRUNCATE` ou une purge de comptes ne peut pas atteindre le texte.
 - La colonne `search` est générée : `prisma migrate diff` la voit comme un défaut à retirer, ce qu'il faut ignorer.
 - ⚠️ `prisma migrate dev` échoue sur la base fantôme à cause de la migration `20261104193121_security_hardening` (Phase 1), qui suppose

@@ -3,6 +3,7 @@ export const HEADLINE_START = "\u0001";
 export const HEADLINE_STOP = "\u0002";
 
 const MAX_REAL = 3e38;
+const MIN_REAL = 1e-37;
 const MAX_INT4 = 2_147_483_647;
 
 export function splitHeadline(headline: string): { text: string; match: boolean }[] {
@@ -30,6 +31,8 @@ export function decodeCursor(cursor: string | undefined): { rank: string; id: nu
   if (!match?.[1] || !match[2]) return null;
   const id = Number(match[2]);
   // Au-delà, PostgreSQL rejetterait le paramètre : un curseur forgé doit donner la première page, pas une erreur.
-  if (Number(match[1]) > MAX_REAL || id > MAX_INT4) return null;
+  const rank = Number(match[1]);
+  const underflows = rank < MIN_REAL && /[1-9]/.test(match[1].split("e")[0] ?? "");
+  if (rank > MAX_REAL || underflows || id > MAX_INT4) return null;
   return { rank: match[1], id };
 }

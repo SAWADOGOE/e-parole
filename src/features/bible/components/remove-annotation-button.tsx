@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { notify } from "@/lib/notify";
 import { errorKey } from "@/lib/error-key";
+import { focusFallback } from "../lib/focus";
 import { removeBookmarkAction, removeHighlightAction } from "../server/actions";
 
 export function RemoveAnnotationButton({ id, kind, reference }: { id: string; kind: "highlight" | "bookmark"; reference: string }) {
@@ -15,7 +16,10 @@ export function RemoveAnnotationButton({ id, kind, reference }: { id: string; ki
   async function remove(): Promise<void> {
     const result = await (kind === "highlight" ? removeHighlightAction({ id }) : removeBookmarkAction({ id }));
     notify(result.ok ? t("removed") : tErrors(errorKey(result.error.code)));
-    if (result.ok) router.refresh();
+    if (result.ok) {
+      focusFallback();
+      router.refresh();
+    }
   }
 
   return (

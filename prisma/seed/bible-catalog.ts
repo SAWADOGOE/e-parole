@@ -56,7 +56,7 @@ export const BIBLE_BOOKS: readonly BibleBookSeed[] = [
   { id: "MRK", name: "Marc", chapterCount: 16, abbreviations: ["mc", "mr", "mar"] },
   { id: "LUK", name: "Luc", chapterCount: 24, abbreviations: ["lc", "lu"] },
   { id: "JHN", name: "Jean", chapterCount: 21, abbreviations: ["jn"] },
-  { id: "ACT", name: "Actes", chapterCount: 28, abbreviations: ["ac", "act"] },
+  { id: "ACT", name: "Actes", chapterCount: 28, abbreviations: ["ac", "act", "actesdesapotres"] },
   { id: "ROM", name: "Romains", chapterCount: 16, abbreviations: ["rm", "ro", "rom"] },
   { id: "1CO", name: "1 Corinthiens", chapterCount: 16, abbreviations: ["1co", "1cor"] },
   { id: "2CO", name: "2 Corinthiens", chapterCount: 13, abbreviations: ["2co", "2cor"] },

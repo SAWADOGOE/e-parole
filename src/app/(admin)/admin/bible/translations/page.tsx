@@ -77,7 +77,7 @@ export default async function AdminBibleTranslationsPage() {
                     {t("checksum")} {version.checksum}
                   </p>
                 </div>
-                {canActivate && version.status === "STAGED" ? <TranslationControl kind="activate" versionId={version.id} /> : null}
+                {canActivate && version.status !== "ACTIVE" ? <TranslationControl kind="activate" versionId={version.id} /> : null}
               </li>
             ))}
           </ul>

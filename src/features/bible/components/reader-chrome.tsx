@@ -1,25 +1,29 @@
 "use client";
 
-import type { Route } from "next";
 import dynamic from "next/dynamic";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { notify } from "@/lib/notify";
-import { errorKey } from "@/lib/error-key";
-import { READER_STORAGE_KEY } from "../constants";
-import { formatCopy, formatFocus, formatSelectionReference, toRanges } from "../lib/format";
-import { applyReaderPrefs, clearReaderPrefs, DEFAULT_READER_PREFS, parseStoredPrefs } from "../lib/reader-prefs";
-import { addNoteAction, recordReadingAction, saveReaderPrefsAction, setHighlightAction, toggleBookmarkAction } from "../server/actions";
-import type { HighlightColorName, ReaderPrefs } from "../types";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
+import { useStoredPreference } from "@/hooks/use-stored-preference";
+import { ACTIONS_SLOT_ID, READER_SHORTCUTS_KEY } from "../constants";
+import { focusFallback } from "../lib/focus";
+import { formatSelectionReference } from "../lib/format";
+import { addNoteAction, recordReadingAction } from "../server/actions";
+import type { ReaderPrefs } from "../types";
 import { ChapterSkeleton } from "./chapter-skeleton";
 import { ReaderHeader } from "./reader-header";
+import { useReaderPrefs } from "./use-reader-prefs";
+import { useReaderShortcuts } from "./use-reader-shortcuts";
+import { useSelectionActions } from "./use-selection-actions";
 import { useVerseSelection } from "./use-verse-selection";
 
 const SelectorSheet = dynamic(() => import("./selector-sheet"), { ssr: false });
 const SettingsSheet = dynamic(() => import("./settings-sheet"), { ssr: false });
 const NoteSheet = dynamic(() => import("./note-sheet"), { ssr: false });
 const ReaderActionBar = dynamic(() => import("./reader-action-bar"), { ssr: false });
+
+const HELP_ID = "verses-help";
 
 interface ReaderChromeProps {
   bookId: string;
@@ -37,163 +41,72 @@ interface ReaderChromeProps {
 }
 
 type Panel = "selector" | "settings" | "note" | null;
-type ActionResult<T> = { ok: true; data: T } | { ok: false; error: { code: string } };
 
-function isEditable(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
-}
-
-function storedPrefs(): ReaderPrefs | null {
-  try {
-    return parseStoredPrefs(localStorage.getItem(READER_STORAGE_KEY));
-  } catch {
-    return null;
-  }
-}
+/** Dernier chapitre monté : le premier affichage ne déplace pas le focus, une navigation client si. */
+let lastChapter: string | null = null;
 
 /** Îlot client du lecteur. Il agit sur le texte rendu par le serveur sans le re-rendre ; les panneaux se chargent à la demande. */
 export function ReaderChrome(props: ReaderChromeProps) {
   const { bookId, bookName, bookSlug, chapter, translationShortName, translationName, previousHref, nextHref, isSignedIn, canPersist, serverPrefs } = props;
   const t = useTranslations("bible");
-  const tErrors = useTranslations("errors.codes");
   const router = useRouter();
-  const pathname = usePathname();
-  const { selected, clear } = useVerseSelection();
+  const reference = `${bookName} ${chapter}`;
+  const { selected, hasSelected, clear } = useVerseSelection(HELP_ID, t("versesLabel", { reference }));
+  const { prefs, changePrefs } = useReaderPrefs(serverPrefs, canPersist);
+  const [storedShortcuts, setStoredShortcuts] = useStoredPreference(READER_SHORTCUTS_KEY);
   const [panel, setPanel] = useState<Panel>(null);
   const [focusMode, setFocusMode] = useState(false);
-  const [prefs, setPrefs] = useState<ReaderPrefs>(() => serverPrefs ?? DEFAULT_READER_PREFS);
-  const [busy, setBusy] = useState(false);
   const [navigating, startNavigation] = useTransition();
-
-  useEffect(() => {
-    const initial = serverPrefs ?? storedPrefs();
-    if (initial) {
-      // localStorage n'existe pas au rendu serveur : la valeur du visiteur ne peut être lue qu'après montage.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPrefs(initial);
-      applyReaderPrefs(initial);
-    }
-    return clearReaderPrefs;
-  }, [serverPrefs]);
+  const singleKeyEnabled = storedShortcuts !== "off";
 
   useEffect(() => {
     if (canPersist) void recordReadingAction({ bookId, chapter });
   }, [canPersist, bookId, chapter]);
 
+  // Après une navigation client, le focus resterait sur <body> : il rejoint le titre du nouveau chapitre.
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (panel !== null || isEditable(event.target)) return;
-      const modifier = event.ctrlKey || event.metaKey;
-      const key = event.key.toLowerCase();
-      if (modifier && key === "k") {
-        event.preventDefault();
-        setPanel("selector");
-      } else if (modifier || event.altKey) {
-        return;
-      } else if (event.key === "Escape") {
-        clear();
-      } else if (event.key === "ArrowLeft" && previousHref) {
-        startNavigation(() => router.push(previousHref));
-      } else if (event.key === "ArrowRight" && nextHref) {
-        startNavigation(() => router.push(nextHref));
-      } else if (key === "g") {
-        event.preventDefault();
-        setPanel("selector");
-      } else if (key === "f") {
-        setFocusMode((value) => !value);
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [panel, previousHref, nextHref, router, clear]);
+    const key = `${bookId}-${chapter}`;
+    if (lastChapter !== null && lastChapter !== key && !window.location.hash) document.querySelector<HTMLElement>("#contenu h1")?.focus({ preventScroll: true });
+    lastChapter = key;
+  }, [bookId, chapter]);
 
   useEffect(() => {
     if (focusMode) document.documentElement.dataset["readerFocus"] = "";
     else delete document.documentElement.dataset["readerFocus"];
   }, [focusMode]);
 
+  /** Le démontage de la barre emporterait le focus : il revient d'abord au verset actif. */
+  const clearSelection = useCallback(() => {
+    const inBar = document.querySelector("[data-reader-actions]")?.contains(document.activeElement) ?? false;
+    clear();
+    if (inBar) focusFallback();
+  }, [clear]);
+
+  const openSelector = useCallback(() => setPanel("selector"), []);
+  const toggleFocus = useCallback(() => setFocusMode((value) => !value), []);
+  const goTo = useCallback((href: string) => startNavigation(() => router.push(href)), [router]);
+  const goPrevious = useMemo(() => (previousHref ? () => goTo(previousHref) : null), [goTo, previousHref]);
+  const goNext = useMemo(() => (nextHref ? () => goTo(nextHref) : null), [goTo, nextHref]);
+
+  useReaderShortcuts({ disabled: panel !== null, singleKeyEnabled, onEscape: clearSelection, onOpenSelector: openSelector, onToggleFocus: toggleFocus, onPrevious: goPrevious, onNext: goNext });
+
   const selection = useMemo(() => [...selected].sort((a, b) => a - b), [selected]);
-  const ranges = useMemo(() => toRanges(selection), [selection]);
-  const reference = `${bookName} ${chapter}`;
   const selectionReference = selection.length > 0 ? formatSelectionReference(bookName, chapter, selection) : reference;
+  const { busy, copy, share, highlight, bookmark, requireAccount } = useSelectionActions({
+    bookId,
+    bookSlug,
+    chapter,
+    translationName,
+    selection,
+    selectionReference,
+    isSignedIn,
+    onDone: clearSelection,
+  });
+
   const first = selection[0];
   const last = selection.at(-1);
-
-  function requireAccount(): boolean {
-    if (isSignedIn) return true;
-    notify(t("actions.signInRequired"));
-    router.push(`/connexion?retour=${encodeURIComponent(pathname)}` as Route);
-    return false;
-  }
-
-  async function run<T>(call: () => Promise<ActionResult<T>>, done: (data: T) => string): Promise<void> {
-    setBusy(true);
-    const result = await call().finally(() => setBusy(false));
-    if (!result.ok) {
-      notify(tErrors(errorKey(result.error.code)));
-      return;
-    }
-    notify(done(result.data));
-    clear();
-    router.refresh();
-  }
-
-  async function writeClipboard(text: string, success: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(text);
-      notify(success);
-    } catch {
-      notify(t("actions.copyFailed"));
-    }
-  }
-
-  function copy(): void {
-    const texts = selection.map((verse) => document.querySelector(`#v${verse} .verse-text`)?.textContent ?? "");
-    void writeClipboard(formatCopy(texts, selectionReference, translationName), t("actions.copied"));
-  }
-
-  async function share(): Promise<void> {
-    const query = first === undefined ? "" : `?v=${formatFocus(first, last)}#v${first}`;
-    const url = `${window.location.origin}/bible/lsg/${bookSlug}/${chapter}${query}`;
-    if (typeof navigator.share !== "function") {
-      await writeClipboard(url, t("actions.linkCopied"));
-      return;
-    }
-    try {
-      await navigator.share({ title: selectionReference, url });
-    } catch {
-      // Partage annulé par l'utilisateur : rien à signaler.
-    }
-  }
-
-  function highlight(color: HighlightColorName | null): void {
-    if (requireAccount()) {
-      void run(
-        () => setHighlightAction({ bookId, chapter, ranges, color }),
-        () => t(color ? "actions.highlighted" : "actions.highlightRemoved"),
-      );
-    }
-  }
-
-  function bookmark(): void {
-    if (requireAccount()) {
-      void run(
-        () => toggleBookmarkAction({ bookId, chapter, ranges }),
-        ({ added }) => t(added ? "actions.bookmarkAdded" : "actions.bookmarkRemoved"),
-      );
-    }
-  }
-
-  function changePrefs(next: ReaderPrefs): void {
-    setPrefs(next);
-    applyReaderPrefs(next);
-    try {
-      localStorage.setItem(READER_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Stockage indisponible : le réglage vaut pour cette page.
-    }
-    if (canPersist) void saveReaderPrefsAction(next);
-  }
+  const slot = selected.size > 0 ? document.getElementById(ACTIONS_SLOT_ID) : null;
+  const status = selected.size > 0 ? t("actions.selected", { count: selected.size }) : hasSelected ? t("actions.cleared") : "";
 
   return (
     <>
@@ -201,37 +114,52 @@ export function ReaderChrome(props: ReaderChromeProps) {
         reference={reference}
         translationShortName={translationShortName}
         focusMode={focusMode}
-        onToggleFocus={() => setFocusMode((value) => !value)}
-        onOpenSelector={() => setPanel("selector")}
+        onToggleFocus={toggleFocus}
+        onOpenSelector={openSelector}
         onOpenSettings={() => setPanel("settings")}
       />
       {navigating ? <ChapterSkeleton /> : null}
-      <p role="status" aria-live="polite" className="sr-only">
-        {selected.size > 0 ? t("actions.selected", { count: selected.size }) : ""}
+      <p id={HELP_ID} className="sr-only">
+        {t("actions.help")}
       </p>
-      {selected.size > 0 ? (
-        <ReaderActionBar
-          reference={selectionReference}
-          busy={busy}
-          onClear={clear}
-          onCopy={copy}
-          onHighlight={highlight}
-          onNote={() => {
-            if (requireAccount()) setPanel("note");
-          }}
-          onBookmark={bookmark}
-          onShare={() => void share()}
+      <p role="status" aria-live="polite" className="sr-only">
+        {status}
+      </p>
+      {slot
+        ? createPortal(
+            <ReaderActionBar
+              reference={selectionReference}
+              busy={busy}
+              onClear={clearSelection}
+              onCopy={copy}
+              onHighlight={highlight}
+              onNote={() => {
+                if (requireAccount()) setPanel("note");
+              }}
+              onBookmark={bookmark}
+              onShare={() => void share()}
+            />,
+            slot,
+          )
+        : null}
+      {panel === "selector" ? <SelectorSheet currentBookId={bookId} onClose={() => setPanel(null)} /> : null}
+      {panel === "settings" ? (
+        <SettingsSheet
+          prefs={prefs}
+          persisted={canPersist}
+          onChange={changePrefs}
+          shortcutsEnabled={singleKeyEnabled}
+          onShortcutsChange={(enabled) => setStoredShortcuts(enabled ? null : "off")}
+          onClose={() => setPanel(null)}
         />
       ) : null}
-      {panel === "selector" ? <SelectorSheet currentBookId={bookId} onClose={() => setPanel(null)} /> : null}
-      {panel === "settings" ? <SettingsSheet prefs={prefs} persisted={canPersist} onChange={changePrefs} onClose={() => setPanel(null)} /> : null}
       {panel === "note" && first !== undefined && last !== undefined ? (
         <NoteSheet
-          reference={formatSelectionReference(bookName, chapter, first === last ? [first] : Array.from({ length: last - first + 1 }, (_, index) => first + index))}
+          reference={formatSelectionReference(bookName, chapter, Array.from({ length: last - first + 1 }, (_, index) => first + index))}
           onClose={() => setPanel(null)}
           onSubmit={(body) => addNoteAction({ bookId, chapter, range: { verseStart: first, verseEnd: last }, body })}
           onSaved={() => {
-            clear();
+            clearSelection();
             router.refresh();
           }}
         />

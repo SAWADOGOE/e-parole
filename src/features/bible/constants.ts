@@ -23,6 +23,10 @@ export const READER_THEMES = ["SYSTEM", "LIGHT", "SEPIA", "DARK"] as const;
 export const READER_FONTS = ["SERIF", "SANS"] as const;
 
 export const READER_STORAGE_KEY = "eparole-reader-prefs";
+export const READER_SHORTCUTS_KEY = "eparole-reader-shortcuts";
+
+/** Emplacement de la barre d'actions, juste après le texte : l'ordre de tabulation suit ainsi la lecture. */
+export const ACTIONS_SLOT_ID = "reader-actions";
 
 export const DAILY_VERSE_MAX_DAYS_AHEAD = 90;
 export const DAILY_VERSE_DUPLICATE_WINDOW_DAYS = 30;

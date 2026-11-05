@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, type SubmitEvent } from "react";
+import { useRef, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
-import { FormField } from "@/components/shared/form-field";
+import { FormAlert, FormField } from "@/components/shared/form-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,11 @@ export function TranslationControl(props: TranslationControlProps) {
   const [reauth, setReauth] = useState(false);
   const [reauthError, setReauthError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const returnFocus = (event: Event): void => {
+    event.preventDefault();
+    opener.current?.focus();
+  };
 
   const isActivate = props.kind === "activate";
   const unpublishing = props.kind === "publish" && props.published;
@@ -77,12 +82,12 @@ export function TranslationControl(props: TranslationControlProps) {
 
   return (
     <>
-      <Button size="sm" variant={isActivate ? "primary" : "secondary"} disabled={busy} onClick={() => setConfirming(true)}>
+      <Button ref={opener} size="sm" variant={isActivate ? "primary" : "secondary"} onClick={() => setConfirming(true)}>
         {label}
       </Button>
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={returnFocus}>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{body}</AlertDialogDescription>
           <AlertDialogFooter>
@@ -95,11 +100,18 @@ export function TranslationControl(props: TranslationControlProps) {
       </AlertDialog>
 
       <AlertDialog open={reauth} onOpenChange={setReauth}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={returnFocus}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            if (event.currentTarget instanceof HTMLElement) event.currentTarget.querySelector("input")?.focus();
+          }}
+        >
           <AlertDialogTitle>{tAdmin("reauthTitle")}</AlertDialogTitle>
           <AlertDialogDescription>{tAdmin("reauthIntro")}</AlertDialogDescription>
           <form method="post" onSubmit={(event) => void submitReauth(event)} className="flex flex-col gap-4">
-            <FormField name="password" type="password" label={tAuth("passwordLabel")} autoComplete="current-password" required error={reauthError} />
+            <FormAlert message={reauthError ?? null} />
+            <FormField name="password" type="password" label={tAuth("passwordLabel")} autoComplete="current-password" required />
             <AlertDialogFooter>
               <AlertDialogCancel type="button">{tCommon("cancel")}</AlertDialogCancel>
               <Button type="submit" disabled={busy}>

@@ -65,8 +65,9 @@ export default async function MyBibleNotesPage({ searchParams }: { searchParams:
   const translation = await getTranslation();
   const take = ANNOTATIONS_PAGE_SIZE + 1;
 
-  const rows =
-    onglet === "surlignages" ? await listHighlights(userId, curseur, take) : onglet === "notes" ? await listNotes(userId, curseur, take) : await listBookmarks(userId, curseur, take);
+  const notes = onglet === "notes" ? await listNotes(userId, curseur, take) : [];
+  const passages = onglet === "surlignages" ? await listHighlights(userId, curseur, take) : onglet === "favoris" ? await listBookmarks(userId, curseur, take) : [];
+  const rows = onglet === "notes" ? notes : passages;
   const page = rows.slice(0, ANNOTATIONS_PAGE_SIZE);
   const nextCursor = rows.length > ANNOTATIONS_PAGE_SIZE ? page.at(-1)?.id : undefined;
   const empty = EMPTY[onglet];
@@ -109,7 +110,7 @@ export default async function MyBibleNotesPage({ searchParams }: { searchParams:
       {page.length > 0 && onglet === "notes" ? (
         <div className="mt-4">
           <NoteList
-            notes={(page as Awaited<ReturnType<typeof listNotes>>).map((note) => ({
+            notes={notes.slice(0, ANNOTATIONS_PAGE_SIZE).map((note) => ({
               id: note.id,
               body: note.body,
               reference: formatReference(nameOf(note.bookId), note.chapter, note.verseStart, note.verseEnd),
@@ -118,7 +119,7 @@ export default async function MyBibleNotesPage({ searchParams }: { searchParams:
         </div>
       ) : null}
       {page.length > 0 && onglet !== "notes" && translation ? (
-        <PassageList translation={translation} items={page} kind={onglet === "surlignages" ? "highlight" : "bookmark"} />
+        <PassageList translation={translation} items={passages.slice(0, ANNOTATIONS_PAGE_SIZE)} kind={onglet === "surlignages" ? "highlight" : "bookmark"} />
       ) : null}
 
       {nextCursor ? (

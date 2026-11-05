@@ -24,7 +24,7 @@ export function VerseQuote({ passage, size = "md", className }: VerseQuoteProps)
         « {verses.map((verse) => verse.text).join(" ")} »
       </blockquote>
       <figcaption className="mt-2 text-sm text-muted">
-        <Link href={href} className="font-medium text-accent underline-offset-4 hover:underline">
+        <Link href={href} className="font-medium text-accent underline underline-offset-4">
           {reference}
         </Link>
         <span aria-hidden="true"> · </span>

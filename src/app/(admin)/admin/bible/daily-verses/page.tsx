@@ -66,7 +66,7 @@ export default async function AdminDailyVersesPage({ searchParams }: { searchPar
             <Link href={`/admin/bible/daily-verses?mois=${monthKey(shiftMonth(year, month - 1, -1))}` as Route} aria-label={t("previousMonth")} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-bg-subtle">
               <ChevronLeft aria-hidden="true" className="size-5" />
             </Link>
-            <h2 id="calendrier" className="text-xl font-semibold text-fg capitalize">
+            <h2 id="calendrier" aria-live="polite" className="text-xl font-semibold text-fg capitalize">
               {t("calendarLabel", { month: monthLabel })}
             </h2>
             <Link href={`/admin/bible/daily-verses?mois=${monthKey(shiftMonth(year, month - 1, 1))}` as Route} aria-label={t("nextMonth")} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-bg-subtle">
@@ -81,7 +81,9 @@ export default async function AdminDailyVersesPage({ searchParams }: { searchPar
                 <li key={key} className="flex min-h-20 flex-col gap-1 bg-bg-elevated p-3 text-sm">
                   <span className="flex items-center justify-between gap-2 font-medium text-fg">
                     <time dateTime={key}>{dayLabel(date)}</time>
-                    {row ? <DeleteDailyVerseButton date={key} label={t("remove", { date: dayLabel(date) })} /> : null}
+                    {row && date >= today ? (
+                      <DeleteDailyVerseButton date={key} label={t("remove", { date: dayLabel(date) })} reference={formatReference(nameOf(row.bookId), row.chapter, row.verseStart, row.verseEnd)} />
+                    ) : null}
                   </span>
                   {row ? (
                     <>

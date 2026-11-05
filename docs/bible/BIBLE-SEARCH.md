@@ -18,6 +18,7 @@ sep       := ":" | "." | "," | " v" | espace
 | `Ap 22:21` | REV 22:21 |
 | `Jean 30` | Erreur `CHAPTER_OUT_OF_RANGE` (21 chapitres) |
 | `Jea` | Suggestions : Jean, Jacques (trigrammes) |
+| `Jean`, `Nombres` | Nom de livre seul : recherche plein texte, avec un lien « Ouvrir le livre » (ce sont aussi des mots courants) |
 
 Abréviations françaises usuelles (LSG, Société biblique) stockées dans `BibleBookName.abbreviations`. Le parseur est une
 fonction pure de `features/bible/lib/parse-reference.ts`, testée par table (≥ 200 cas).

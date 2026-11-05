@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { notify } from "@/lib/notify";
 import {
   AlertDialog,
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { errorKey } from "@/lib/error-key";
+import { focusFallback, restoreFocus } from "../lib/focus";
 import { deleteNoteAction, editNoteAction } from "../server/actions";
 
 const NoteSheet = dynamic(() => import("./note-sheet"), { ssr: false });
@@ -34,11 +35,15 @@ export function NoteList({ notes }: { notes: readonly NoteListItem[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<NoteListItem | null>(null);
   const [deleting, setDeleting] = useState<NoteListItem | null>(null);
+  const opener = useRef<Element | null>(null);
 
   async function remove(note: NoteListItem): Promise<void> {
     const result = await deleteNoteAction({ id: note.id });
     notify(result.ok ? t("deleted") : tErrors(errorKey(result.error.code)));
-    if (result.ok) router.refresh();
+    if (result.ok) {
+      focusFallback();
+      router.refresh();
+    }
   }
 
   return (
@@ -52,7 +57,10 @@ export function NoteList({ notes }: { notes: readonly NoteListItem[] }) {
                 <button type="button" aria-label={t("edit", { reference: note.reference })} onClick={() => setEditing(note)} className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg-subtle">
                   <Pencil aria-hidden="true" className="size-5" />
                 </button>
-                <button type="button" aria-label={t("delete", { reference: note.reference })} onClick={() => setDeleting(note)} className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg-subtle">
+                <button type="button" aria-label={t("delete", { reference: note.reference })} onClick={() => {
+                    opener.current = document.activeElement;
+                    setDeleting(note);
+                  }} className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg-subtle">
                   <Trash2 aria-hidden="true" className="size-5" />
                 </button>
               </div>
@@ -73,7 +81,12 @@ export function NoteList({ notes }: { notes: readonly NoteListItem[] }) {
       ) : null}
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            restoreFocus(opener.current);
+          }}
+        >
           <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
           <AlertDialogDescription>{t("deleteConfirmBody", { reference: deleting?.reference ?? "" })}</AlertDialogDescription>
           <AlertDialogFooter>

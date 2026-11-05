@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatCopy, formatReference, formatSelectionReference, parseFocus, passagePath, toRanges } from "@/features/bible/lib/format";
-import { applyHighlight, type ColoredRange } from "@/features/bible/lib/highlight-ranges";
+import { applyHighlight, toggleVerseRanges, type ColoredRange } from "@/features/bible/lib/highlight-ranges";
 import { chapterNeighbours } from "@/features/bible/lib/navigation";
 import { DEFAULT_READER_PREFS, parseStoredPrefs } from "@/features/bible/lib/reader-prefs";
 import { decodeCursor, encodeCursor, HEADLINE_START, HEADLINE_STOP, splitHeadline } from "@/features/bible/lib/search-text";
@@ -112,6 +112,26 @@ describe("surlignages", () => {
   });
 });
 
+describe("favoris verset par verset", () => {
+  const range = (verseStart: number, verseEnd = verseStart) => ({ verseStart, verseEnd });
+
+  it("ajoute une plage", () => {
+    expect(toggleVerseRanges([], [range(2, 3)])).toEqual({ next: [range(2, 3)], added: true });
+  });
+
+  it("retire un verset d'une plage plus large en la découpant", () => {
+    expect(toggleVerseRanges([range(1, 3)], [range(2)])).toEqual({ next: [range(1), range(3)], added: false });
+  });
+
+  it("complète une sélection partiellement marquée, sans doublon", () => {
+    expect(toggleVerseRanges([range(1)], [range(1, 2)])).toEqual({ next: [range(1, 2)], added: true });
+  });
+
+  it("gère une sélection discontinue", () => {
+    expect(toggleVerseRanges([range(1), range(5)], [range(1), range(5)])).toEqual({ next: [], added: false });
+  });
+});
+
 describe("recherche", () => {
   it("découpe ts_headline sans produire de HTML", () => {
     const headline = `La ${HEADLINE_START}grâce${HEADLINE_STOP} <b>soit</b> avec ${HEADLINE_START}vous${HEADLINE_STOP}`;
@@ -133,6 +153,8 @@ describe("recherche", () => {
     expect(decodeCursor("n'importe-quoi")).toBeNull();
     expect(decodeCursor(Buffer.from("0; DROP TABLE:1").toString("base64url"))).toBeNull();
     expect(decodeCursor(encodeCursor("1e999", 1))).toBeNull();
+    expect(decodeCursor(encodeCursor("1e-999", 1))).toBeNull();
+    expect(decodeCursor(encodeCursor("0", 1))).toEqual({ rank: "0", id: 1 });
     expect(decodeCursor(encodeCursor("0.1", 9_999_999_999))).toBeNull();
   });
 });

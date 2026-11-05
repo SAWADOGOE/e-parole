@@ -7,7 +7,7 @@ import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import { parseSource } from "./lib/run-import";
 
-export const FIXTURE_PATH = "tests/fixtures/bible/lsg-sample.usfx.xml";
+const FIXTURE_PATH = "tests/fixtures/bible/lsg-sample.usfx.xml";
 
 const SAMPLE: Readonly<Record<string, readonly number[] | "all">> = {
   GEN: [1],

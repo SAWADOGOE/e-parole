@@ -2,6 +2,9 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseSource } from "../../scripts/bible/lib/run-import";
 import { activateVersion, assertReadOnlyAppRole, createImportClient, stageVersion, verifyStoredVersion } from "../../scripts/bible/repository";
+import { activateVersionOptions } from "@/features/bible/server/admin-options";
+import { runAdminAction } from "@/server/actions/admin-action-core";
+import { NO_REQUEST, createTestUser } from "../factories/db-users";
 import { queryAsApp } from "../support/db";
 import { testOwnerUrl } from "../support/integration-env";
 
@@ -120,23 +123,38 @@ describe("import contrôlé", () => {
         UPDATE "bible_verse" SET "text" = $q$${text}$q$ WHERE "id" = ${original.id};
         ALTER TABLE "bible_verse" ENABLE TRIGGER "bible_verse_guard";`);
     await rewrite("Texte falsifié.");
-    await expect(activateVersion(db, versionId, { publish: false, operator: "test" })).rejects.toThrow(/altérée/);
-    await rewrite(original.text);
+    try {
+      await expect(activateVersion(db, versionId, { publish: false, operator: "test" })).rejects.toThrow(/altérée/);
+    } finally {
+      await rewrite(original.text);
+    }
+  });
+
+  it("SUPER_ADMIN active une version sous le rôle applicatif, audit compris", async () => {
+    const { actor } = await createTestUser({ roles: ["SUPER_ADMIN"] });
+    const session = { sessionId: "session", reauthenticatedAt: new Date(), actor };
+    await expect(runAdminAction(activateVersionOptions(), session, { versionId }, NO_REQUEST)).resolves.toEqual({ code: CODE });
+    expect((await db.bibleTranslationVersion.findUniqueOrThrow({ where: { id: versionId } })).status).toBe("ACTIVE");
+    expect(await db.auditLog.count({ where: { action: "bible.version.activated", targetId: String(versionId) } })).toBe(1);
+  });
+
+  it("une version retirée peut être réactivée (retour arrière), une seule version reste active", async () => {
+    await ownerQuery(`UPDATE "bible_translation_version" SET "status" = 'RETIRED' WHERE "id" = ${versionId}`);
+    await activateVersion(db, versionId, { publish: true, operator: "test" });
+    expect(await db.bibleTranslationVersion.count({ where: { translation: { code: CODE }, status: "ACTIVE" } })).toBe(1);
   });
 
   it("une version activée est figée, même pour le rôle d'import", async () => {
-    await activateVersion(db, versionId, { publish: true, operator: "test" });
     const insert = `INSERT INTO "bible_verse" ("versionId", "bookId", "chapter", "verse", "text", "checksum") VALUES (${versionId}, 'JHN', 99, 1, 'ajout', '${"0".repeat(64)}')`;
     await expect(ownerQuery(`BEGIN; SET LOCAL ROLE eparole_bible_import; ${insert}; ROLLBACK;`)).rejects.toThrow(/figée/);
     await ownerQuery("ROLLBACK");
   });
 
-  it("active explicitement, une seule fois, et audite", async () => {
+  it("une version active n'est pas réactivable, et la fiche pointe sur elle", async () => {
     const translation = await db.bibleTranslation.findUniqueOrThrow({ where: { code: CODE } });
     expect(translation.activeVersionId).toBe(versionId);
     expect(translation.isPublished).toBe(true);
     await expect(activateVersion(db, versionId, { publish: false, operator: "test" })).rejects.toThrow(/non activable/);
-    expect(await db.auditLog.count({ where: { action: "bible.version.activated", targetId: String(versionId) } })).toBe(1);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { HighlightColorName, VerseRange } from "../types";
+import { toRanges } from "./format";
 
 export interface ColoredRange extends VerseRange {
   color: HighlightColorName;
@@ -20,6 +21,23 @@ export function applyHighlight(existing: readonly ColoredRange[], target: VerseR
   }
   if (color !== null) result.push({ ...target, color });
   return mergeAdjacent(result);
+}
+
+/**
+ * Bascule de favoris, verset par verset comme l'affichage : tout est déjà marqué, le geste retire ; sinon il complète.
+ * Une plage recouverte en partie est découpée, jamais doublée.
+ */
+export function toggleVerseRanges(existing: readonly VerseRange[], target: readonly VerseRange[]): { next: VerseRange[]; added: boolean } {
+  const expand = (ranges: readonly VerseRange[]): number[] =>
+    ranges.flatMap(({ verseStart, verseEnd }) => Array.from({ length: verseEnd - verseStart + 1 }, (_, index) => verseStart + index));
+  const marked = new Set(expand(existing));
+  const wanted = expand(target);
+  const added = !wanted.every((verse) => marked.has(verse));
+  for (const verse of wanted) {
+    if (added) marked.add(verse);
+    else marked.delete(verse);
+  }
+  return { next: toRanges(marked), added };
 }
 
 function mergeAdjacent(ranges: readonly ColoredRange[]): ColoredRange[] {

@@ -9,7 +9,7 @@ métadonnées et l'éditorial autour du texte ; elle **ne permet pas d'éditer u
 |---|---|---|---|
 | `/admin/bible/translations` | Code, nom, licence, source, preuve de licence, attribution, statut de publication, historique des versions avec nombre de versets et checksum | `bible:translation:read` | 2 |
 | Publier / dépublier une traduction | Bascule `isPublished` avec ré-auth | `bible:translation:publish` | 2 |
-| Activer une version | Bascule atomique de version (après import staged) | `bible:import` | 2 |
+| Activer une version | Bascule atomique de version (après import staged, ou retour arrière sur une version retirée) | `bible:import` | 2 |
 | `/admin/bible/daily-verses` | Calendrier mensuel, programmation, aperçu, historique, alerte de doublon (30 j) | `daily_verse:manage` | MVP |
 | `/admin/bible/reading-plans` | Plans : création, jours, passages, statut éditorial | `reading_plan:manage` | 6 |
 | Méditations liées | Via `/admin/content?kind=MEDITATION` | `editorial:*` | 6 |

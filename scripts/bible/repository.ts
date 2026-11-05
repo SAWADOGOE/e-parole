@@ -34,15 +34,8 @@ export async function stageVersion(db: PrismaClient, input: StageInput): Promise
       const record = await tx.bibleTranslation.upsert({
         where: { code: translation.code },
         create: { ...translation, sourceRetrievedAt: input.sourceRetrievedAt, licenseEvidence: input.licenseEvidence },
-        update: {
-          name: translation.name,
-          licenseType: translation.licenseType,
-          licenseUrl: translation.licenseUrl,
-          attribution: translation.attribution,
-          sourceUrl: translation.sourceUrl,
-          sourceRetrievedAt: input.sourceRetrievedAt,
-          licenseEvidence: input.licenseEvidence,
-        },
+        // Une version STAGED ne doit pas modifier les métadonnées affichées avec le texte actif.
+        update: {},
         select: { id: true },
       });
 

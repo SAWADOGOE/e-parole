@@ -13,6 +13,8 @@ export interface ParsedReference {
   chapter: number;
   verseStart?: number;
   verseEnd?: number;
+  /** Saisie d'un nom de livre seul : le chapitre 1 est une valeur par défaut, pas une demande. */
+  wholeBook?: true;
 }
 
 export type ReferenceError =
@@ -168,7 +170,7 @@ export function parseReference(input: string, books: readonly ReferenceBook[]): 
     // Sans chiffre, seul un nom complet ouvre un livre : « es » ou « la » restent une recherche de mots.
     if (!book) return notReference;
     const isFullName = bookKey(foldText(book.name)) === key || key.length >= MIN_BOOK_ONLY_KEY_LENGTH;
-    return isFullName ? { ok: true, reference: { bookId: book.id, chapter: 1 } } : notReference;
+    return isFullName ? { ok: true, reference: { bookId: book.id, chapter: 1, wholeBook: true } } : notReference;
   }
 
   if (!book) return { ok: false, error: { code: "UNKNOWN_BOOK", input: rawBook.trim(), suggestions: suggestBooks(rawBook, books) } };

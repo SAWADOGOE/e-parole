@@ -32,18 +32,36 @@ function Choice<T extends string | number | boolean>({ label, options, value, on
   );
 }
 
-function Stepper({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
+/** aria-disabled et non disabled : un bouton désactivé perdrait le focus à la taille limite (WCAG 2.4.3). */
+function Stepper({ label, atLimit, onClick, children }: { label: string; atLimit: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} className="inline-flex size-11 items-center justify-center rounded-md border text-fg hover:bg-bg-subtle disabled:opacity-50">
+    <button
+      type="button"
+      aria-label={label}
+      aria-disabled={atLimit}
+      onClick={() => {
+        if (!atLimit) onClick();
+      }}
+      className="inline-flex size-11 items-center justify-center rounded-md border text-fg hover:bg-bg-subtle aria-disabled:opacity-50"
+    >
       {children}
     </button>
   );
 }
 
-export default function SettingsSheet({ prefs, persisted, onChange, onClose }: { prefs: ReaderPrefs; persisted: boolean; onChange: (next: ReaderPrefs) => void; onClose: () => void }) {
+interface SettingsSheetProps {
+  prefs: ReaderPrefs;
+  persisted: boolean;
+  onChange: (next: ReaderPrefs) => void;
+  shortcutsEnabled: boolean;
+  onShortcutsChange: (enabled: boolean) => void;
+  onClose: () => void;
+}
+
+export default function SettingsSheet({ prefs, persisted, onChange, shortcutsEnabled, onShortcutsChange, onClose }: SettingsSheetProps) {
   const t = useTranslations("bible.settings");
-  const sizes = READER_FONT_SIZES;
-  const index = sizes.indexOf(prefs.fontSize as (typeof sizes)[number]);
+  const sizes: readonly number[] = READER_FONT_SIZES;
+  const index = sizes.indexOf(prefs.fontSize);
   const setSize = (next: number | undefined): void => {
     if (next !== undefined) onChange({ ...prefs, fontSize: next });
   };
@@ -53,13 +71,13 @@ export default function SettingsSheet({ prefs, persisted, onChange, onClose }: {
         <div>
           <p className="mb-1.5 text-sm font-semibold text-fg">{t("size")}</p>
           <div className="flex items-center gap-3">
-            <Stepper label={t("smaller")} disabled={index <= 0} onClick={() => setSize(sizes[index - 1])}>
+            <Stepper label={t("smaller")} atLimit={index <= 0} onClick={() => setSize(sizes[index - 1])}>
               <Minus aria-hidden="true" className="size-5" />
             </Stepper>
             <output aria-live="polite" className="min-w-14 text-center text-sm text-fg tabular-nums">
               {t("sizeValue", { size: prefs.fontSize })}
             </output>
-            <Stepper label={t("larger")} disabled={index >= sizes.length - 1} onClick={() => setSize(sizes[index + 1])}>
+            <Stepper label={t("larger")} atLimit={index >= sizes.length - 1} onClick={() => setSize(sizes[index + 1])}>
               <Plus aria-hidden="true" className="size-5" />
             </Stepper>
           </div>
@@ -90,6 +108,15 @@ export default function SettingsSheet({ prefs, persisted, onChange, onClose }: {
             { value: false, label: t("numbersOff") },
           ]}
           onChange={(showVerseNumbers) => onChange({ ...prefs, showVerseNumbers })}
+        />
+        <Choice
+          label={t("shortcuts")}
+          value={shortcutsEnabled}
+          options={[
+            { value: true, label: t("shortcutsOn") },
+            { value: false, label: t("shortcutsOff") },
+          ]}
+          onChange={onShortcutsChange}
         />
         {persisted ? null : <p className="text-sm text-muted">{t("localOnly")}</p>}
       </div>

@@ -1,47 +1,33 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import type { Route } from "next";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { chapterPath } from "../lib/format";
 import { suggestBooks } from "../lib/parse-reference";
-import type { BookSummary } from "../types";
 import { ReaderSheet } from "./reader-sheet";
-
-type SelectorBook = BookSummary & { abbreviations: readonly string[] };
+import { useBookCatalog, type SelectorBook } from "./use-book-catalog";
 
 const FIELD_ID = "bible-reference-input";
 
 export default function SelectorSheet({ currentBookId, onClose }: { currentBookId: string; onClose: () => void }) {
   const t = useTranslations("bible.selector");
-  const [books, setBooks] = useState<SelectorBook[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const { books, failed } = useBookCatalog();
   const [opened, setOpened] = useState<SelectorBook | null>(null);
   const [query, setQuery] = useState("");
+  const chaptersTitle = useRef<HTMLHeadingElement>(null);
+  const firstBook = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => {
-    let active = true;
-    fetch("/api/bible/books")
-      .then(async (response) => {
-        if (!response.ok) throw new Error("books");
-        return (await response.json()) as { books: SelectorBook[] };
-      })
-      .then((body) => {
-        if (active) setBooks(body.books);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Le bouton activé disparaît avec la vue : le focus suit vers la vue suivante au lieu de retomber sur le dialogue.
+  function open(book: SelectorBook | null): void {
+    setOpened(book);
+    requestAnimationFrame(() => (book ? chaptersTitle : firstBook).current?.focus());
+  }
 
   const suggestions = useMemo(() => {
     if (!books || !/^[^\d]*[a-zà-ÿ]{2,}$/i.test(query.trim())) return [];
@@ -56,7 +42,7 @@ export default function SelectorSheet({ currentBookId, onClose }: { currentBookI
           <button
             type="button"
             aria-current={book.id === currentBookId ? "true" : undefined}
-            onClick={() => setOpened(book)}
+            onClick={() => open(book)}
             className="flex min-h-11 w-full items-center rounded-md px-2 text-left text-sm text-fg hover:bg-bg-subtle aria-[current]:bg-accent-subtle aria-[current]:font-semibold"
           >
             {book.name}
@@ -91,7 +77,7 @@ export default function SelectorSheet({ currentBookId, onClose }: { currentBookI
           <ul className="flex flex-wrap gap-1">
             {suggestions.map((book) => (
               <li key={book.id}>
-                <button type="button" onClick={() => setOpened(book)} className="inline-flex h-11 items-center rounded-full border px-3 text-sm text-fg hover:bg-bg-subtle">
+                <button type="button" onClick={() => open(book)} className="inline-flex h-11 items-center rounded-full border px-3 text-sm text-fg hover:bg-bg-subtle">
                   {book.name}
                 </button>
               </li>
@@ -100,7 +86,11 @@ export default function SelectorSheet({ currentBookId, onClose }: { currentBookI
         </section>
       ) : null}
 
-      {failed ? <p className="text-sm text-danger">{t("loadError")}</p> : null}
+      {failed ? (
+        <p role="alert" className="text-sm text-danger">
+          {t("loadError")}
+        </p>
+      ) : null}
       {!books && !failed ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 6 }, (_, index) => (
@@ -111,18 +101,18 @@ export default function SelectorSheet({ currentBookId, onClose }: { currentBookI
 
       {books && opened ? (
         <section aria-labelledby="selector-chapters">
-          <button type="button" onClick={() => setOpened(null)} className="mb-2 inline-flex h-11 items-center gap-1 rounded-md px-2 text-sm text-accent hover:bg-bg-subtle">
+          <button type="button" onClick={() => open(null)} className="mb-2 inline-flex h-11 items-center gap-1 rounded-md px-2 text-sm text-accent hover:bg-bg-subtle">
             <ArrowLeft aria-hidden="true" className="size-4" />
             {t("backToBooks")}
           </button>
-          <h3 id="selector-chapters" className="mb-2 text-sm font-semibold text-muted">
+          <h3 ref={chaptersTitle} id="selector-chapters" tabIndex={-1} className="mb-2 text-sm font-semibold text-muted">
             {t("chaptersOf", { book: opened.name })}
           </h3>
           <ul className="grid grid-cols-6 gap-1">
             {Array.from({ length: opened.chapterCount }, (_, index) => index + 1).map((chapter) => (
               <li key={chapter}>
                 <Link
-                  href={chapterPath(opened.slug, chapter) as Route}
+                  href={chapterPath(opened.slug, chapter)}
                   onClick={onClose}
                   aria-label={t("chapterLabel", { book: opened.name, chapter })}
                   className="flex size-11 items-center justify-center rounded-md border text-sm text-fg hover:bg-bg-subtle"
@@ -138,7 +128,7 @@ export default function SelectorSheet({ currentBookId, onClose }: { currentBookI
       {books && !opened ? (
         <>
           <section aria-labelledby="selector-ot">
-            <h3 id="selector-ot" className="mb-2 text-sm font-semibold text-muted">
+            <h3 ref={firstBook} id="selector-ot" tabIndex={-1} className="mb-2 text-sm font-semibold text-muted">
               {t("oldTestament")}
             </h3>
             {grid(books.filter((book) => book.testament === "OT"))}

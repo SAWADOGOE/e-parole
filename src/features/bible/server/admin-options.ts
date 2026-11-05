@@ -26,6 +26,14 @@ import {
 
 const DAY_MS = 86_400_000;
 
+/** Refus métier des fonctions d'activation : toute autre erreur (droits, connexion) reste une erreur serveur. */
+const STATE_REFUSAL = /non activable|incomplète|altérée|sans version active/;
+
+function toConflict(error: unknown): AppError {
+  if (error instanceof Error && STATE_REFUSAL.test(error.message)) return new AppError("CONFLICT", { cause: error });
+  throw error;
+}
+
 export function parseDay(value: string): Date {
   const date = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || isoDay(date) !== value) throw new AppError("VALIDATION", { fieldErrors: { date: ["invalidDate"] } });
@@ -105,7 +113,10 @@ export function deleteDailyVerseOptions(): AdminActionOptions<typeof deleteDaily
     permission: "daily_verse:manage",
     schema: deleteDailyVerseSchema,
     handler: async ({ input, tx }) => {
-      const id = await removeDailyVerse(tx, parseDay(input.date));
+      const date = parseDay(input.date);
+      // Un jour passé appartient à l'historique et à la fenêtre anti-doublon : il ne s'efface pas.
+      if (date < utcDay(new Date())) throw new AppError("VALIDATION", { fieldErrors: { date: ["dateInPast"] } });
+      const id = await removeDailyVerse(tx, date);
       if (!id) throw new AppError("NOT_FOUND");
       return {
         data: { date: input.date },
@@ -125,8 +136,8 @@ export function activateVersionOptions(): AdminActionOptions<typeof activateVers
       try {
         await activateVersion(tx, input.versionId);
       } catch (error: unknown) {
-        // La fonction refuse une version déjà active, retirée ou incomplète.
-        throw new AppError("CONFLICT", { cause: error });
+        // La fonction refuse une version déjà active, incomplète ou altérée.
+        throw toConflict(error);
       }
       return {
         data: { code: version.code },
@@ -151,7 +162,7 @@ export function setPublishedOptions(): AdminActionOptions<typeof setPublishedSch
       try {
         await setTranslationPublished(tx, input.translationId, input.published);
       } catch (error: unknown) {
-        throw new AppError("CONFLICT", { cause: error });
+        throw toConflict(error);
       }
       return {
         data: { code },
@@ -166,4 +177,3 @@ export function setPublishedOptions(): AdminActionOptions<typeof setPublishedSch
   };
 }
 
-export { findTranslationCode };

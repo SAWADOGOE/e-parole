@@ -73,6 +73,7 @@ describe("recherche plein texte", () => {
   it("cherche une expression exacte entre guillemets", async () => {
     const page = await search('"bon berger"');
     expect(page.hits.map((hit) => hit.reference)).toContain("Jean 10:11");
+    expect(page.hits.length).toBeGreaterThan(0);
     for (const hit of page.hits) expect(plain(hit.segments)).toMatch(/bons? bergers?/i);
   });
 
@@ -83,6 +84,7 @@ describe("recherche plein texte", () => {
 
   it("exclut un mot avec le signe moins", async () => {
     const page = await search("berger -bon");
+    expect(page.hits.length).toBeGreaterThan(0);
     for (const hit of page.hits) expect(plain(hit.segments)).not.toMatch(/\bbon\b/i);
   });
 
@@ -184,6 +186,32 @@ describe("surlignages, favoris et état de lecture", () => {
     expect((await findChapterAnnotations(scopeOf(actor))).bookmarks).toHaveLength(0);
   });
 
+  it("deux écritures simultanées sur un chapitre ne perdent aucun surlignage", async () => {
+    const { actor } = await createTestUser();
+    await Promise.all([1, 3, 5, 7, 9].map((verse) => setHighlight(actor, { ...JOHN_3_16, ranges: [range(verse)], color: "GREEN" })));
+    const { highlights } = await findChapterAnnotations(scopeOf(actor));
+    expect(highlights.map((mark) => mark.verseStart)).toEqual([1, 3, 5, 7, 9]);
+  });
+
+  it("un geste ne recrée pas les surlignages qu'il ne touche pas", async () => {
+    const { actor } = await createTestUser();
+    await setHighlight(actor, { ...JOHN_3_16, ranges: [range(1)], color: "GREEN" });
+    const [before] = (await findChapterAnnotations(scopeOf(actor))).highlights;
+    await setHighlight(actor, { ...JOHN_3_16, ranges: [range(9)], color: "BLUE" });
+    expect((await findChapterAnnotations(scopeOf(actor))).highlights.map((mark) => mark.id)).toContain(before?.id);
+  });
+
+  it("le favori raisonne par verset : retirer le verset 2 d'une plage 1-3 la découpe", async () => {
+    const { actor } = await createTestUser();
+    await toggleBookmark(actor, { ...JOHN_3_16, ranges: [range(1, 3)] });
+    expect(await toggleBookmark(actor, { ...JOHN_3_16, ranges: [range(2)] })).toEqual({ added: false });
+    const { bookmarks } = await findChapterAnnotations(scopeOf(actor));
+    expect(bookmarks.map(({ verseStart, verseEnd }) => [verseStart, verseEnd])).toEqual([
+      [1, 1],
+      [3, 3],
+    ]);
+  });
+
   it("refuse des coordonnées qui n'existent pas dans le texte", async () => {
     const { actor } = await createTestUser();
     await expect(setHighlight(actor, { ...JOHN_3_16, ranges: [range(99)], color: "PINK" })).rejects.toMatchObject({ code: "VALIDATION" });
@@ -201,6 +229,14 @@ describe("surlignages, favoris et état de lecture", () => {
     await expect(addNote(unverified, note)).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
     await expect(recordReadingPosition(unverified, JOHN_3_16)).rejects.toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
     await expect(addNote(suspended, note)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("la seule position de lecture ne vaut pas choix de réglages", async () => {
+    const { actor } = await createTestUser();
+    await recordReadingPosition(actor, JOHN_3_16);
+    expect((await findReadingState(actor.userId))?.prefsSetAt).toBeNull();
+    await updateReaderPrefs(actor, { fontSize: 24, lineHeight: 1.9, theme: "SEPIA", font: "SANS", showVerseNumbers: false });
+    expect((await findReadingState(actor.userId))?.prefsSetAt).toBeInstanceOf(Date);
   });
 
   it("enregistre position et réglages dans le même état", async () => {
@@ -291,7 +327,8 @@ describe("notes bibliques : strictement privées", () => {
     const other = await createTestUser();
     const { id } = await noteOf(author.actor);
     await addNote(other.actor, { ...JOHN_3_16, range: range(17), body: "autre" });
-    expect((await listNotes(other.user.id, id, 20)).every((note) => note.body !== SECRET)).toBe(true);
+    expect((await listNotes(other.user.id, undefined, 20)).map((note) => note.body)).toEqual(["autre"]);
+    expect((await listNotes(other.user.id, id, 20)).map((note) => note.body)).not.toContain(SECRET);
   });
 });
 
@@ -331,6 +368,13 @@ describe("verset du jour", () => {
     expect(await db.dailyVerse.count()).toBe(2);
   });
 
+  it("reprogrammer un même jour avec le même verset n'est pas un doublon, et un doublon futur est détecté", async () => {
+    const { actor } = await createTestUser({ roles: ["CONTENT_EDITOR"] });
+    await schedule(actor, { date: inDays(5), reference: "Jean 3:16" });
+    await expect(schedule(actor, { date: inDays(5), reference: "Jean 3:16", reflection: "Corrigé." })).resolves.toBeDefined();
+    await expect(schedule(actor, { date: inDays(1), reference: "Jean 3:16" })).rejects.toMatchObject({ code: "CONFLICT", fieldErrors: { reference: [inDays(5)] } });
+  });
+
   it("une plage qui chevauche compte comme doublon, un autre verset non", async () => {
     const { actor } = await createTestUser({ roles: ["CONTENT_EDITOR"] });
     await schedule(actor, { date: inDays(1), reference: "Jean 3:16" });
@@ -361,6 +405,13 @@ describe("verset du jour", () => {
     await runAdminAction(deleteDailyVerseOptions(), adminSession(actor), { date: inDays(1) }, NO_REQUEST);
     expect(await db.dailyVerse.count()).toBe(0);
     expect(await db.auditLog.count({ where: { action: "daily_verse.deleted" } })).toBe(1);
+  });
+
+  it("un jour passé ne se supprime pas", async () => {
+    const { actor } = await createTestUser({ roles: ["CONTENT_EDITOR"] });
+    await db.dailyVerse.create({ data: { date: new Date(`${inDays(-2)}T00:00:00Z`), translationId: translation.id, bookId: "JHN", chapter: 3, verseStart: 16, verseEnd: 16 } });
+    await expect(runAdminAction(deleteDailyVerseOptions(), adminSession(actor), { date: inDays(-2) }, NO_REQUEST)).rejects.toMatchObject({ code: "VALIDATION" });
+    expect(await db.dailyVerse.count()).toBe(1);
   });
 
   it("la sélection automatique n'écrase jamais une programmation", async () => {
