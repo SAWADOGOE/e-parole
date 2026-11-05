@@ -51,3 +51,10 @@ tests d'isolation inter-communautés (2) · pilote : CGU, confidentialité, onbo
 
 ## Phases 5 à 8
 Voir [08-ROADMAP](08-ROADMAP.md). Détail à produire au début de chaque phase.
+
+## Reporté (décision du propriétaire, 2026-11-05)
+Tâches volontairement sorties du périmètre actuel pour ne pas alourdir le projet. À replanifier avant le lancement public (Phase 8).
+
+| ID | Tâche | Contexte |
+|---|---|---|
+| R-1 | Tests manuels aux lecteurs d'écran : TalkBack (Android, prioritaire pour le public cible), NVDA, VoiceOver | Les tests automatiques (axe) passent ; seule l'écoute humaine confirme une lecture agréable. Idéalement par une personne qui utilise TalkBack au quotidien. Protocole : lecture continue d'un chapitre, sélection d'un verset par son numéro, barre d'actions. |

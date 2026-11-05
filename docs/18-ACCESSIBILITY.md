@@ -24,7 +24,7 @@ Cible : **WCAG 2.2 niveau AA** sur les trois espaces.
 - La sélection de versets ne transforme jamais le chapitre : chaque verset reste un paragraphe, que les lecteurs d'écran lisent d'un trait.
   Après hydratation, seul le numéro de verset devient un bouton bascule (`role="button"`, `aria-pressed`), avec un point d'entrée unique au clavier
   (flèches entre les versets, Espace ou Entrée pour sélectionner). Le motif `listbox` a été écarté sur décision du propriétaire (revue E6, 2026-11-05) :
-  il faisait lire le chapitre comme une liste de choix. Test NVDA et TalkBack recommandé avant le lancement public.
+  il faisait lire le chapitre comme une liste de choix. Tests NVDA et TalkBack reportés (backlog R-1).
 - Les surlignages ne sont pas signalés uniquement par la couleur : un indicateur (icône ou motif) est disponible et annoncé.
 
 ## Langue
