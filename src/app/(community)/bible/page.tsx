@@ -1,5 +1,5 @@
 import { BookOpen } from "lucide-react";
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/shared/empty-state";

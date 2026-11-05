@@ -15,5 +15,6 @@ export {
   type ReadingState,
 } from "./server/repository";
 export { searchBible } from "./server/search";
+export { assertCanonicalChapter, resolveChapter } from "./server/resolve-chapter";
 export { isoDay, utcDay } from "./server/daily-verse";
 export type * from "./types";

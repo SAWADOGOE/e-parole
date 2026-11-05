@@ -4,21 +4,22 @@ import type { Route } from "next";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { notify } from "@/lib/notify";
 import { errorKey } from "@/lib/error-key";
 import { READER_STORAGE_KEY } from "../constants";
 import { formatCopy, formatFocus, formatSelectionReference, toRanges } from "../lib/format";
 import { applyReaderPrefs, clearReaderPrefs, DEFAULT_READER_PREFS, parseStoredPrefs } from "../lib/reader-prefs";
 import { addNoteAction, recordReadingAction, saveReaderPrefsAction, setHighlightAction, toggleBookmarkAction } from "../server/actions";
 import type { HighlightColorName, ReaderPrefs } from "../types";
-import { ReaderActionBar } from "./reader-action-bar";
+import { ChapterSkeleton } from "./chapter-skeleton";
 import { ReaderHeader } from "./reader-header";
 import { useVerseSelection } from "./use-verse-selection";
 
 const SelectorSheet = dynamic(() => import("./selector-sheet"), { ssr: false });
 const SettingsSheet = dynamic(() => import("./settings-sheet"), { ssr: false });
 const NoteSheet = dynamic(() => import("./note-sheet"), { ssr: false });
+const ReaderActionBar = dynamic(() => import("./reader-action-bar"), { ssr: false });
 
 interface ReaderChromeProps {
   bookId: string;
@@ -62,6 +63,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
   const [focusMode, setFocusMode] = useState(false);
   const [prefs, setPrefs] = useState<ReaderPrefs>(() => serverPrefs ?? DEFAULT_READER_PREFS);
   const [busy, setBusy] = useState(false);
+  const [navigating, startNavigation] = useTransition();
 
   useEffect(() => {
     const initial = serverPrefs ?? storedPrefs();
@@ -91,9 +93,9 @@ export function ReaderChrome(props: ReaderChromeProps) {
       } else if (event.key === "Escape") {
         clear();
       } else if (event.key === "ArrowLeft" && previousHref) {
-        router.push(previousHref);
+        startNavigation(() => router.push(previousHref));
       } else if (event.key === "ArrowRight" && nextHref) {
-        router.push(nextHref);
+        startNavigation(() => router.push(nextHref));
       } else if (key === "g") {
         event.preventDefault();
         setPanel("selector");
@@ -119,7 +121,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
 
   function requireAccount(): boolean {
     if (isSignedIn) return true;
-    toast(t("actions.signInRequired"));
+    notify(t("actions.signInRequired"));
     router.push(`/connexion?retour=${encodeURIComponent(pathname)}` as Route);
     return false;
   }
@@ -128,10 +130,10 @@ export function ReaderChrome(props: ReaderChromeProps) {
     setBusy(true);
     const result = await call().finally(() => setBusy(false));
     if (!result.ok) {
-      toast(tErrors(errorKey(result.error.code)));
+      notify(tErrors(errorKey(result.error.code)));
       return;
     }
-    toast(done(result.data));
+    notify(done(result.data));
     clear();
     router.refresh();
   }
@@ -139,9 +141,9 @@ export function ReaderChrome(props: ReaderChromeProps) {
   async function writeClipboard(text: string, success: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
-      toast(success);
+      notify(success);
     } catch {
-      toast(t("actions.copyFailed"));
+      notify(t("actions.copyFailed"));
     }
   }
 
@@ -203,6 +205,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
         onOpenSelector={() => setPanel("selector")}
         onOpenSettings={() => setPanel("settings")}
       />
+      {navigating ? <ChapterSkeleton /> : null}
       <p role="status" aria-live="polite" className="sr-only">
         {selected.size > 0 ? t("actions.selected", { count: selected.size }) : ""}
       </p>

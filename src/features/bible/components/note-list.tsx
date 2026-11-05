@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,7 @@ export function NoteList({ notes }: { notes: readonly NoteListItem[] }) {
 
   async function remove(note: NoteListItem): Promise<void> {
     const result = await deleteNoteAction({ id: note.id });
-    toast(result.ok ? t("deleted") : tErrors(errorKey(result.error.code)));
+    notify(result.ok ? t("deleted") : tErrors(errorKey(result.error.code)));
     if (result.ok) router.refresh();
   }
 

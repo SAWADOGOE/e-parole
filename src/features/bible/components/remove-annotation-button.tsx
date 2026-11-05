@@ -3,7 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { errorKey } from "@/lib/error-key";
 import { removeBookmarkAction, removeHighlightAction } from "../server/actions";
 
@@ -14,7 +14,7 @@ export function RemoveAnnotationButton({ id, kind, reference }: { id: string; ki
 
   async function remove(): Promise<void> {
     const result = await (kind === "highlight" ? removeHighlightAction({ id }) : removeBookmarkAction({ id }));
-    toast(result.ok ? t("removed") : tErrors(errorKey(result.error.code)));
+    notify(result.ok ? t("removed") : tErrors(errorKey(result.error.code)));
     if (result.ok) router.refresh();
   }
 

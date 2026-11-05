@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useId, useState, type SubmitEvent } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { FormAlert } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -36,7 +36,7 @@ export default function NoteSheet({ reference, initialBody = "", onClose, onSubm
       setError(tErrors(errorKey(result.error.code)));
       return;
     }
-    toast(t("saved"));
+    notify(t("saved"));
     onClose();
     onSaved();
   }

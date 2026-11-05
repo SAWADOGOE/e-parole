@@ -3,8 +3,9 @@ import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { BottomNav, SideNav } from "@/components/layout/member-nav";
 
-// Seule instance préchargée de Literata : le reste de l'application la charge à la demande (docs/29).
-const literata = Literata({ subsets: ["latin"], variable: "--font-literata", display: "swap", preload: true });
+// Seule police préchargée de l'application (docs/29). Graisse unique : le texte biblique n'emploie que le 400,
+// et un fichier statique pèse bien moins que la variable complète sur un réseau lent.
+const literata = Literata({ subsets: ["latin"], weight: "400", variable: "--font-literata", display: "swap", preload: true });
 
 /** Layout du lecteur : aucune donnée de session, pas de colonne latérale ; le texte occupe l'espace. */
 export default async function ReaderLayout({ children }: { children: ReactNode }) {

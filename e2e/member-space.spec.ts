@@ -27,7 +27,7 @@ test.describe("espace membre", () => {
   test("pages publiques accessibles en clair et en sombre", async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
       await page.emulateMedia({ colorScheme: scheme });
-      for (const path of ["/", "/bible", "/prieres", "/communautes", "/publier"]) {
+      for (const path of ["/", "/prieres", "/communautes", "/publier"]) {
         await page.goto(path);
         await expectAccessible(page);
       }

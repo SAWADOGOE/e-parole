@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/cn";
 import { isActive, MEMBER_NAV } from "./member-nav-items";
 
 /** Barre inférieure mobile (< 768 px), 5 onglets, zone de sécurité iOS. */
@@ -23,10 +22,7 @@ export function BottomNav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 text-xs font-medium",
-                  active ? "text-brand" : "text-muted",
-                )}
+                className={`flex h-full flex-col items-center justify-center gap-1 text-xs font-medium ${active ? "text-brand" : "text-muted"}`}
               >
                 <Icon aria-hidden="true" className="size-6" strokeWidth={active ? 2.25 : 1.75} />
                 {t(labelKey)}
@@ -53,10 +49,7 @@ export function SideNav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-12 items-center justify-center gap-3 rounded-md px-3 text-base transition-colors lg:justify-start",
-                  active ? "bg-accent-subtle font-semibold text-brand" : "text-fg hover:bg-bg-subtle",
-                )}
+                className={`flex h-12 items-center justify-center gap-3 rounded-md px-3 text-base transition-colors lg:justify-start ${active ? "bg-accent-subtle font-semibold text-brand" : "text-fg hover:bg-bg-subtle"}`}
               >
                 <Icon aria-hidden="true" className="size-6 shrink-0" strokeWidth={active ? 2.25 : 1.75} />
                 <span className="sr-only lg:not-sr-only">{t(labelKey)}</span>

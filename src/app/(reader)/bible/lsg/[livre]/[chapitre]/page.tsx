@@ -1,20 +1,19 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BookOpen } from "lucide-react";
-import { findChapterAnnotations, findReadingState, getCatalog, getChapterVerses, getTranslation } from "@/features/bible";
+import { findChapterAnnotations, findReadingState, getChapterVerses, resolveChapter } from "@/features/bible";
+import { ChapterLinkPending } from "@/features/bible/components/chapter-skeleton";
 import { ChapterText } from "@/features/bible/components/chapter-text";
-import { NoteList } from "@/features/bible/components/note-list";
+import { LazyNoteList } from "@/features/bible/components/lazy-note-list";
 import { ReaderChrome } from "@/features/bible/components/reader-chrome";
 import { chapterPath, formatReference, parseFocus } from "@/features/bible/lib/format";
 import { chapterNeighbours } from "@/features/bible/lib/navigation";
-import { foldText } from "@/features/bible/lib/parse-reference";
 import { READER_BOOT_SCRIPT } from "@/features/bible/lib/reader-prefs";
-import type { CatalogBook, ChapterLink, ReaderPrefs, TranslationInfo } from "@/features/bible/types";
+import type { ChapterLink, ReaderPrefs } from "@/features/bible/types";
 import { getCurrentSession } from "@/server/auth/session";
 
 interface PageProps {
@@ -24,31 +23,9 @@ interface PageProps {
 
 const TRANSLATION_SHORT_NAME = "LSG";
 
-function findBook(books: readonly CatalogBook[], segment: string): CatalogBook | undefined {
-  const key = foldText(decodeURIComponent(segment)).replace(/[\s-]+/g, "");
-  return books.find((book) => book.slug === segment) ?? books.find((book) => book.id.toLowerCase() === key || book.abbreviations.includes(key));
-}
-
-interface Resolved {
-  translation: TranslationInfo;
-  books: CatalogBook[];
-  book: CatalogBook;
-  chapter: number;
-}
-
-async function resolve(livre: string, chapitre: string): Promise<Resolved | null> {
-  const translation = await getTranslation();
-  if (!translation) return null;
-  const books = await getCatalog(translation);
-  const book = findBook(books, livre);
-  const chapter = Number(chapitre);
-  if (!book || !/^\d{1,3}$/.test(chapitre) || book.verseCounts[chapter] === undefined) notFound();
-  return { translation, books, book, chapter };
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { livre, chapitre } = await params;
-  const resolved = await resolve(livre, chapitre);
+  const resolved = await resolveChapter(livre, chapitre);
   if (!resolved) return {};
   return { title: `${formatReference(resolved.book.name, resolved.chapter)} · ${resolved.translation.name}` };
 }
@@ -65,6 +42,7 @@ function ChapterNavLink({ link, label, direction }: { link: ChapterLink; label: 
       {direction === "previous" ? <ChevronLeft aria-hidden="true" className="size-5" /> : null}
       {reference}
       {direction === "next" ? <ChevronRight aria-hidden="true" className="size-5" /> : null}
+      <ChapterLinkPending />
     </Link>
   );
 }
@@ -72,7 +50,7 @@ function ChapterNavLink({ link, label, direction }: { link: ChapterLink; label: 
 export default async function ChapterPage({ params, searchParams }: PageProps) {
   const { livre, chapitre } = await params;
   const t = await getTranslations("bible");
-  const resolved = await resolve(livre, chapitre);
+  const resolved = await resolveChapter(livre, chapitre);
 
   if (!resolved) {
     return (
@@ -83,9 +61,6 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
   }
 
   const { translation, books, book, chapter } = resolved;
-  // Une seule forme d'URL par chapitre : variantes (JHN, jn, 03) redirigées vers le slug français.
-  if (livre !== book.slug || chapitre !== String(chapter)) permanentRedirect(chapterPath(book.slug, chapter));
-
   const session = await getCurrentSession();
   const userId = session?.actor.userId;
   const [verses, annotations, state, query, nonce] = await Promise.all([
@@ -141,7 +116,7 @@ export default async function ChapterPage({ params, searchParams }: PageProps) {
             <h2 id="mes-notes" className="text-xl font-semibold text-fg">
               {t("notes.title")}
             </h2>
-            <NoteList
+            <LazyNoteList
               notes={annotations.notes.map(({ id, body, verseStart, verseEnd }) => ({
                 id,
                 body,

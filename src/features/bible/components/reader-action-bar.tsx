@@ -3,7 +3,6 @@
 import { Bookmark, Copy, Highlighter, NotebookPen, Share2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { cn } from "@/lib/cn";
 import { HIGHLIGHT_COLORS } from "../constants";
 import type { HighlightColorName } from "../types";
 
@@ -21,7 +20,7 @@ interface ReaderActionBarProps {
 const ACTION = "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-xs font-medium text-fg hover:bg-bg-subtle disabled:opacity-50";
 
 /** Barre d'actions de la sélection : au-dessus de la navigation sur mobile, libellés toujours visibles. */
-export function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight, onNote, onBookmark, onShare }: ReaderActionBarProps) {
+export default function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight, onNote, onBookmark, onShare }: ReaderActionBarProps) {
   const t = useTranslations("bible");
   const [colorsOpen, setColorsOpen] = useState(false);
   return (
@@ -44,7 +43,7 @@ export function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight,
               type="button"
               disabled={busy}
               onClick={() => onHighlight(color)}
-              className={cn("inline-flex h-11 min-w-11 items-center justify-center rounded-md border border-border-strong px-2 text-xs font-medium text-fg", `highlight-swatch-${color}`)}
+              className={`inline-flex h-11 min-w-11 items-center justify-center rounded-md border border-border-strong px-2 text-xs font-medium text-fg highlight-swatch-${color}`}
             >
               {t(`colors.${color}`)}
             </button>

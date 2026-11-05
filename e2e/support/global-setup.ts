@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
 import pg from "pg";
+import { ensureSampleBible } from "../../scripts/bible/ensure-sample";
+import { createImportClient } from "../../scripts/bible/repository";
 import { e2eEnv, MAILPIT_URL } from "./env";
 
 const TABLES = [
@@ -29,6 +31,13 @@ export default async function globalSetup(): Promise<void> {
     stdio: "inherit",
     shell: process.platform === "win32",
   });
+
+  const bibleClient = createImportClient(ownerUrl);
+  try {
+    await ensureSampleBible(bibleClient);
+  } finally {
+    await bibleClient.$disconnect();
+  }
 
   await fetch(`${MAILPIT_URL}/api/v1/messages`, { method: "DELETE" });
 }

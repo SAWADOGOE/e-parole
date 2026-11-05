@@ -258,7 +258,8 @@ html[data-reader-selecting] {
 }
 
 .reader-text {
-  font-family: var(--font-serif);
+  /* --font-literata et non --font-serif : ce dernier est résolu à la racine, donc sans l'instance préchargée du lecteur. */
+  font-family: var(--font-literata), ui-serif, Georgia, serif;
   font-size: var(--reader-size, 19px);
   line-height: var(--reader-leading, 1.7);
 }

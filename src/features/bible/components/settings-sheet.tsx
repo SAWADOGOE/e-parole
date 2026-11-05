@@ -19,7 +19,7 @@ function Choice<T extends string | number | boolean>({ label, options, value, on
           <label
             key={String(option.value)}
             className={cn(
-              "inline-flex h-11 min-w-11 flex-1 cursor-pointer items-center justify-center rounded-md border px-3 text-sm text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring",
+              "relative inline-flex h-11 min-w-11 flex-1 cursor-pointer items-center justify-center rounded-md border px-3 text-sm text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring",
               option.value === value && "border-accent bg-accent-subtle font-semibold",
             )}
           >

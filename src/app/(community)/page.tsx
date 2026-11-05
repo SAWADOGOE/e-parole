@@ -4,7 +4,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
-import type { Route } from "next";
 import { findReadingState, getCatalog, getTranslation } from "@/features/bible";
 import { DailyVerseCard } from "@/features/bible/components/daily-verse-card";
 import { chapterPath, formatReference } from "@/features/bible/lib/format";
