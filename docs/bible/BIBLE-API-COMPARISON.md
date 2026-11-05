@@ -47,7 +47,9 @@ Les fichiers `fraLSG` (Louis Segond 1910) et `frajnd` (Darby) d'eBible.org, en U
 d'import**. eBible.org publie la licence de chaque traduction ; ⚠️ la page `https://ebible.org/Scriptures/details.php?id=fraLSG`
 doit être relue et archivée (capture datée) avant l'import en Phase 2.
 
-## À vérifier en Phase 2
-- Lecture intégrale des conditions d'utilisation de Midvash et HelloAO (pages dédiées non consultées).
-- Versification LSG d'eBible.org comparée à HelloAO et Midvash (Psaumes, Malachie 4, Romains 16:25-27…).
+## Vérifié en Phase 2
+- Versification et texte comparés à HelloAO et Midvash : voir [BIBLE-DATABASE-SCHEMA.md](BIBLE-DATABASE-SCHEMA.md#contrôle-croisé).
+
+## Toujours à vérifier
+- Lecture intégrale des conditions d'utilisation de Midvash et HelloAO (pages dédiées non consultées ; aucune dépendance d'exécution, usage limité au contrôle).
 - Catalogue français d'API.Bible et conditions de cache (si une traduction moderne est envisagée).

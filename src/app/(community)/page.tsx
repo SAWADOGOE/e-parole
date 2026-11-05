@@ -4,6 +4,9 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { findReadingState, getCatalog, getTranslation } from "@/features/bible";
+import { DailyVerseCard } from "@/features/bible/components/daily-verse-card";
+import { chapterPath, formatReference } from "@/features/bible/lib/format";
 import { getCurrentSession } from "@/server/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage() {
   const t = await getTranslations("home");
   const tNav = await getTranslations("nav");
+  const tBible = await getTranslations("bible");
   const session = await getCurrentSession();
 
   if (!session) {
@@ -30,20 +34,29 @@ export default async function HomePage() {
             <Link href="/connexion">{t("visitorSecondary")}</Link>
           </Button>
         </div>
+        <DailyVerseCard headingId="verset-du-jour-visiteur" size="lg" className="mt-12 lg:hidden" />
       </section>
     );
   }
+
+  const state = await findReadingState(session.actor.userId);
+  const translation = state?.bookId ? await getTranslation() : null;
+  const books = translation ? await getCatalog(translation) : [];
+  const resumeBook = books.find((book) => book.id === state?.bookId);
+  const resumeChapter = state?.chapter ?? null;
 
   return (
     <>
       <p className="font-serif text-xl text-fg">{t("greeting", { name: session.displayName })}</p>
 
-      <section aria-labelledby="verset-du-jour-mobile" className="mt-6 border-l-[3px] border-gold pl-4 lg:hidden">
-        <h2 id="verset-du-jour-mobile" className="text-xs font-semibold tracking-[0.18em] text-gold-fg uppercase">
-          {t("verseOfDayLabel")}
-        </h2>
-        <p className="mt-2 text-sm text-muted">{t("verseOfDayEmpty")}</p>
-      </section>
+      <DailyVerseCard headingId="verset-du-jour-mobile" size="lg" className="mt-6 lg:hidden" />
+      {resumeBook && resumeChapter ? (
+        <p className="mt-6">
+          <Link href={chapterPath(resumeBook.slug, resumeChapter)} className="inline-flex min-h-11 items-center font-medium text-accent underline-offset-4 hover:underline">
+            {tBible("resume", { reference: formatReference(resumeBook.name, resumeChapter) })}
+          </Link>
+        </p>
+      ) : null}
 
       <h1 className="sr-only">{tNav("home")}</h1>
       <h2 className="mt-10 text-sm font-semibold text-muted">{t("feedTitle")}</h2>

@@ -209,3 +209,188 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * 6. Lecteur biblique — docs/bible/BIBLE-READER-UX.md
+ * Réglages posés sur <html> avant la première peinture (READER_BOOT_SCRIPT).
+ * Thème sépia : contrastes calculés et documentés dans docs/15-DESIGN-SYSTEM.md.
+ * ------------------------------------------------------------------------- */
+:root {
+  --highlight-yellow: #fbeeb4;
+  --highlight-green: #cdeccb;
+  --highlight-blue: #cfe4f7;
+  --highlight-pink: #f9d6e0;
+  --highlight-purple: #e3d7f5;
+}
+
+.dark {
+  --highlight-yellow: #5a4a12;
+  --highlight-green: #1f4d33;
+  --highlight-blue: #1e4266;
+  --highlight-pink: #63283f;
+  --highlight-purple: #47316e;
+}
+
+html[data-reader-theme="sepia"] {
+  color-scheme: light;
+  --bg: #f3ead8;
+  --bg-elevated: #f8f1e3;
+  --bg-subtle: #e9dec7;
+  --fg: #3b2f22;
+  --fg-muted: #65553f;
+  --border: #d9cbb0;
+  --border-strong: #7d6c55;
+  --brand: #103b39;
+  --accent: #1f5f54;
+  --accent-subtle: #dfe3cd;
+  --gold-fg: #6b4f1c;
+  --selection: #dfe3cd;
+  --focus-ring: #1f5f54;
+  --highlight-yellow: #f6e3a1;
+  --highlight-green: #cfe3b8;
+  --highlight-blue: #c9dce6;
+  --highlight-pink: #f1cfc9;
+  --highlight-purple: #dccfe6;
+}
+
+/* Un élément focalisé ne passe jamais sous la navigation ni sous la barre d'actions (WCAG 2.4.11). */
+@media (max-width: 767px) {
+  html:has([data-reader-header]) {
+    scroll-padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  }
+}
+
+html[data-reader-selecting] {
+  scroll-padding-bottom: calc(var(--reader-bar-height, 160px) + var(--bottom-nav-height) + 24px);
+}
+
+html[data-reader-selecting] #contenu {
+  padding-bottom: calc(var(--reader-bar-height, 160px) + var(--bottom-nav-height) + 48px);
+}
+
+.reader-text {
+  /* --font-literata et non --font-serif : ce dernier est résolu à la racine, donc sans l'instance préchargée du lecteur. */
+  font-family: var(--font-literata), ui-serif, Georgia, serif;
+  font-size: var(--reader-size, 19px);
+  line-height: var(--reader-leading, 1.7);
+}
+
+html[data-reader-font="sans"] .reader-text {
+  font-family: var(--font-sans);
+}
+
+.verse {
+  margin-inline: -0.75rem;
+  border-inline-start: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.75rem 0.125rem calc(0.75rem - 3px);
+  scroll-margin-top: calc(var(--header-height) + 16px);
+  overflow-wrap: anywhere;
+  transition: background-color var(--motion-fast) ease-out;
+}
+
+#verses[role="listbox"] .verse {
+  cursor: pointer;
+}
+
+.verse:target,
+.verse[data-focus] {
+  border-inline-start-color: var(--accent);
+}
+
+.verse[aria-selected="true"] {
+  border-inline-start-color: var(--accent);
+  background-color: var(--selection);
+}
+
+.verse-number {
+  margin-inline-end: 0.25em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 0;
+  color: var(--gold-fg);
+  user-select: none;
+}
+
+html[data-reader-numbers="off"] .verse-number > [aria-hidden="true"] {
+  display: none;
+}
+
+/* Jamais la couleur seule : chaque teinte a son propre trait, repris dans la légende annoncée. */
+.verse[data-highlight] .verse-text,
+[class*="highlight-swatch-"] {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.verse[data-highlight] .verse-text {
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.verse[data-highlight="YELLOW"] .verse-text {
+  background-color: var(--highlight-yellow);
+  text-decoration-style: solid;
+}
+.verse[data-highlight="GREEN"] .verse-text {
+  background-color: var(--highlight-green);
+  text-decoration-style: dashed;
+}
+.verse[data-highlight="BLUE"] .verse-text {
+  background-color: var(--highlight-blue);
+  text-decoration-style: dotted;
+}
+.verse[data-highlight="PINK"] .verse-text {
+  background-color: var(--highlight-pink);
+  text-decoration-style: double;
+}
+.verse[data-highlight="PURPLE"] .verse-text {
+  background-color: var(--highlight-purple);
+  text-decoration-style: wavy;
+}
+
+.highlight-swatch-YELLOW {
+  background-color: var(--highlight-yellow);
+  text-decoration-style: solid;
+}
+.highlight-swatch-GREEN {
+  background-color: var(--highlight-green);
+  text-decoration-style: dashed;
+}
+.highlight-swatch-BLUE {
+  background-color: var(--highlight-blue);
+  text-decoration-style: dotted;
+}
+.highlight-swatch-PINK {
+  background-color: var(--highlight-pink);
+  text-decoration-style: double;
+}
+.highlight-swatch-PURPLE {
+  background-color: var(--highlight-purple);
+  text-decoration-style: wavy;
+}
+
+[data-reader-header] {
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+[data-reader-header][data-hidden="true"]:not(:focus-within) {
+  transform: translateY(-100%);
+}
+
+/* L'attribution reste visible en mode focus : elle accompagne toujours le texte. */
+html[data-reader-focus] [data-reader-nav] {
+  display: none;
+}
+
+/* Contraste forcé : les fonds disparaissent, la sélection doit rester visible autrement. */
+@media (forced-colors: active) {
+  .verse {
+    border-inline-start-color: Canvas;
+  }
+  .verse[aria-selected="true"] {
+    border-inline-start-color: Highlight;
+    outline: 2px solid Highlight;
+  }
+}

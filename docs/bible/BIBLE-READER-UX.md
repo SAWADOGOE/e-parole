@@ -5,7 +5,7 @@ Une lecture **aussi confortable qu'un livre** : texte serif, marges généreuses
 qui n'apparaissent que lorsqu'on les demande.
 
 ## URL
-`/bible` → redirige vers le dernier chapitre lu (ou Jean 1 pour un nouveau lecteur).
+`/bible` → redirige vers le dernier chapitre lu d'un compte (ou Jean 1 pour un nouveau lecteur ou un visiteur).
 `/bible/lsg/jean/3` (slug français du livre) · `/bible/lsg/jean/3#v16` · `/bible/recherche?q=grâce`.
 Les slugs sont résolus via `BibleBookName` ; `/bible/lsg/JHN/3` redirige vers la forme canonique.
 
@@ -39,10 +39,13 @@ Les slugs sont résolus via `BibleBookName` ; `/bible/lsg/JHN/3` redirige vers l
 | Sélectionner un verset | Tap | Clic ; flèches ↑↓ pour se déplacer, Espace pour (dé)sélectionner |
 | Étendre la sélection | Tap sur d'autres versets (contigus ou non) | Maj + clic / Maj + flèches |
 | Effacer la sélection | Tap hors texte, bouton ✕ | Échap |
-| Chapitre suivant / précédent | Swipe ou boutons de fin | `→` / `←` (hors champ de saisie) |
+| Chapitre suivant / précédent | Boutons de fin (swipe non livré) | `→` / `←` (hors champ de saisie) |
 | Changer de livre/chapitre | Bottom sheet : grille des livres (AT/NT), puis grille des chapitres | Popover, saisie directe |
 | Aller à une référence | Champ en tête du sheet | `G` ou `Ctrl/⌘ K` |
 | Mode focus | Icône plein écran | `F` |
+
+Les raccourcis à une touche (`G`, `F`) se désactivent dans le panneau « Aa » (WCAG 2.1.4). `Ctrl/⌘ K` et les boutons restent disponibles.
+Le mode focus masque la navigation, jamais l'attribution.
 
 Copier produit : `« Car Dieu a tant aimé le monde… » — Jean 3:16 (Louis Segond 1910)`.
 Partager : feuille avec « Publier », « Envoyer à une communauté », « Copier le lien », et partage natif (`navigator.share`).
@@ -56,17 +59,18 @@ Une image de verset (carte légère générée côté serveur, < 80 Ko) est pré
 | Thème | Système · Clair · Sépia · Sombre | Système |
 | Police | Serif (Literata) · Sans (Inter) | Serif |
 | Numéros de versets | Affichés · Masqués | Affichés |
+| Raccourcis à une touche | Activés · Désactivés | Activés (préférence locale) |
 
 Persistance : `BibleReadingState` si connecté ; `localStorage` sinon (avec `try/catch`).
 
 ## États
-- Chargement de chapitre (navigation client) : skeleton de 12 lignes de largeurs variables.
+- Chargement de chapitre (navigation client) : skeleton de 12 lignes de largeurs variables, côté client (pas de `loading.tsx`, voir [ADR-010](../adr/ADR-010-BIBLE-RENDERING-CACHE.md)).
 - Hors ligne : chapitres déjà visités servis par le cache du navigateur (Phase 7) ; sinon message « Ce chapitre n'est pas
   encore disponible hors ligne ».
 - Référence invalide : message correctif (« Jean compte 21 chapitres. Aller à Jean 21 ? »).
 
 ## Desktop
-Lecteur centré 720 px ; colonne contextuelle droite : notes du chapitre, références croisées (futur), méditation liée.
+Lecteur centré ; les notes du chapitre sont sous le texte (colonne contextuelle droite reportée : références croisées et méditations arrivent plus tard).
 Comparaison de traductions (Phase 6) : deux colonnes synchronisées verset par verset.
 
 ## Accessibilité

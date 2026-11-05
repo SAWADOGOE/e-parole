@@ -4,11 +4,12 @@ import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
-import { Toaster } from "@/components/ui/sonner";
+import { LazyToaster } from "@/components/ui/lazy-toaster";
 import { THEME_STORAGE_KEY } from "@/components/shared/theme-constants";
 import "@/styles/globals.css";
 
-const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter", display: "swap" });
+// Pas de préchargement : il tirerait aussi latin-ext sur chaque page, alors que unicode-range ne le charge qu'au besoin.
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter", display: "swap", preload: false });
 const literata = Literata({
   subsets: ["latin", "latin-ext"],
   variable: "--font-literata",
@@ -50,7 +51,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-dvh">
         <NextIntlClientProvider>
           {children}
-          <Toaster />
+          <LazyToaster />
         </NextIntlClientProvider>
       </body>
     </html>

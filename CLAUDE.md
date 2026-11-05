@@ -4,7 +4,7 @@ Plateforme sociale **protestante évangélique** (pas catholique) : Bible intég
 prières + enseignements + administration. Signature : « Grandir dans la foi, ensemble. » Français par défaut,
 i18n prévue. Cible : Afrique francophone, mobile, réseau lent.
 
-**État : Phase 1 (fondations) livrée, en attente de validation. Ne pas commencer la Phase 2 (Bible) sans accord explicite.**
+**État : Phase 2 (Bible) livrée sur `phase-2/bible`, en attente de validation. Ne pas commencer la Phase 3 (réseau social) sans accord explicite.**
 
 ## Identité (non négociable)
 - Centralité du Christ, autorité des Écritures, salut par grâce par la foi. Accueil des pentecôtistes,
@@ -15,7 +15,7 @@ i18n prévue. Cible : Afrique francophone, mobile, réseau lent.
 ## Architecture
 - Monolithe modulaire Next.js 16 App Router. Pas de microservices.
 - `src/app` contient des routes minces. La logique métier vit dans `src/features/<module>/server/` (services, policies, repositories).
-- Route groups : `(public)`, `(auth)`, `(community)`, `(manage)` → `/manage`, `(admin)` → `/admin`. Un layout par espace.
+- Route groups : `(public)`, `(auth)`, `(community)`, `(reader)` (lecteur biblique), `(manage)` → `/manage`, `(admin)` → `/admin`. Un layout par espace.
 - Un worker (même code, entrée `src/worker.ts`) exécute les jobs pg-boss.
 - Références : `docs/10-SYSTEM-ARCHITECTURE.md`, `docs/adr/`.
 
@@ -44,8 +44,10 @@ Versions publiées depuis au moins 7 jours (`minimumReleaseAge`). Jamais d'alpha
 
 ## Bible
 - Le texte biblique est une **donnée de référence immuable** : import contrôlé avec checksum, aucune écriture applicative.
+  Coquille avérée : erratum tracé dans `scripts/bible/lib/errata.ts`, sur décision du propriétaire, par un nouvel import.
 - Toujours conserver référence + traduction + attribution. Une IA ne modifie jamais un verset.
 - Séparer texte, notes, méditations et commentaires. Vérifier la licence avant toute traduction (`docs/bible/BIBLE-LICENSING.md`).
+- Lecteur : pas de `loading.tsx` sur le chapitre, il casserait la lecture sans JavaScript et les statuts 404/308 (ADR-010).
 
 ## UI/UX
 - Mobile-first pour `/`, desktop-first pour `/admin`. Tokens dans `docs/15-DESIGN-SYSTEM.md`.
@@ -63,7 +65,8 @@ Tout nouveau service suit cette règle (`docs/22-DOCKER-SETUP.md`).
 
 ## Commandes
 `docker compose up -d --wait db storage mail` · `pnpm dev` · `pnpm worker` · `pnpm lint` · `pnpm typecheck` · `pnpm test` ·
-`pnpm test:integration` · `pnpm build && pnpm test:e2e` · `pnpm db:migrate` / `db:deploy` / `db:seed`.
+`pnpm test:integration` · `pnpm build && pnpm test:e2e` · `pnpm db:migrate` / `db:deploy` / `db:seed` ·
+`pnpm bible:import` / `bible:activate` / `bible:crosscheck`.
 Premier démarrage : `docs/22-DOCKER-SETUP.md`.
 
 ## Où chercher

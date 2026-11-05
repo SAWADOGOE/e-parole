@@ -17,6 +17,8 @@ export const logger = pino({
       "*.email",
       "secret",
       "*.secret",
+      "body",
+      "*.body",
       "headers.cookie",
       "headers.authorization",
     ],

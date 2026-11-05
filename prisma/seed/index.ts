@@ -7,6 +7,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaClient } from "../../generated/prisma/client";
+import { seedBibleCatalog } from "./bible-catalog";
 
 if (process.env["NODE_ENV"] === "production" || process.env["APP_ENV"] === "production") {
   console.error("Seed refusé : environnement de production.");
@@ -87,6 +88,7 @@ async function seedFeatureFlags(): Promise<void> {
 try {
   await seedSuperAdmin();
   await seedFeatureFlags();
+  await seedBibleCatalog(db);
 } finally {
   await db.$disconnect();
 }

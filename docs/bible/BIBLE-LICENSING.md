@@ -12,6 +12,52 @@
 | Néo-Crampon Libre | **CC BY-SA 4.0** | HelloAO `fra_ncl`, Midvash `ncl` | Attribution obligatoire, partage à l'identique ; contient les deutérocanoniques (à exclure) ; traduction d'origine catholique → pertinence à évaluer |
 | Segond 21, NEG 1979, Colombe, Semeur, Parole de Vie, NBS, TOB | **Sous droits** (Société Biblique de Genève, Biblio, Alliance biblique…) | — | **Interdit** sans contrat écrit avec l'éditeur |
 
+### Vérification de la Phase 2 (2026-11-05)
+**Décision : texte des versets de `fraLSG` retenu en `PUBLIC_DOMAIN`. Tout le reste du fichier est exclu.**
+
+| Source consultée | Constat | Preuve archivée (`data/bible-sources/`, hors dépôt) |
+|---|---|---|
+| eBible.org, page `fraLSG` | « This Bible is in the Public Domain. It is not copyrighted. » ; mise à jour 2026-10-30 | `ebible-fraLSG-details-2026-11-05.html` (SHA-256 `224ad709…d051f`), `ebible-fraLSG-copyright-2026-11-05.html` (`b46e85f9…14bc0`) |
+| Métadonnées DBL du fichier | `dateCompleted` 1910, « Bible without Deuterocanon », même mention de domaine public | `fraLSGmetadata.xml` dans l'archive |
+| HelloAO `fra_lsg` | `publicDomain: true`, `commercialUse: allowed`, source eBible.org, 31 170 versets | `helloao-translations-2026-11-05.json` |
+| Midvash `lsg` | « © 1910. Public Domain. » | `midvash-versions-2026-11-05.json` |
+| getBible `ls1910` | « Copyrighted; Permission to distribute granted to CrossWire » | `getbible-translations-2026-11-05.json` |
+
+**Contradiction getBible : expliquée.** Elle porte sur un **autre fichier** : moduleDoc CrossWire OSIS version 4.0 « with Strong's numbers »,
+source Richard Lemay, numéros de Strong affectés en 2026. Sa mention de droits vise cette édition numérique, pas le fichier eBible.
+
+**Le fichier n'est pas un texte de 1910 brut.** Son en-tête indique `31-10-2011, Moon Sun Kim. Updated for DBL by E. Canales, September 2012`,
+et il contient des apports modernes. La licence d'eBible porte sur « cette Bible » sans les distinguer et leur provenance n'est pas établie :
+je ne peux pas garantir qu'ils partagent la licence du texte. Conformément à la règle 3, **ils ne sont pas importés** :
+
+| Élément écarté | Occurrences |
+|---|---|
+| Introductions de livres (`ip`, `io1`, `io2`, `ipi`, `imt*`, `is1`, `ib`, `ie`), en français moderne | 965 paragraphes |
+| Titres de section (`s`) et titres majeurs (`ms`, `mr`) | 1 533 |
+| Renvois (`x`) et paragraphes de références (`r`) | 12 537 |
+| Numéros de Strong (`w@s`) | 705 652 |
+| Tableaux | 13 |
+
+**Le texte est bien celui de 1910 d'après les contrôles disponibles, sans preuve absolue.** Aucune édition imprimée de 1910 n'a été comparée.
+Faisceau d'indices : leçons caractéristiques (Gn 1:1 « les cieux et la terre »), concordance avec une saisie indépendante (voir
+[contrôle croisé](BIBLE-DATABASE-SCHEMA.md#contrôle-croisé)) et aucune substitution de mots suggérant une révision. La typographie semble
+modernisée (« Éternel », « œuvres », « … » là où Midvash écrit « Eternel », « oeuvres », « ... ») : ce n'est pas une révision du texte.
+eBible écrit que la première édition de la Bible Segond date de 1910 : c'est imprécis (Bible complète en 1880, révision de 1910), sans effet sur la décision.
+
+La signature PGP de l'archive est valide et ses SHA-256 concordent, mais la clé provient de la même archive et n'est certifiée par aucun tiers :
+cela prouve l'intégrité du téléchargement, pas l'authenticité de l'éditeur.
+
+**Coquilles de la source, corrigées par errata** (décision du propriétaire, 2026-11-05, règle 4) :
+
+| Verset | Source | Corrigé | Preuve |
+|---|---|---|---|
+| Gn 50:10 | « audelà » | « au-delà » | 54 occurrences de « au-delà » dans la même source (2 de « au delà ») ; HelloAO « au-delà », Midvash « au delà » |
+| Éz 21:32 | « n’aua » | « n’aura » | HelloAO et Midvash (Éz 21:27) |
+
+Le propriétaire signale ces coquilles à eBible. Une fois la source corrigée, l'import échouera volontairement : l'entrée d'errata devra alors être retirée.
+
+⚠️ Ceci n'est pas un avis juridique : une validation par un juriste reste recommandée avant le lancement public.
+
 ### Point d'attention LSG
 getBible indique pour `ls1910` : « Copyrighted; Permission to distribute granted to CrossWire ». Les trois autres sources
 la déclarent domaine public. Position retenue : **domaine public**, en important depuis eBible.org dont la licence sera
@@ -24,8 +70,9 @@ archivée. Attention aux éditions « LSG » révisées ou annotées postérieur
 2. Le statut `isPublished` ne peut passer à `true` qu'après validation d'un `SUPER_ADMIN` (auditée).
 3. Les notes, titres de péricopes et introductions des éditions sources ne sont importés que si leur licence est identique
    au texte (sinon ignorés).
-4. Le texte n'est jamais réécrit, corrigé, modernisé ou complété par une IA ou un humain dans l'application. Les corrections
-   éventuelles passent par une nouvelle version d'import depuis la source.
+4. Le texte n'est jamais réécrit, modernisé ou complété, ni par une IA ni par un humain, et jamais modifié en base. Seule exception : une
+   coquille typographique avérée, sur décision explicite du propriétaire du projet, listée dans `scripts/bible/lib/errata.ts` avec sa preuve et
+   appliquée par un nouvel import (nouvelle version, tracée). Une leçon, une tournure ou un choix de traduction n'est jamais un erratum.
 5. Le canon affiché est de 66 livres ; les livres deutérocanoniques présents dans une source sont exclus.
 6. L'attribution est affichée dans le lecteur (pied de chapitre) et dans chaque `VerseQuote`.
 

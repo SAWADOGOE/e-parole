@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "./empty-state";
 
-type Namespace = "bible" | "prayers" | "communities" | "publish";
+type Namespace = "prayers" | "communities" | "publish";
 
 /** Page d'un module pas encore livré : vrai état vide, jamais de contenu fictif. */
 export async function ComingSoonPage({ namespace, icon }: { namespace: Namespace; icon: LucideIcon }) {

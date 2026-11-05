@@ -8,14 +8,14 @@ Contexte : Android d'entrée de gamme, 3G/4G instable, data coûteuse. La perfor
 | LCP p75 (Slow 4G, Moto G Power) | < 2,5 s | `/`, `/bible/lsg/jean/3`, `/prieres` |
 | INP p75 | < 200 ms | Toutes |
 | CLS | < 0,1 | Toutes |
-| JS initial (gzip) | < 170 Ko `/` ; < 120 Ko lecteur | |
+| JS initial (gzip) | < 170 Ko `/` ; < 120 Ko lecteur ⚠️ | Lecteur mesuré : 171,3 Ko, dont 129,7 Ko de runtime Next + React (ADR-010) : budget à réviser |
 | Poids page lecteur (HTML + CSS + polices) | < 120 Ko hors JS | |
 | Image de fil | ≤ 200 Ko (mobile), ≤ 60 Ko en mode économie | |
 | TTFB lecteur (cache) | < 200 ms | |
 
 ## Leviers
-- **Lecteur biblique en Server Component statique** : HTML pré-rendu par chapitre (1 189 pages par traduction), cache CDN 1 an.
-  Interactivité (sélection) hydratée en îlot client léger.
+- **Lecteur biblique en Server Component dynamique avec cache de données** : la CSP à nonce impose le rendu dynamique ([ADR-010](adr/ADR-010-BIBLE-RENDERING-CACHE.md)).
+  Texte jamais hydraté, interactivité en îlot client léger, panneaux chargés à la demande.
 - Polices : sous-ensembles latin/latin-ext, `font-display: swap`, préchargement de Literata uniquement sur le lecteur.
 - Images : AVIF/WebP via `sharp` dans le worker, tailles fixes, `loading="lazy"`, placeholders de couleur dominante.
 - Mode **économie de données** (auto si `Save-Data`) : pas d'images automatiques, avatars en initiales.

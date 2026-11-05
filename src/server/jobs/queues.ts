@@ -3,6 +3,7 @@ import { EMAIL_TEMPLATES } from "../email/templates";
 
 export const QUEUES = {
   emailSend: "email.send",
+  dailyVerseEnsure: "bible.daily-verse.ensure",
 } as const;
 
 export const emailJobSchema = z.object({

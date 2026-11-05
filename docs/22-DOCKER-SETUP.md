@@ -74,6 +74,10 @@ tests d'intégration et E2E.
 | Tests | `pnpm test` · `pnpm test:integration` · `pnpm build && pnpm test:e2e` |
 | Image web | `docker build --target runner -t eparole-web .` |
 
+## Texte biblique (première installation)
+Le fichier source n'est pas dans le dépôt. Sans import, `/bible` affiche un état vide. Procédure : [docs/bible/BIBLE-MODULE.md](bible/BIBLE-MODULE.md#import-contrôlé).
+Commencer par `pnpm db:seed`, qui crée les 66 livres et la liste de références du verset du jour.
+
 ## Sauvegardes et restauration
 - Dump : `docker compose exec db pg_dump -U eparole_owner -Fc eparole > backups/eparole-$(date +%F).dump`
 - Restauration (base vide) : `docker compose exec -T db pg_restore -U eparole_owner -d eparole --clean --if-exists < backups/<fichier>.dump`

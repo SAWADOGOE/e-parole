@@ -3,14 +3,15 @@
 ## Fonctionnalités et phases
 | Fonction | Phase | Statut |
 |---|---|---|
-| Lecture LSG 1910 (66 livres) | 2 | Prévu |
-| Navigation livre / chapitre / verset, précédent / suivant | 2 | Prévu |
-| Recherche par référence et plein texte | 2 | Prévu |
-| Réglages (taille, interligne, thème, focus), reprise de lecture | 2 | Prévu |
-| Copier, surligner, noter, favori, partager (post, communauté) | 2-3 | Prévu |
+| Lecture LSG 1910 (66 livres) | 2 | Implémenté |
+| Navigation livre / chapitre / verset, précédent / suivant | 2 | Implémenté |
+| Recherche par référence et plein texte | 2 | Implémenté |
+| Réglages (taille, interligne, thème, focus), reprise de lecture | 2 | Implémenté |
+| Copier, surligner, noter, favori, partager par lien | 2 | Implémenté |
+| Partager dans une publication ou une communauté | 3 | Prévu |
 | Associer un passage à une prière | 4 | Prévu |
 | Partager dans une conversation | 7 | Prévu |
-| Verset du jour éditorialisé | 2 | Prévu |
+| Verset du jour éditorialisé | 2 | Implémenté |
 | Darby + comparaison de traductions | 6 | Prévu |
 | Plans de lecture | 6 | Prévu |
 | Méditations liées aux passages | 6 | Prévu |
@@ -65,13 +66,21 @@ Les codes de livres suivent **USFM** (`GEN`, `PSA`, `JHN`, `1CO`…), indépenda
 français sont en base (`bible_book_name`).
 
 ## Import contrôlé
-1. Téléchargement manuel du fichier source (eBible.org `fraLSG` USFX ou USFM) par un `SUPER_ADMIN`, stocké hors dépôt.
-2. `pnpm bible:import --dry-run` : parse, normalise (espaces, apostrophes typographiques **sans modifier les mots**),
+1. Téléchargement manuel du fichier source (eBible.org `fraLSG` USFX) par un `SUPER_ADMIN`, stocké hors dépôt (`data/bible-sources/`, ignoré par Git).
+2. `pnpm bible:import --dry-run` : parse, normalise (encodage NFC et espaces ; apostrophes et ponctuation conservées telles quelles),
    calcule un SHA-256 par verset et global, compare au référentiel attendu (66 livres, 1 189 chapitres, nombre de versets de la source).
 3. Rapport d'écarts (versets manquants, versification). Validation humaine.
 4. Import réel en transaction dans une **nouvelle version** de traduction (`bible_translation_version`) ; activation
    atomique de la version ; l'ancienne reste disponible pour les références existantes.
-5. Audit log `bible.import` avec checksums ; invalidation du cache `bible:lsg`.
+5. Audit `bible.import.staged` puis `bible.version.activated` ; activation par `pnpm bible:activate` ou `/admin/bible/translations`.
+
+Commandes réelles :
+```bash
+pnpm bible:import --source ebible --translation lsg --file <usfx> --retrieved-at AAAA-MM-JJ --license-evidence <archive> --dry-run
+pnpm bible:crosscheck --file <usfx> --helloao <complete.json>   # lecture seule, écarts listés
+pnpm bible:import ...                                           # sans --dry-run : version STAGED
+pnpm bible:activate --translation lsg --publish                 # activation explicite
+```
 
 Aucune édition verset par verset n'est possible dans l'UI admin.
 

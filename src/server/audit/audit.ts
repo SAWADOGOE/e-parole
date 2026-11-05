@@ -22,6 +22,13 @@ export const AUDIT_ACTIONS = [
   "security.admin_access_denied",
   "security.cross_community_attempt",
   "seed.super_admin.created",
+  "bible.import.staged",
+  "bible.version.activated",
+  "bible.translation.published",
+  "bible.translation.unpublished",
+  "daily_verse.scheduled",
+  "daily_verse.updated",
+  "daily_verse.deleted",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

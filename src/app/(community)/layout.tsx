@@ -1,12 +1,11 @@
-import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { DailyVerseCard } from "@/features/bible/components/daily-verse-card";
 import { listManagedCommunities } from "@/features/communities";
 import { getCurrentSession } from "@/server/auth/session";
 
 export default async function CommunityLayout({ children }: { children: ReactNode }) {
   const session = await getCurrentSession();
-  const t = await getTranslations("home");
   const managed = session ? await listManagedCommunities(session.actor.userId) : [];
   const firstManaged = managed[0];
 
@@ -24,14 +23,7 @@ export default async function CommunityLayout({ children }: { children: ReactNod
             }
           : null
       }
-      aside={
-        <section aria-labelledby="verset-du-jour" className="border-l-[3px] border-gold pl-4">
-          <h2 id="verset-du-jour" className="text-xs font-semibold tracking-[0.18em] text-gold-fg uppercase">
-            {t("verseOfDayLabel")}
-          </h2>
-          <p className="mt-3 text-sm text-muted">{t("verseOfDayEmpty")}</p>
-        </section>
-      }
+      aside={<DailyVerseCard headingId="verset-du-jour" />}
     >
       {children}
     </AppShell>

@@ -55,7 +55,21 @@ texte doré sur clair ; neutres teintés de vert pour éviter un gris froid.
 | `--focus-ring` | `green-600` | `gold-400` | Anneau de focus 2 px + offset 2 px |
 | `--highlight-yellow/green/blue/pink/purple` | pastels 30 % | pastels sombres | Surlignages bibliques |
 
-Mode lecture « Sépia » supplémentaire pour le lecteur : fond `#F3EAD8`, texte `#3B2F22`.
+Mode lecture « Sépia » supplémentaire pour le lecteur : fond `#F3EAD8`, texte `#3B2F22`. Tokens dédiés dans `globals.css` (section 6).
+
+Contrastes du lecteur, calculés en Phase 2 (formule WCAG 2.x) :
+
+| Paire | Clair | Sombre | Sépia |
+|---|---|---|---|
+| Texte / fond | 13,29 | 14,40 | 10,88 |
+| Texte secondaire / fond | 5,05 | 7,06 | 6,01 |
+| Lien / fond | 5,46 | 7,47 | 6,22 |
+| Numéro de verset / fond | 5,70 | 8,52 | 6,37 |
+| Numéro de verset / sélection | 4,95 | 5,94 | 5,80 |
+| Texte / sélection | 11,54 | 10,05 | 9,91 |
+| Texte / surlignage (le plus faible des 5) | 10,56 | 7,08 | 8,73 |
+
+Un surlignage n'est jamais signalé par la seule couleur : chaque teinte a un trait distinct (plein, tirets, pointillés, double, ondulé) et un texte annoncé.
 
 Dans Tailwind 4 :
 ```css

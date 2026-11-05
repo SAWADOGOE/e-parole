@@ -43,6 +43,13 @@ au moins 7 jours, imposée par `minimumReleaseAge: 10080` ([ADR-009](adr/ADR-009
 Non installés en Phase 1 (pas encore utilisés) : `@aws-sdk/client-s3`, `sharp`, `@tanstack/react-table`, `recharts`,
 `react-hook-form`. Ils seront ajoutés avec la phase qui en a besoin.
 
+## Ajouté en Phase 2 (2026-11-05)
+| Paquet | Version | Publication | Usage |
+|---|---|---|---|
+| `saxes` (dev) | 6.0.0 | 2021-11-07 | Lecture en flux du fichier USFX par `scripts/bible` ; déjà présent via `jsdom`, aucune dépendance runtime |
+
+Extensions PostgreSQL : `unaccent`, `pg_trgm`. Aucune API biblique externe à l'exécution.
+
 ## Versions stables retenues (relevé Phase 0)
 
 | Catégorie | Paquet | `latest` relevé | Choix | Note |

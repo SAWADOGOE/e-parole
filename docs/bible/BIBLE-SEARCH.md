@@ -18,6 +18,7 @@ sep       := ":" | "." | "," | " v" | espace
 | `Ap 22:21` | REV 22:21 |
 | `Jean 30` | Erreur `CHAPTER_OUT_OF_RANGE` (21 chapitres) |
 | `Jea` | Suggestions : Jean, Jacques (trigrammes) |
+| `Jean`, `Nombres` | Nom de livre seul : recherche plein texte, avec un lien « Ouvrir le livre » (ce sont aussi des mots courants) |
 
 Abréviations françaises usuelles (LSG, Société biblique) stockées dans `BibleBookName.abbreviations`. Le parseur est une
 fonction pure de `features/bible/lib/parse-reference.ts`, testée par table (≥ 200 cas).
@@ -30,8 +31,7 @@ CREATE TEXT SEARCH CONFIGURATION french_unaccent (COPY = french);
 ALTER TEXT SEARCH CONFIGURATION french_unaccent
   ALTER MAPPING FOR hword, hword_part, word WITH unaccent, french_stem;
 ```
-`unaccent` n'étant pas `IMMUTABLE`, la colonne générée passe par une fonction wrapper `IMMUTABLE` déclarée dans la
-migration (pattern classique) ⚠️ à valider en Phase 2.
+La colonne générée passe par la fonction `IMMUTABLE` `bible_fts_vector(text)`, avec une configuration qualifiée : validé en Phase 2 sur PostgreSQL 17.
 
 | Requête utilisateur | Traitement |
 |---|---|
@@ -41,13 +41,13 @@ migration (pattern classique) ⚠️ à valider en Phase 2.
 | Filtres | `testament`, `bookId`, `versionId` en clauses `WHERE` (index composite) |
 
 Classement : `ts_rank_cd`, puis ordre canonique. Surlignage : `ts_headline` (limité au verset).
-Pagination : 20 résultats, curseur `(rank, verseId)`. Compteur de résultats par livre (facettes) calculé sur la requête.
+Pagination : 20 résultats, curseur `(rank, verseId)` ; les identifiants suivant l'ordre canonique de l'import, un rang égal garde l'ordre de lecture. Compteur de résultats par livre (facettes) calculé sur la requête.
 
-Limites : le stemming français peut rapprocher des mots distincts ; l'option « mot exact » désactive le stemming
-(configuration `simple` + `unaccent`).
+Limites : le stemming français peut rapprocher des mots distincts. L'option « mot exact » (configuration `simple` + `unaccent`) n'est pas livrée :
+elle demanderait un second index et n'est pas exigée par US-3.
 
 ## Performance attendue
-~31 000 lignes : requête GIN < 20 ms. Objectif p95 < 150 ms de bout en bout.
+Mesuré le 2026-11-05 sur 31 170 versets : requête GIN 0,26 ms ; page complète p95 97,3 ms sur 200 requêtes (objectif 150 ms).
 
 ## Évolutions
 Recherche multi-traductions (Phase 6), synonymes thématiques (« salut » ↔ « délivrance ») gérés par une table éditoriale,

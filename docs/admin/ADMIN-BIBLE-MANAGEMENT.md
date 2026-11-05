@@ -7,10 +7,9 @@ métadonnées et l'éditorial autour du texte ; elle **ne permet pas d'éditer u
 ## Écrans
 | Écran | Contenu | Permission | Phase |
 |---|---|---|---|
-| `/admin/bible/translations` | Liste : code, nom, licence, source, version active, nombre de versets, checksum, statut de publication | `bible:translation:read` | 2 |
-| Détail traduction | Historique des versions importées, rapport d'import, preuve de licence, attribution affichée | idem | 2 |
+| `/admin/bible/translations` | Code, nom, licence, source, preuve de licence, attribution, statut de publication, historique des versions avec nombre de versets et checksum | `bible:translation:read` | 2 |
 | Publier / dépublier une traduction | Bascule `isPublished` avec ré-auth | `bible:translation:publish` | 2 |
-| Activer une version | Bascule atomique de version (après import staged) | `bible:import` | 2 |
+| Activer une version | Bascule atomique de version (après import staged, ou retour arrière sur une version retirée) | `bible:import` | 2 |
 | `/admin/bible/daily-verses` | Calendrier mensuel, programmation, aperçu, historique, alerte de doublon (30 j) | `daily_verse:manage` | MVP |
 | `/admin/bible/reading-plans` | Plans : création, jours, passages, statut éditorial | `reading_plan:manage` | 6 |
 | Méditations liées | Via `/admin/content?kind=MEDITATION` | `editorial:*` | 6 |
@@ -23,10 +22,10 @@ l'activation. Raisons : fichiers volumineux, opération rare, surface d'attaque 
 ## Verset du jour
 - Choix de la référence via `ReferenceInput`, aperçu exact du texte et de l'attribution.
 - Petite phrase éditoriale facultative (≤ 200 caractères), **séparée** du verset.
-- Statuts du workflow éditorial ; programmation jusqu'à 90 jours à l'avance.
+- Programmation directe jusqu'à 90 jours à l'avance. Le workflow éditorial (relecture par une autre personne) arrive avec le CMS en Phase 6.
 - Si aucun verset n'est programmé pour un jour : sélection automatique dans une liste curatée (`daily_verse_pool`),
   signalée « automatique » dans l'historique.
 
 ## Audit
 `bible.import.staged`, `bible.version.activated`, `bible.translation.published`, `daily_verse.scheduled`,
-`daily_verse.updated`.
+`daily_verse.updated`, `daily_verse.deleted`, `bible.translation.unpublished`.

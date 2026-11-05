@@ -19,6 +19,9 @@ export const RATE_LIMITS = {
   "audit.access_denied": { window: 3600, max: 20 },
   "auth.account_exists.account": { window: 86_400, max: 2 },
   "auth.verification.account": { window: 3600, max: 3 },
+  "bible.annotation": { window: 3600, max: 300 },
+  "bible.reading": { window: 3600, max: 600 },
+  "bible.search": { window: 60, max: 60 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;
