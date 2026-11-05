@@ -16,6 +16,14 @@ const ALL_ROLES_VERIFIED = {
   SUPER_ADMIN: VERIFIED,
 } as const;
 const ALL_ROLES_OWN = { MEMBER: OWN, CONTENT_EDITOR: OWN, MODERATOR: OWN, ADMIN: OWN, SUPER_ADMIN: OWN } as const;
+const OWN_VERIFIED: readonly Condition[] = [{ kind: "verifiedEmail" }, { kind: "own" }];
+const ALL_ROLES_OWN_VERIFIED = {
+  MEMBER: OWN_VERIFIED,
+  CONTENT_EDITOR: OWN_VERIFIED,
+  MODERATOR: OWN_VERIFIED,
+  ADMIN: OWN_VERIFIED,
+  SUPER_ADMIN: OWN_VERIFIED,
+} as const;
 const STAFF_MODERATION = { MODERATOR: true, ADMIN: true, SUPER_ADMIN: true } as const;
 const ADMINS = { ADMIN: true, SUPER_ADMIN: true } as const;
 const SUPER_ONLY = { SUPER_ADMIN: true } as const;
@@ -96,6 +104,10 @@ export const GLOBAL_PERMISSIONS = {
   "bible:translation:read": { write: false, rules: EDITORS },
   "bible:translation:publish": { write: true, rules: SUPER_ONLY },
   "bible:import": { write: true, rules: SUPER_ONLY },
+  "bible_annotation:create": { write: true, rules: ALL_ROLES_VERIFIED },
+  "bible_annotation:update": { write: true, rules: ALL_ROLES_OWN_VERIFIED },
+  "bible_annotation:delete": { write: true, rules: ALL_ROLES_OWN_VERIFIED },
+  "bible_reading_state:update": { write: true, rules: ALL_ROLES_OWN_VERIFIED },
   "settings:read": { write: false, rules: ADMINS },
   "settings:update": { write: true, rules: ADMINS },
   "settings:update:critical": { write: true, rules: SUPER_ONLY },

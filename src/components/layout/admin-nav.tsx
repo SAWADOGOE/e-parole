@@ -20,7 +20,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard },
   { href: "/admin/users", key: "users", icon: Users },
   { href: null, key: "moderation", icon: Flag, phase: 3 },
-  { href: null, key: "bible", icon: BookOpen, phase: 2 },
+  { href: "/admin/bible", key: "bible", icon: BookOpen },
   { href: "/admin/audit-logs", key: "auditLogs", icon: ScrollText },
   { href: null, key: "settings", icon: Settings, phase: 5 },
 ];

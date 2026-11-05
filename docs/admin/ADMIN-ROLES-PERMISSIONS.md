@@ -61,6 +61,9 @@ aucun droit** d'administration ; ils affichent une marque de confiance et peuven
 | `reading_plan:manage` | — | ✅ | — | ✅ | ✅ |
 | `bible:translation:read` | — | ✅ | — | ✅ | ✅ |
 | `bible:translation:publish` / `bible:import` | — | — | — | — | ✅ |
+| `bible_annotation:create` (surlignage, note, favori) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `bible_annotation:update` / `bible_annotation:delete` | ◐ les siennes | ◐ les siennes | ◐ les siennes | ◐ les siennes | ◐ les siennes |
+| `bible_reading_state:update` | ◐ le sien | ◐ le sien | ◐ le sien | ◐ le sien | ◐ le sien |
 | `settings:read` | — | — | — | ✅ | ✅ |
 | `settings:update` (non critiques) | — | — | — | ✅ | ✅ |
 | `settings:update:critical` (inscriptions, limites, rétention) | — | — | — | — | ✅ |

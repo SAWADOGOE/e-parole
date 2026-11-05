@@ -25,6 +25,9 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
+    "bible:import": "tsx scripts/bible/import.ts",
+    "bible:activate": "tsx scripts/bible/activate.ts",
+    "bible:crosscheck": "tsx scripts/bible/cross-check.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -73,6 +76,7 @@
     "prettier": "3.9.10",
     "prettier-plugin-tailwindcss": "0.8.1",
     "prisma": "7.10.1",
+    "saxes": "6.0.0",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "tw-animate-css": "1.4.0",

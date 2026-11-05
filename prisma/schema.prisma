@@ -1,4 +1,4 @@
-// e-Parole — schéma Prisma (Phase 1 : fondations).
+// e-Parole — schéma Prisma (Phase 1 : fondations ; Phase 2 : Bible).
 // Spécification : docs/11-DATABASE-DESIGN.md. Tables en snake_case via @@map.
 // Les modèles User, Session, Account, Verification, TwoFactor et RateLimit suivent
 // le schéma attendu par Better Auth 1.7 (noms de champs imposés par la bibliothèque).
@@ -82,6 +82,44 @@ enum MediaPurpose {
   VERIFICATION_DOCUMENT
 }
 
+enum BibleLicense {
+  PUBLIC_DOMAIN
+  CC_BY
+  CC_BY_SA
+  LICENSED
+}
+
+enum BibleVersionStatus {
+  STAGED
+  ACTIVE
+  RETIRED
+}
+
+enum Testament {
+  OT
+  NT
+}
+
+enum HighlightColor {
+  YELLOW
+  GREEN
+  BLUE
+  PINK
+  PURPLE
+}
+
+enum ReaderTheme {
+  SYSTEM
+  LIGHT
+  SEPIA
+  DARK
+}
+
+enum ReaderFont {
+  SERIF
+  SANS
+}
+
 // ---------------------------------------------------------------------------
 // Identité et authentification (Better Auth)
 // ---------------------------------------------------------------------------
@@ -112,6 +150,12 @@ model User {
   memberships    CommunityMember[]
   settingsEdited PlatformSetting[]
   flagsEdited    FeatureFlag[]
+
+  bibleHighlights    BibleHighlight[]
+  bibleNotes         BibleNote[]
+  bibleBookmarks     BibleBookmark[]
+  bibleReadingState  BibleReadingState?
+  dailyVersesCreated DailyVerse[]
 
   @@index([status])
   @@map("user")
@@ -355,4 +399,263 @@ model MediaAsset {
   @@index([ownerId, createdAt(sort: Desc)])
   @@index([status, createdAt])
   @@map("media_asset")
+}
+
+// ---------------------------------------------------------------------------
+// Bible — données de référence (docs/bible/BIBLE-DATABASE-SCHEMA.md)
+// Le rôle applicatif n'a que SELECT sur ces tables ; l'écriture passe par le rôle
+// eparole_bible_import (migration SQL). Aucune clé étrangère vers "user" : un TRUNCATE
+// ou une purge de comptes ne doit jamais pouvoir atteindre le texte biblique.
+// ---------------------------------------------------------------------------
+
+model BibleTranslation {
+  id                Int          @id @default(autoincrement())
+  code              String       @unique
+  name              String
+  language          String
+  licenseType       BibleLicense
+  licenseUrl        String
+  /// Texte affiché partout où un verset apparaît.
+  attribution       String
+  sourceUrl         String
+  sourceRetrievedAt DateTime
+  /// Référence de l'archive datée de la page de licence (hors dépôt).
+  licenseEvidence   String
+  isPublished       Boolean      @default(false)
+  activeVersionId   Int?         @unique
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  activeVersion BibleTranslationVersion?  @relation("ActiveVersion", fields: [activeVersionId], references: [id], onDelete: Restrict)
+  versions      BibleTranslationVersion[] @relation("TranslationVersions")
+  highlights    BibleHighlight[]
+  notes         BibleNote[]
+  bookmarks     BibleBookmark[]
+  readingStates BibleReadingState[]
+  dailyVerses   DailyVerse[]
+
+  @@map("bible_translation")
+}
+
+model BibleTranslationVersion {
+  id                Int                @id @default(autoincrement())
+  translationId     Int
+  sourceProvider    String
+  /// SHA-256 du fichier source tel que téléchargé.
+  sourceSha256      String
+  sourceRetrievedAt DateTime
+  /// SHA-256 global, calculé sur les versets normalisés dans l'ordre canonique.
+  checksum          String
+  bookCount         Int
+  chapterCount      Int
+  verseCount        Int
+  /// Libellé de l'opérateur de la CLI (pas une clé étrangère : voir l'en-tête de section).
+  importedBy        String
+  importedAt        DateTime           @default(now())
+  activatedAt       DateTime?
+  status            BibleVersionStatus @default(STAGED)
+  /// Rapport d'intégrité : écarts de versification, éléments ignorés, contrôle croisé.
+  report            Json               @default("{}")
+
+  translation  BibleTranslation   @relation("TranslationVersions", fields: [translationId], references: [id], onDelete: Restrict)
+  activeFor    BibleTranslation?  @relation("ActiveVersion")
+  verses       BibleVerse[]
+  chapterMetas BibleChapterMeta[]
+
+  @@index([translationId, status])
+  @@map("bible_translation_version")
+}
+
+model BibleBook {
+  /// Code USFM indépendant de la langue (GEN … REV).
+  id           String    @id
+  order        Int       @unique
+  testament    Testament
+  chapterCount Int
+
+  names        BibleBookName[]
+  verses       BibleVerse[]
+  chapterMetas BibleChapterMeta[]
+  highlights   BibleHighlight[]
+  notes        BibleNote[]
+  bookmarks    BibleBookmark[]
+  dailyVerses  DailyVerse[]
+  poolEntries  DailyVersePool[]
+
+  @@index([testament, order])
+  @@map("bible_book")
+}
+
+model BibleBookName {
+  bookId        String
+  language      String
+  name          String
+  /// Slug canonique de l'URL (« 1-corinthiens »).
+  slug          String
+  /// Formes reconnues par le parseur, en minuscules et sans accents.
+  abbreviations String[]
+
+  book BibleBook @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@id([bookId, language])
+  @@unique([language, slug])
+  @@map("bible_book_name")
+}
+
+/// Un chapitre n'est pas une table : ceci dénormalise le nombre de versets par chapitre.
+model BibleChapterMeta {
+  versionId  Int
+  bookId     String
+  chapter    Int
+  verseCount Int
+
+  version BibleTranslationVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  book    BibleBook               @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@id([versionId, bookId, chapter])
+  @@map("bible_chapter_meta")
+}
+
+model BibleVerse {
+  id        Int                      @id @default(autoincrement())
+  versionId Int
+  bookId    String
+  chapter   Int
+  verse     Int
+  text      String
+  /// SHA-256 du texte normalisé.
+  checksum  String
+  /// Colonne générée (migration SQL) : bible_fts_vector(text).
+  search    Unsupported("tsvector")?
+
+  version BibleTranslationVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  book    BibleBook               @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@unique([versionId, bookId, chapter, verse])
+  @@index([search], map: "bible_verse_search_idx", type: Gin)
+  @@map("bible_verse")
+}
+
+// ---------------------------------------------------------------------------
+// Bible — données utilisateur : coordonnées, jamais BibleVerse.id, pour survivre à un
+// nouvel import. Les notes sont strictement privées (permission bible_note:read = jamais).
+// ---------------------------------------------------------------------------
+
+model BibleHighlight {
+  id            String         @id @default(cuid(2))
+  userId        String
+  translationId Int
+  bookId        String
+  chapter       Int
+  verseStart    Int
+  verseEnd      Int
+  color         HighlightColor
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  translation BibleTranslation @relation(fields: [translationId], references: [id], onDelete: Restrict)
+  book        BibleBook        @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@index([userId, translationId, bookId, chapter])
+  @@index([userId, createdAt(sort: Desc), id])
+  @@map("bible_highlight")
+}
+
+model BibleNote {
+  id            String   @id @default(cuid(2))
+  userId        String
+  translationId Int
+  bookId        String
+  chapter       Int
+  verseStart    Int
+  verseEnd      Int
+  body          String   @db.VarChar(5000)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  translation BibleTranslation @relation(fields: [translationId], references: [id], onDelete: Restrict)
+  book        BibleBook        @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@index([userId, translationId, bookId, chapter])
+  @@index([userId, createdAt(sort: Desc), id])
+  @@map("bible_note")
+}
+
+model BibleBookmark {
+  id            String   @id @default(cuid(2))
+  userId        String
+  translationId Int
+  bookId        String
+  chapter       Int
+  verseStart    Int
+  verseEnd      Int
+  createdAt     DateTime @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  translation BibleTranslation @relation(fields: [translationId], references: [id], onDelete: Restrict)
+  book        BibleBook        @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, translationId, bookId, chapter, verseStart, verseEnd])
+  @@index([userId, createdAt(sort: Desc), id])
+  @@map("bible_bookmark")
+}
+
+model BibleReadingState {
+  userId           String      @id
+  translationId    Int?
+  bookId           String?
+  chapter          Int?
+  fontSize         Int         @default(19)
+  lineHeight       Float       @default(1.7)
+  theme            ReaderTheme @default(SYSTEM)
+  font             ReaderFont  @default(SERIF)
+  showVerseNumbers Boolean     @default(true)
+  updatedAt        DateTime    @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  translation BibleTranslation? @relation(fields: [translationId], references: [id], onDelete: Restrict)
+
+  @@map("bible_reading_state")
+}
+
+/// Un verset par jour. Le texte n'est jamais recopié : il est rendu depuis bible_verse.
+model DailyVerse {
+  id            String   @id @default(cuid(2))
+  date          DateTime @unique @db.Date
+  translationId Int
+  bookId        String
+  chapter       Int
+  verseStart    Int
+  verseEnd      Int
+  /// Phrase éditoriale, séparée du texte biblique.
+  reflection    String?  @db.VarChar(200)
+  /// Sélection automatique depuis daily_verse_pool (aucun éditeur).
+  isAutomatic   Boolean  @default(false)
+  scheduledById String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  translation BibleTranslation @relation(fields: [translationId], references: [id], onDelete: Restrict)
+  book        BibleBook        @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  scheduledBy User?            @relation(fields: [scheduledById], references: [id], onDelete: SetNull)
+
+  @@index([bookId, chapter, verseStart])
+  @@map("daily_verse")
+}
+
+/// Liste curatée de références (aucun texte) pour les jours non programmés.
+model DailyVersePool {
+  id         Int     @id @default(autoincrement())
+  bookId     String
+  chapter    Int
+  verseStart Int
+  verseEnd   Int
+  isActive   Boolean @default(true)
+
+  book BibleBook @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@unique([bookId, chapter, verseStart, verseEnd])
+  @@map("daily_verse_pool")
 }
