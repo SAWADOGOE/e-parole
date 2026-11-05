@@ -14,6 +14,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 - Verset du jour : affichage, `/admin/bible/daily-verses`, sélection automatique ; `/admin/bible/translations`.
 - ADR-010 : rendu et cache sous CSP à nonce.
 
+### Revues de la Phase 2 (`security-auditor`, `accessibility-reviewer`, `code-reviewer`)
+- Texte : vérification dans la transaction d'import, SHA-256 recalculés à l'activation, trigger d'immutabilité, retour arrière de version, styles de paragraphe inconnus refusés.
+- Sécurité : limite de recherche sans IP de confiance, curseur et caractère NUL bornés, refus admin journalisés.
+- Accessibilité : focus jamais perdu, raccourcis à une touche désactivables, barre d'actions après le texte, rien de focalisé sous la barre, contraste forcé.
+- Lecteur : lisible sans JavaScript, statuts 404 et 308 réels, attribution conservée en mode focus.
+- Données : surlignages et favoris sérialisés et écrits par différence, réglages locaux préservés à l'inscription.
+
 ### Ajouté — Phase 1 : fondations (2026-11-04)
 - Next.js 16.4.3 (App Router), TypeScript 6.0.3 strict, Tailwind 4 avec les tokens du design system, primitives Radix.
 - Docker Compose (PostgreSQL 17, SeaweedFS S3, Mailpit) sur les ports 5xxxx ; Dockerfile multi-stage non root.

@@ -37,14 +37,14 @@ Script : `node scripts/bible/measure.mjs` et `measure-lcp.mjs`. Serveur et navig
 
 | Indicateur | Budget | Mesuré | Verdict |
 |---|---|---|---|
-| JS initial lecteur (gzip) | < 120 Ko | **170,3 Ko** (brotli 147,4 Ko) | ❌ **non atteint** |
+| JS initial lecteur (gzip) | < 120 Ko | **171,3 Ko** (brotli 148,3 Ko) | ❌ **non atteint** |
 | dont runtime Next 16 + React 19 (`rootMainFiles`) | — | 129,7 Ko | incompressible |
-| dont code e-Parole + next-intl + icônes | — | ≈ 40 Ko | 66 Ko avant optimisation |
-| HTML + CSS + police préchargée (gzip) | < 120 Ko | 50,6 Ko (≈ 99 Ko avec Inter latin, chargée à l'usage) | ✅ |
-| TTFB (cache), p95 | < 200 ms | 64,7 ms | ✅ |
-| LCP, Slow 4G émulé + CPU ×4, médiane sur 5 | < 2,5 s | 732 ms (max 1 120 ms) | ✅ émulation locale |
+| dont code e-Parole + next-intl + icônes | — | ≈ 42 Ko | 66 Ko avant optimisation |
+| HTML + CSS + police préchargée (gzip) | < 120 Ko | 50,9 Ko (≈ 99 Ko avec Inter latin, chargée à l'usage) | ✅ |
+| TTFB (cache), p95 | < 200 ms | 71,2 ms | ✅ |
+| LCP, Slow 4G émulé + CPU ×4, médiane sur 5 | < 2,5 s | 716 ms (max 1 180 ms) | ✅ émulation locale |
 | CLS | < 0,1 | 0 | ✅ |
-| Recherche « grace », page complète, p95 sur 200 | < 150 ms | 108,6 ms | ✅ |
+| Recherche « grace », page complète, p95 sur 200 | < 150 ms | 97,3 ms | ✅ |
 | Requête FTS seule (`EXPLAIN ANALYZE`) | — | 0,26 ms (index GIN) | ✅ |
 
 Lighthouse n'a pas été exécuté (non installé) ; le LCP vient d'une émulation Chromium, pas d'un appareil réel ni d'un p75 de terrain.

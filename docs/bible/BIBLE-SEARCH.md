@@ -47,7 +47,7 @@ Limites : le stemming français peut rapprocher des mots distincts. L'option « 
 elle demanderait un second index et n'est pas exigée par US-3.
 
 ## Performance attendue
-Mesuré le 2026-11-05 sur 31 170 versets : requête GIN 0,26 ms ; page complète p95 108,6 ms sur 200 requêtes (objectif 150 ms).
+Mesuré le 2026-11-05 sur 31 170 versets : requête GIN 0,26 ms ; page complète p95 97,3 ms sur 200 requêtes (objectif 150 ms).
 
 ## Évolutions
 Recherche multi-traductions (Phase 6), synonymes thématiques (« salut » ↔ « délivrance ») gérés par une table éditoriale,
