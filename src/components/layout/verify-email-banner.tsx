@@ -3,8 +3,6 @@
 import { MailWarning } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { cn } from "@/lib/cn";
 import { notify, notifyError } from "@/lib/notify";
 
 export function VerifyEmailBanner({ email }: { email: string }) {
@@ -33,7 +31,7 @@ export function VerifyEmailBanner({ email }: { email: string }) {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-2 text-sm">
         <MailWarning aria-hidden="true" className="size-5 shrink-0 text-gold-fg" />
         <p className="min-w-0 flex-1 text-fg">{t("verifyEmail")}</p>
-        <button type="button" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-11")} onClick={() => void resend()} disabled={pending}>
+        <button type="button" className="inline-flex h-11 shrink-0 items-center text-sm font-medium text-accent underline-offset-4 hover:underline disabled:opacity-50" onClick={() => void resend()} disabled={pending}>
           {t("verifyEmailAction")}
         </button>
       </div>

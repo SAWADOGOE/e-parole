@@ -1,6 +1,6 @@
 # ADR-013 — Notifications in-app : groupes en base, SSE sur LISTEN/NOTIFY, repli polling
 
-- **Statut** : Proposé (Phase 3), en attente de validation du propriétaire
+- **Statut** : Accepté le 2026-11-06 par le propriétaire du projet
 - **Date** : 2026-11-06
 - **Applique** : [ADR-005](ADR-005-REALTIME.md)
 

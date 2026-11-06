@@ -4,6 +4,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 
 ## [Non publié]
 
+### Modifié — après la Phase 3 (2026-11-06)
+- JS initial : 160,9 Ko sur `/` et 161,7 Ko sur le lecteur (environ −10 Ko sur toutes les pages) : la frontière d'erreur globale n'embarque plus `Slot` ni `tailwind-merge`.
+- ADR-011, ADR-012 et ADR-013 acceptés ; rétention d'un mois décidée pour les contenus supprimés par leur auteur (purge à livrer, R-4).
+
 ### Ajouté — Phase 3 : réseau social (2026-11-06)
 - Profils `/@handle` : avatar, bannière, bio, @handle modifiable (unique, réservés refusés, 1 changement par 24 h), champs sensibles
   avec visibilité par champ (public / abonnés / moi), privés par défaut ; abonnés, abonnements, recherche de membres découvrables.

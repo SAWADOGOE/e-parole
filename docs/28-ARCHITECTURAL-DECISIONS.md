@@ -16,9 +16,9 @@ Synthèse. Le détail et les alternatives sont dans [docs/adr/](adr/README.md).
 | 10 | pnpm comme unique gestionnaire | Validé | [09](09-TECH-STACK.md#gestionnaire-de-paquets--pnpm) |
 | 11 | TypeScript 6.0.3, pnpm 11.28.9, SeaweedFS en dev, versions publiées depuis au moins 7 jours | Validé (Phase 1) | [ADR-009](adr/ADR-009-PHASE1-TOOLING.md) |
 | 12 | Toute publication est publique (membres connectés) ; trois réactions Amen, J'aime, Encouragé | Décidé par le propriétaire (2026-11-05) | [04](04-PRODUCT-REQUIREMENTS.md) |
-| 13 | Règles d'accès sociales en fragments SQL partagés ; fils sans cache partagé | Proposé (Phase 3) | [ADR-011](adr/ADR-011-SOCIAL-FEEDS-VISIBILITY.md) |
-| 14 | Images en bucket privé, servies par l'application après contrôle d'accès | Proposé (Phase 3) | [ADR-012](adr/ADR-012-MEDIA-PIPELINE.md) |
-| 15 | Notifications regroupées en base, SSE sur LISTEN/NOTIFY, repli polling 60 s | Proposé (Phase 3) | [ADR-013](adr/ADR-013-NOTIFICATIONS.md) |
+| 13 | Règles d'accès sociales en fragments SQL partagés ; fils sans cache partagé | Validé (Phase 3) | [ADR-011](adr/ADR-011-SOCIAL-FEEDS-VISIBILITY.md) |
+| 14 | Images en bucket privé, servies par l'application après contrôle d'accès | Validé (Phase 3) | [ADR-012](adr/ADR-012-MEDIA-PIPELINE.md) |
+| 15 | Notifications regroupées en base, SSE sur LISTEN/NOTIFY, repli polling 60 s | Validé (Phase 3) | [ADR-013](adr/ADR-013-NOTIFICATIONS.md) |
 
 ## Hypothèses (à confirmer)
 - H1 : le pilote ne dépasse pas ~2 000 utilisateurs et 10 communautés → un VPS suffit.

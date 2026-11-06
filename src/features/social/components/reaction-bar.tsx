@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { errorKey } from "@/lib/error-key";
 import { notifyError } from "@/lib/notify";
-import { cn } from "@/lib/cn";
 import { REACTION_EMOJI, REACTION_KINDS, type ReactionKindName } from "../constants";
 import { reactAction } from "../server/actions";
 import type { ReactionCounts } from "../types";
@@ -59,15 +58,11 @@ export function ReactionBar({ target, targetId, counts, viewerReaction, compact 
             aria-pressed={active}
             aria-disabled={pending || undefined}
             onClick={() => choose(kind)}
-            className={cn(
-              "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-(--motion-fast) aria-disabled:opacity-70",
-              compact && "min-h-11 px-2.5 text-xs",
-              active ? "border-accent bg-accent-subtle font-semibold text-fg" : "border-border text-fg hover:bg-bg-subtle",
-            )}
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border transition-colors duration-(--motion-fast) aria-disabled:opacity-70 ${compact ? "px-2.5 text-xs" : "px-3 text-sm"} ${active ? "border-accent bg-accent-subtle font-semibold text-fg" : "border-border text-fg hover:bg-bg-subtle"}`}
           >
             <span aria-hidden="true">{REACTION_EMOJI[kind]}</span>
             <span>{t(kind)}</span>
-            {count > 0 ? <span className={cn("tabular-nums", active ? "text-fg" : "text-muted")}>{count}</span> : null}
+            {count > 0 ? <span className={`tabular-nums ${active ? "text-fg" : "text-muted"}`}>{count}</span> : null}
           </button>
         );
       })}
