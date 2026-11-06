@@ -18,7 +18,8 @@ import {
   insertSanction,
   lockCase,
   reporterIds,
-  setAccountStatus,
+  banAccount,
+  suspendAccount,
   type OpenCaseRow,
 } from "./repository";
 
@@ -68,15 +69,16 @@ async function applyEffect(tx: TransactionClient, decision: DecisionName, target
       return null;
     case "SUSPEND": {
       if (!authorId || input.durationDays === null) throw new AppError("VALIDATION");
-      const until = new Date(Date.now() + input.durationDays * 86_400_000);
-      await setAccountStatus(tx, authorId, "SUSPENDED", until);
+      const requested = new Date(Date.now() + input.durationDays * 86_400_000);
+      const until = await suspendAccount(tx, authorId, requested);
+      if (!until) throw new AppError("CONFLICT", { message: "Ce compte est déjà banni." });
       await revokeAllSessions(authorId, tx);
       await insertSanction(tx, { userId: authorId, kind: "SUSPENSION", caseId: target.id, actionId, issuedById: moderatorId, endsAt: until });
       return until;
     }
     case "BAN":
       if (!authorId) throw new AppError("VALIDATION");
-      await setAccountStatus(tx, authorId, "BANNED", null);
+      await banAccount(tx, authorId);
       await revokeAllSessions(authorId, tx);
       await insertSanction(tx, { userId: authorId, kind: "BAN", caseId: target.id, actionId, issuedById: moderatorId, endsAt: null });
       return null;

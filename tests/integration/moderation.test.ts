@@ -231,6 +231,27 @@ describe("décisions", () => {
     expect(Object.keys(detail?.author ?? {})).not.toContain("email");
   });
 
+  it("une suspension ne lève jamais un bannissement et ne raccourcit jamais une suspension en cours", async () => {
+    const first = await reportedPost();
+    const handle = await handleOf(first.author.actor.userId);
+    const admin = await createTestUser({ roles: ["ADMIN"] });
+    await decide(admin, { caseId: first.caseId, decision: "SUSPEND", durationDays: 60, confirmHandle: handle });
+    const longUntil = (await db.user.findUniqueOrThrow({ where: { id: first.author.actor.userId } })).suspendedUntil;
+
+    const reporter = await createTestUser();
+    const second = await createReport(reporter.actor, { targetType: "PROFILE", targetId: first.author.actor.userId, reason: "SPAM", details: "" });
+    await decide(first.moderator, { caseId: second.caseId, decision: "SUSPEND", durationDays: 3, confirmHandle: handle });
+    expect((await db.user.findUniqueOrThrow({ where: { id: first.author.actor.userId } })).suspendedUntil).toEqual(longUntil);
+
+    // Dossier ouvert pendant que le compte était encore visible, puis bannissement par une autre décision.
+    const postId = await db.post.findFirstOrThrow({ where: { authorId: first.author.actor.userId }, select: { id: true } });
+    await db.user.update({ where: { id: first.author.actor.userId }, data: { status: "ACTIVE", suspendedUntil: null } });
+    const third = await createReport((await createTestUser()).actor, { targetType: "COMMENT", targetId: await commentAs(first.author.actor, postId.id), reason: "HATE", details: "" });
+    await db.user.update({ where: { id: first.author.actor.userId }, data: { status: "BANNED" } });
+    await expect(decide(admin, { caseId: third.caseId, decision: "SUSPEND", durationDays: 1, confirmHandle: handle })).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await db.user.findUniqueOrThrow({ where: { id: first.author.actor.userId } })).status).toBe("BANNED");
+  });
+
   it("une suspension échue est levée par le job", async () => {
     const { author } = await reportedPost();
     await db.user.update({ where: { id: author.actor.userId }, data: { status: "SUSPENDED", suspendedUntil: new Date(Date.now() - 1000) } });

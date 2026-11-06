@@ -42,12 +42,29 @@ export async function authenticatedRoute(request: Request, options: RouteOptions
   }
 }
 
-/** Corps JSON limité en taille (les uploads passent par une URL présignée, jamais par ce corps). */
+/**
+ * Corps JSON limité en taille, contrôlé AVANT lecture complète : Content-Length d'abord, puis comptage en flux
+ * (un corps sans longueur annoncée est coupé dès qu'il dépasse la limite).
+ */
 export async function readJson(request: Request, maxBytes = 4096): Promise<unknown> {
-  const text = await request.text();
-  if (text.length > maxBytes) throw new AppError("VALIDATION");
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > maxBytes) throw new AppError("VALIDATION");
+  if (!request.body) throw new AppError("VALIDATION");
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new AppError("VALIDATION");
+    }
+    chunks.push(value);
+  }
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
   } catch {
     throw new AppError("VALIDATION");
   }

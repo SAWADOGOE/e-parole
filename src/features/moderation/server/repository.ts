@@ -279,8 +279,23 @@ export async function insertSanction(
   await tx.sanction.create({ data });
 }
 
-export async function setAccountStatus(tx: TransactionClient, userId: string, status: "SUSPENDED" | "BANNED", until: Date | null): Promise<void> {
-  await tx.user.update({ where: { id: userId }, data: { status, suspendedUntil: until } });
+/**
+ * Suspension : jamais sur un compte banni (une suspension ne doit pas lever un bannissement), et jamais plus courte
+ * qu'une suspension déjà en cours. Renvoie la date de fin effective, ou null si le compte est banni.
+ */
+export async function suspendAccount(tx: TransactionClient, userId: string, until: Date): Promise<Date | null> {
+  const rows = await tx.$queryRaw<{ suspendedUntil: Date }[]>`
+    UPDATE "user" SET "status" = 'SUSPENDED',
+      "suspendedUntil" = CASE WHEN "status" = 'SUSPENDED' AND "suspendedUntil" > ${until.toISOString()}::timestamp
+                              THEN "suspendedUntil" ELSE ${until.toISOString()}::timestamp END,
+      "updatedAt" = now()
+    WHERE "id" = ${userId} AND "status" <> 'BANNED'
+    RETURNING "suspendedUntil"`;
+  return rows[0]?.suspendedUntil ?? null;
+}
+
+export async function banAccount(tx: TransactionClient, userId: string): Promise<void> {
+  await tx.user.update({ where: { id: userId }, data: { status: "BANNED", suspendedUntil: null } });
 }
 
 export async function reporterIds(tx: TransactionClient, caseId: string): Promise<string[]> {
