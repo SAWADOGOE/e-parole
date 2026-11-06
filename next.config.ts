@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   serverExternalPackages: ["pino", "pg-boss", "@prisma/client", "@prisma/adapter-pg", "pg"],
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
+  // Profil public /@handle (REQ-PROF-1) : un dossier « @… » serait un slot parallèle pour Next, d'où la réécriture.
+  rewrites: () =>
+    Promise.resolve([
+      { source: "/@:handle([a-zA-Z0-9_]{3,30})", destination: "/membres/:handle" },
+      { source: "/@:handle([a-zA-Z0-9_]{3,30})/:section(abonnes|abonnements)", destination: "/membres/:handle/:section" },
+    ]),
 };
 
 export default withNextIntl(nextConfig);

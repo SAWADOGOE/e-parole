@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/cn";
 
 export async function Pagination({

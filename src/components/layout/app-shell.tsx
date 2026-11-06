@@ -2,14 +2,15 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/shared/logo";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { VisitorThemeToggle } from "@/components/shared/visitor-theme-toggle";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { AccountMenu, type AccountMenuProps } from "./account-menu";
 import { BottomNav, SideNav } from "./member-nav";
 import { VerifyEmailBanner } from "./verify-email-banner";
 
 interface AppShellProps {
-  account: (AccountMenuProps & { email: string; emailVerified: boolean }) | null;
+  account: (AccountMenuProps & { email: string; emailVerified: boolean; unreadNotifications: number; dataSaver: boolean }) | null;
   aside?: ReactNode;
   children: ReactNode;
 }
@@ -32,16 +33,18 @@ export async function AppShell({ account, aside, children }: AppShellProps) {
             <span className="sr-only">{t("nav.home")}</span>
           </Link>
           <div className="flex items-center gap-2">
+            {account ? <NotificationBell initialUnread={account.unreadNotifications} /> : null}
             {account ? (
               <AccountMenu
                 displayName={account.displayName}
                 handle={account.handle}
                 showAdmin={account.showAdmin}
                 manageHref={account.manageHref}
+                dataSaver={account.dataSaver}
               />
             ) : (
               <>
-                <ThemeToggle className="hidden sm:inline-flex" />
+                <VisitorThemeToggle className="hidden sm:inline-flex" />
                 <Button asChild variant="ghost" size="sm">
                   <Link href="/connexion">{t("nav.signIn")}</Link>
                 </Button>

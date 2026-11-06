@@ -157,7 +157,8 @@ function buildAuth() {
             return Promise.resolve({ data: user });
           },
           after: async (user) => {
-            await createProfileForUser(user.id, user.name);
+            const birthYear = (user as { birthYear?: unknown }).birthYear;
+            await createProfileForUser(user.id, user.name, typeof birthYear === "number" ? birthYear : null);
           },
         },
         update: {
@@ -174,8 +175,13 @@ function buildAuth() {
           before: async (session) => {
             const owner = await db.user.findUnique({
               where: { id: session.userId },
-              select: { status: true, deletedAt: true },
+              select: { status: true, deletedAt: true, suspendedUntil: true },
             });
+            // Suspension échue mais pas encore levée par le worker : le compte retrouve son accès dès maintenant.
+            if (owner?.status === "SUSPENDED" && owner.suspendedUntil && owner.suspendedUntil <= new Date()) {
+              await db.user.updateMany({ where: { id: session.userId, status: "SUSPENDED" }, data: { status: "ACTIVE", suspendedUntil: null } });
+              owner.status = "ACTIVE";
+            }
             if (!owner || owner.deletedAt || owner.status !== "ACTIVE") {
               logger.warn({ userId: session.userId }, "connexion refusée : compte non actif");
               throw new APIError("FORBIDDEN", { message: "ACCOUNT_NOT_ACTIVE" });

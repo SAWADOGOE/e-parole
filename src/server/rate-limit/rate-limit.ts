@@ -22,6 +22,22 @@ export const RATE_LIMITS = {
   "bible.annotation": { window: 3600, max: 300 },
   "bible.reading": { window: 3600, max: 600 },
   "bible.search": { window: 60, max: 60 },
+  // Réseau social (docs/19-SECURITY.md) : un compte de moins de 7 jours publie moins.
+  "post.create": { window: 3600, max: 60 },
+  "post.create.new_account": { window: 3600, max: 10 },
+  "post.update": { window: 3600, max: 60 },
+  "comment.create": { window: 3600, max: 120 },
+  "comment.update": { window: 3600, max: 120 },
+  "reaction.set": { window: 3600, max: 600 },
+  "relation.follow": { window: 3600, max: 120 },
+  "relation.block": { window: 3600, max: 60 },
+  "bookmark.manage": { window: 3600, max: 300 },
+  "profile.update": { window: 3600, max: 30 },
+  "profile.search": { window: 60, max: 60 },
+  "report.create": { window: 3600, max: 20 },
+  "upload.request": { window: 3600, max: 40 },
+  "feed.page": { window: 3600, max: 1200 },
+  "notification.read": { window: 3600, max: 600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;
@@ -75,6 +91,14 @@ export async function isRateLimited(
 export async function refundRateLimit(name: RateLimitName, subject: string): Promise<void> {
   await db.$executeRaw`
     UPDATE "rate_limit" SET "count" = GREATEST("count" - 1, 0) WHERE "key" = ${`app:${name}:${subject}`}`;
+}
+
+/** Fenêtre la plus longue : au-delà, une ligne de rate_limit ne sert plus à rien (purge, IP non conservées). */
+export const LONGEST_WINDOW_SECONDS = Math.max(86_400, ...Object.values(RATE_LIMITS).map((rule) => rule.window));
+
+/** Supprime les fenêtres expirées (clés applicatives et Better Auth, dont certaines contiennent une IP). */
+export async function purgeExpiredRateLimits(now: number = Date.now()): Promise<number> {
+  return db.$executeRaw`DELETE FROM "rate_limit" WHERE "lastRequest" < ${now - LONGEST_WINDOW_SECONDS * 1000}`;
 }
 
 export async function enforceRateLimit(name: RateLimitName, subject: string): Promise<void> {

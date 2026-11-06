@@ -24,6 +24,7 @@ const ALL_ROLES_OWN_VERIFIED = {
   ADMIN: OWN_VERIFIED,
   SUPER_ADMIN: OWN_VERIFIED,
 } as const;
+const ALL_ROLES = { MEMBER: true, CONTENT_EDITOR: true, MODERATOR: true, ADMIN: true, SUPER_ADMIN: true } as const;
 const STAFF_MODERATION = { MODERATOR: true, ADMIN: true, SUPER_ADMIN: true } as const;
 const ADMINS = { ADMIN: true, SUPER_ADMIN: true } as const;
 const SUPER_ONLY = { SUPER_ADMIN: true } as const;
@@ -128,6 +129,20 @@ export const GLOBAL_PERMISSIONS = {
       SUPER_ADMIN: true,
     },
   },
+  "comment:update": { write: true, rules: ALL_ROLES_OWN },
+  "comment:delete": { write: true, rules: ALL_ROLES_OWN },
+  /** ownerId = auteur de la publication qui porte le commentaire. */
+  "comment:hide_on_own_post": { write: true, rules: ALL_ROLES_OWN },
+  "reaction:set": { write: true, rules: ALL_ROLES_VERIFIED },
+  "relation:follow": { write: true, rules: ALL_ROLES_VERIFIED },
+  /** Protection : accessibles sans email vérifié (docs/admin/ADMIN-ROLES-PERMISSIONS.md, Phase 3). */
+  "relation:block": { write: true, rules: ALL_ROLES },
+  "relation:mute": { write: true, rules: ALL_ROLES },
+  "bookmark:manage": { write: true, rules: ALL_ROLES_VERIFIED },
+  "profile:update": { write: true, rules: ALL_ROLES_OWN_VERIFIED },
+  "media:upload": { write: true, rules: ALL_ROLES_VERIFIED },
+  "notification:preferences:update": { write: true, rules: ALL_ROLES_OWN },
+  "moderation:case:resolve": { write: true, rules: STAFF_MODERATION },
   "admin:access": { write: false, rules: { CONTENT_EDITOR: true, ...STAFF_MODERATION } },
   "private_message:read": { write: false, never: true, rules: {} },
   "private_prayer:read": { write: false, never: true, rules: {} },

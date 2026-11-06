@@ -104,5 +104,13 @@ export function useSelectionActions(context: SelectionContext) {
     );
   }
 
-  return { busy, copy, share, highlight, bookmark, requireAccount };
+  /** US-5 : la première plage contiguë de la sélection devient la citation de la publication (le texte reste en base). */
+  function publish(): void {
+    const range = ranges[0];
+    if (!range || !requireAccount()) return;
+    const end = range.verseEnd === range.verseStart ? "" : `-${range.verseEnd}`;
+    router.push(`/publier?verset=${bookId}.${chapter}.${range.verseStart}${end}` as Route);
+  }
+
+  return { busy, copy, share, highlight, bookmark, publish, requireAccount };
 }
