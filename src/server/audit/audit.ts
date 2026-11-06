@@ -29,6 +29,10 @@ export const AUDIT_ACTIONS = [
   "daily_verse.scheduled",
   "daily_verse.updated",
   "daily_verse.deleted",
+  "moderation.case.assign",
+  "moderation.decision",
+  "moderation.auto_hide",
+  "user.suspension.expired",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

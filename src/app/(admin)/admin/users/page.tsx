@@ -1,6 +1,6 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Pagination } from "@/components/shared/pagination";
@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ADMIN_PAGE_SIZE, listUsers, userListQuerySchema } from "@/features/administration";
-import { requireAdminPage } from "@/server/auth/session";
-import { can } from "@/server/policies";
+import { requireAdminPermission } from "@/server/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin");
@@ -17,8 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
-  const session = await requireAdminPage();
-  if (!can(session.actor, "user:read:admin", { linkedToCase: false })) notFound();
+  await requireAdminPermission("user:read:admin", "/admin/users", { linkedToCase: false });
   const t = await getTranslations("admin");
   const format = await getFormatter();
   // URL invalide (page=0, page=abc, paramètre répété) : retour aux valeurs par défaut plutôt qu'une erreur 500.
@@ -51,7 +49,7 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
         <>
           <div className="mt-6 hidden overflow-x-auto rounded-lg border lg:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-bg-subtle text-muted">
+              <thead className="bg-bg-subtle text-fg">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">{t("colName")}</th>
                   <th scope="col" className="px-4 py-3 font-medium">{t("colStatus")}</th>

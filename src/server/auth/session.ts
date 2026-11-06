@@ -6,7 +6,7 @@ import { recordAudit } from "../audit/audit";
 import { db } from "../db";
 import { AppError } from "../errors/app-error";
 import { getRequestContext } from "../request-context";
-import type { Actor } from "../policies";
+import { can, type Actor, type GlobalPermission, type PolicyResource } from "../policies";
 import { ADMIN_SESSION_MAX_AGE_MS, ADULT_AGE, REAUTH_WINDOW_MS } from "./constants";
 import { getAuth } from "./auth";
 import { findSessionMarkers } from "./session-repository";
@@ -150,6 +150,19 @@ export async function requireAdminPage(): Promise<CurrentSession> {
     case "session_expired":
       redirect("/connexion?raison=session-admin-expiree");
   }
+}
+
+/**
+ * Garde de page /admin avec permission (dette Phase 2 généralisée) : un membre du staff sans la permission reçoit
+ * un 404 et la tentative est journalisée (security.admin_access_denied), comme un non-admin.
+ */
+export async function requireAdminPermission(permission: GlobalPermission, path: string, resource?: PolicyResource): Promise<CurrentSession> {
+  const session = await requireAdminPage();
+  if (!can(session.actor, permission, resource)) {
+    await recordDeniedAccess(session.actor, "security.admin_access_denied", "route", path);
+    notFound();
+  }
+  return session;
 }
 
 /** Garde d'action admin : lève une AppError (jamais de redirection dans une action). */
