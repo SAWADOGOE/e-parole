@@ -36,7 +36,7 @@ Versions publiées depuis au moins 7 jours (`minimumReleaseAge`). Jamais d'alpha
   visibilité d'abord (404) puis `authorize()`. Aucun cache partagé des fils (ADR-011). Images servies par `/api/media` (ADR-012).
 - Budget JS de `/` : îlots lourds chargés à la demande (`LazyMenuTrigger`, `next/dynamic`) ; `buttonVariants` depuis
   `components/ui/button-variants` dans un îlot client (évite le `Slot` Radix) ; un composant client importé par un layout est
-  chargé même s'il n'est pas affiché.
+  chargé même s'il n'est pas affiché ; `src/app/error.tsx` est chargé partout : ni `Button` ni `cn` dedans.
 - Erreurs : `AppError` typées (`NOT_FOUND`, `FORBIDDEN`, `VALIDATION`, `RATE_LIMITED`, `CONFLICT`) mappées vers une UI soignée.
 
 ## Sécurité (toujours)

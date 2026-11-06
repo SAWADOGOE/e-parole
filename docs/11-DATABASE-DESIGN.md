@@ -288,6 +288,7 @@ par clé ; un dossier de modération ouvert par cible ; `moderation_action` en a
 | Prières archivées | Conservées jusqu'à suppression par l'auteur ; purge physique 30 jours après suppression |
 | Sessions expirées | Purge quotidienne |
 | Audit log | 2 ans, IP tronquées après 90 jours |
+| Publications et commentaires supprimés par leur auteur | 1 mois, puis purge physique avec leurs images (décision du propriétaire, 2026-11-06 ; job à livrer, backlog R-4) |
 | Signalements résolus | 1 an, puis `evidenceSnapshot` effacé |
 | Sauvegardes | Quotidiennes 14 j, hebdomadaires 8 semaines, chiffrées, hors site |
 

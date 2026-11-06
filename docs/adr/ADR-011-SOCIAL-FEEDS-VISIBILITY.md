@@ -1,6 +1,6 @@
 # ADR-011 — Fils, visibilité et blocage : règles d'accès en SQL, sans cache partagé
 
-- **Statut** : Proposé (Phase 3), en attente de validation du propriétaire
+- **Statut** : Accepté le 2026-11-06 par le propriétaire du projet
 - **Date** : 2026-11-06
 - **Complète** : [ADR-010](ADR-010-BIBLE-RENDERING-CACHE.md) (CSP à nonce, rendu dynamique)
 
@@ -39,7 +39,7 @@ Option 3.
 
 ## Conséquences
 - ➕ Une seule implémentation de chaque règle ; 17 tests d'intégration couvrent chaque surface dans les deux sens.
-- ➕ Temps de réponse mesuré : fil complet p95 entre 36 et 58 ms en local (50 mesures, selon la charge du poste).
+- ➕ Temps de réponse mesuré : fil complet p95 entre 50 et 63 ms en local, serveur chaud (trois séries de 50 mesures).
 - ➖ Requêtes SQL brutes (`$queryRaw`) : typage manuel des lignes ; toute nouvelle requête doit composer les fragments
   (règle vérifiée en revue).
 - ➖ Sans cache partagé, la charge du fil croît avec les lecteurs ; à réévaluer en Phase 8 (tests de charge k6).

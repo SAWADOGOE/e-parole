@@ -61,7 +61,7 @@ Tâches volontairement sorties du périmètre actuel pour ne pas alourdir le pro
 |---|---|---|
 | R-2 | Détection automatique de mots-clés d'escroquerie (« Orange Money », « semence » contre prière) → signalement priorité 1 | Prévue par ADMIN-MODERATION, non livrée en Phase 3 |
 | R-3 | Troncature des IP de l'audit après 90 jours | Le journal est en append-only pour le rôle applicatif : il faut une fonction `SECURITY DEFINER` dédiée, à concevoir |
-| R-4 | Purge physique des publications et commentaires supprimés (et de leurs images) après rétention ; durée à fixer dans docs/11 (30 j, ou 1 an si retirés par la modération) | Revue sécurité Phase 3 (M3) : conservés sans limite aujourd'hui |
+| R-4 | Purge physique des publications et commentaires supprimés par leur auteur (et de leurs images) après **1 mois** (décision du 2026-11-06) ; contenus retirés par la modération : 1 an (ADMIN-MODERATION) | Revue sécurité Phase 3 (M3) : conservés sans limite aujourd'hui ; prévu en Phase 4 |
 | R-5 | Balayage du préfixe `originals/` (une URL présignée réutilisée dans ses 60 s peut laisser un original orphelin) ou règle de cycle de vie du bucket | Revue sécurité Phase 3 (F5), sans contournement du pipeline |
 | R-6 | Quota d'envois atomique (verrou par propriétaire) | Revue sécurité Phase 3 (F8) : des requêtes simultanées peuvent dépasser 8 envois en cours |
 | R-7 | Abonnement à un mineur soumis à son approbation, avant la messagerie (Phase 7) | Revue sécurité Phase 3 (F9) : conforme à docs/20 aujourd'hui, à durcir avant les messages |

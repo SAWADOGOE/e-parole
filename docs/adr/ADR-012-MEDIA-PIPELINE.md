@@ -1,6 +1,6 @@
 # ADR-012 — Images : bucket privé, variantes servies par l'application
 
-- **Statut** : Proposé (Phase 3), en attente de validation du propriétaire
+- **Statut** : Accepté le 2026-11-06 par le propriétaire du projet
 - **Date** : 2026-11-06
 - **Précise** : [ADR-004](ADR-004-FILE-STORAGE.md)
 

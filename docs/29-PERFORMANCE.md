@@ -16,14 +16,16 @@ Contexte : Android d'entrée de gamme, 3G/4G instable, data coûteuse. La perfor
 ## Mesures de la Phase 3 (2026-11-06, build de production local, données « [Démo] »)
 | Indicateur | Budget | Mesuré |
 |---|---|---|
-| JS initial `/` connecté (gzip) | < 170 Ko | **170,4 Ko** (228,8 Ko avant optimisation) — 0,4 Ko au-dessus, en attente d'arbitrage du propriétaire |
-| JS initial lecteur (gzip) | < 175 Ko | 171,5 Ko |
-| Fil complet (HTML), p95 sur 50 | — | 36 à 58 ms selon la charge du poste (Abonnements), 35 à 49 ms (Découvrir) |
+| JS initial `/` connecté (gzip) | < 170 Ko | **160,9 Ko** (228,8 Ko avant optimisation) |
+| JS initial lecteur (gzip) | < 175 Ko | 161,7 Ko |
+| Fil complet (HTML), p95 sur 50, serveur chaud | — | 51 à 56 ms (Abonnements), 50 à 63 ms (Découvrir), sur trois séries ; environ 120 ms juste après un redémarrage |
 | Image de fil 960 px (photos réelles) | ≤ 200 Ko | 17 à 71 Ko (AVIF), 25 à 71 Ko (WebP) |
 | Image 320 px (économie de données) | ≤ 60 Ko | 4 à 7 Ko |
 | Requêtes SQL par page de fil | constant | identique pour 1 ou 15 publications (test d'intégration) |
 
-Leviers appliqués : menus « … » et menu du compte chargés à la demande, composer chargé au clic, client d'authentification
+Levier le plus rentable : `src/app/error.tsx`, chargé sur **toutes** les pages, importait `Button` (Slot de Radix) et `EmptyState` (`tailwind-merge`) ; le rendre autonome a retiré environ 10 Ko partout. Règle : la frontière d'erreur et les îlots de la coque n'importent ni `Button` ni `cn`.
+
+Autres leviers : menus « … » et menu du compte chargés à la demande, composer chargé au clic, client d'authentification
 et `sonner` retirés de la coque (≈ −24 Ko sur **toutes** les pages membres), variantes de bouton sans `Slot` Radix, temps réel
 des notifications chargé à l'inactivité. Scripts : `node scripts/dev/measure-feed.mjs`, `node scripts/dev/capture-screens.mjs`.
 
