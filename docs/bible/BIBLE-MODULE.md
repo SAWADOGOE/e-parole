@@ -8,7 +8,8 @@
 | Recherche par référence et plein texte | 2 | Implémenté |
 | Réglages (taille, interligne, thème, focus), reprise de lecture | 2 | Implémenté |
 | Copier, surligner, noter, favori, partager par lien | 2 | Implémenté |
-| Partager dans une publication ou une communauté | 3 | Prévu |
+| Partager dans une publication (bouton « Publier » de la barre d'actions) | 3 | Implémenté |
+| Partager dans une communauté | 4 | Prévu |
 | Associer un passage à une prière | 4 | Prévu |
 | Partager dans une conversation | 7 | Prévu |
 | Verset du jour éditorialisé | 2 | Implémenté |

@@ -27,10 +27,12 @@ En tant que membre, je veux ouvrir Jean 3 afin de lire le chapitre entier.
 - La publication affiche le texte exact, la référence et « Louis Segond 1910 » ; le texte n'est pas modifiable par l'auteur.
 
 ## Social
-**US-10 — Publier un témoignage** : type « Témoignage », jusqu'à 4 images (≤ 10 Mo chacune avant compression),
-visibilité publique ou communauté. Brouillon conservé localement en cas de perte réseau.
+**US-10 — Publier un témoignage** : type « Témoignage », jusqu'à 4 images (≤ 10 Mo chacune avant compression).
+La publication est toujours publique (visible par tout membre connecté, jamais par un compte bloqué) ; la visibilité
+« Communauté » sera décidée en Phase 4. Brouillon conservé localement en cas de perte réseau.
 **US-11 — Commenter** : réponse à un commentaire sur un seul niveau ; l'auteur du post peut masquer un commentaire.
-**US-12 — Réagir « Amen »** : une réaction par personne et par cible, modifiable.
+**US-12 — Réagir** : trois réactions, Amen 🙏, J'aime ❤️, Encouragé 💪, chacune avec un libellé texte ; une réaction par
+personne et par cible (publication ou commentaire), modifiable et retirable.
 **US-13 — Suivre un auteur** : le fil Abonnements affiche ses publications par ordre chronologique.
 **US-14 — Bloquer** : un utilisateur bloqué ne voit plus mes contenus, ne peut ni commenter ni m'écrire, et n'est pas notifié.
 

@@ -59,6 +59,23 @@ provisoirement en attendant la décision.
 Avertissement → retrait de contenu → restriction temporaire (publication/commentaires 24 h à 7 j) → suspension (7 à 30 j) →
 bannissement. La fraude financière avérée et l'atteinte aux mineurs peuvent mener directement au bannissement.
 
+## Implémenté en Phase 3
+- **Publications** : toujours publiques pour les membres connectés (jamais pour un visiteur, jamais indexées), jamais pour un compte
+  bloqué dans un sens ou dans l'autre. Le composer le rappelle à tous, et rappelle aux mineurs de ne partager ni adresse, ni école,
+  ni téléphone.
+- **Profil** : église, ville, pays, dénomination avec visibilité par champ (public / abonnés / moi), privés par défaut ;
+  filtrés par le serveur, jamais par l'interface.
+- **Mineurs** (année de naissance absente comptée comme mineur) : non découvrables par défaut (recherche, autocomplétion de mention,
+  listes d'abonnés d'autrui) ; ville et pays **toujours** privés (pas de géolocalisation) ; un contenu signalé les concernant passe
+  au moins en priorité 1.
+- **Blocage** : retire les abonnements dans les deux sens, cache tout dans les deux sens (fils, profil, publication, commentaires,
+  réactions, mentions, notifications passées et futures, favoris, recherche, images), jamais notifié. Bloquer et mettre en sourdine
+  ne demandent pas d'email vérifié (geste de protection).
+- **Sourdine** : retire des fils et des notifications du membre qui la pose, sans rien changer pour l'autre.
+- **Modération v1** : signalement unique par personne et par cible, copie figée, dossiers, priorités, masquage provisoire à 5 signalements
+  de comptes de plus de 7 jours, décisions avec motif communiqué et notification ([ADMIN-MODERATION](admin/ADMIN-MODERATION.md)).
+  Le dossier ne montre de l'auteur que des métadonnées de modération (âge du compte, statut, sanctions, signalements reçus).
+
 ## Droits des personnes
 Export JSON en libre-service, suppression (30 j de grâce), rectification via le profil, retrait de consentement
 (suppression des champs sensibles). Politique de confidentialité et CGU à rédiger avec un juriste avant le pilote.

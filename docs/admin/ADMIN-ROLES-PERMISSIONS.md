@@ -100,6 +100,32 @@ automatiquement de rôle local : un `MODERATOR` global agit via `/admin/moderati
 | `community:read` | Lecture interne d'une communauté | Tout membre actif |
 | `community:manage:access` | Accès à `/manage/[id]` | `COMMUNITY_MODERATOR` et plus |
 
+## Permissions ajoutées en Phase 3 (réseau social et modération)
+Spécifiées avant le code (règle RBAC). « Vérifié » = email vérifié ; toute écriture exige aussi un compte `ACTIVE`.
+La visibilité (contenu supprimé, masqué, ou blocage dans un sens ou dans l'autre) est contrôlée **avant** la permission :
+un contenu invisible répond `NOT_FOUND`.
+
+| Permission | MEMBER | CONTENT_EDITOR | MODERATOR | ADMIN | SUPER_ADMIN |
+|---|---|---|---|---|---|
+| `comment:update` / `comment:delete` | ◐ propre | ◐ propre | ◐ propre | ◐ propre | ◐ propre |
+| `comment:hide_on_own_post` (masquer un commentaire, verrouiller) | ◐ auteur de la publication | ◐ idem | ◐ idem | ◐ idem | ◐ idem |
+| `reaction:set` (ajouter, changer, retirer) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) |
+| `relation:follow` | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) |
+| `relation:block` / `relation:mute` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `bookmark:manage` (favoris, privés) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) |
+| `profile:update` | ◐ le sien (vérifié) | ◐ idem | ◐ idem | ◐ idem | ◐ idem |
+| `media:upload` | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) | ✅ (vérifié) |
+| `notification:preferences:update` | ◐ les siennes | ◐ idem | ◐ idem | ◐ idem | ◐ idem |
+| `moderation:case:resolve` (« Ignorer ») | — | — | ✅ | ✅ | ✅ |
+
+Exception justifiée : bloquer et mettre en sourdine ne demandent **pas** d'email vérifié. Ce sont des gestes de protection :
+un membre harcelé doit pouvoir se protéger avant même d'avoir confirmé son adresse.
+
+Décisions de modération et permission évaluée : Ignorer → `moderation:case:resolve` ; Avertir → `moderation:sanction:warn` ;
+Masquer → `content:hide` ; Retirer → `content:remove` ; Suspendre → `moderation:sanction:suspend` (◐ ≤ 30 j pour `MODERATOR`,
+ré-authentification) ; Bannir → `moderation:sanction:ban` (`ADMIN`+, ré-authentification). La hiérarchie s'applique :
+on ne sanctionne pas un compte de rang égal ou supérieur.
+
 ## Règles transverses
 1. **Hiérarchie** : nul ne peut agir sur un compte de rôle égal ou supérieur au sien (un `ADMIN` ne suspend pas un `ADMIN`).
 2. **Pas d'auto-élévation** : on ne peut pas s'attribuer un rôle. Le rôle `SUPER_ADMIN` ne peut être retiré par

@@ -40,6 +40,8 @@ Estimation en points (1 = demi-journée). `US` → [06-USER-STORIES](06-USER-STO
 | B-10 | Verset du jour + admin de programmation (US-42) | 2 |
 
 ## Phase 3 — Social
+
+**Statut : S-1 à S-10 livrés le 2026-11-06 sur `phase-3/social`, en attente de validation.** Détails et écarts : [CHANGELOG](../CHANGELOG.md), ADR-011 à 013.
 Profils et visibilité (3) · uploads S3 + pipeline sharp (4) · publications typées (3) · commentaires (2) · réactions (1) ·
 follows + blocages (2) · fils avec curseur (3) · mentions + notifications in-app (3) · favoris (1) · signalements +
 `/admin/moderation` v1 (4).
@@ -57,4 +59,6 @@ Tâches volontairement sorties du périmètre actuel pour ne pas alourdir le pro
 
 | ID | Tâche | Contexte |
 |---|---|---|
+| R-2 | Détection automatique de mots-clés d'escroquerie (« Orange Money », « semence » contre prière) → signalement priorité 1 | Prévue par ADMIN-MODERATION, non livrée en Phase 3 |
+| R-3 | Troncature des IP de l'audit après 90 jours | Le journal est en append-only pour le rôle applicatif : il faut une fonction `SECURITY DEFINER` dédiée, à concevoir |
 | R-1 | Tests manuels aux lecteurs d'écran : TalkBack (Android, prioritaire pour le public cible), NVDA, VoiceOver | Les tests automatiques (axe) passent ; seule l'écoute humaine confirme une lecture agréable. Idéalement par une personne qui utilise TalkBack au quotidien. Protocole : lecture continue d'un chapitre, sélection d'un verset par son numéro, barre d'actions. |

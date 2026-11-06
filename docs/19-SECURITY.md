@@ -58,6 +58,22 @@
   clé étrangère de l'audit en `RESTRICT` (une action `SET NULL` contournerait l'append-only).
 - Comptes non `ACTIVE` : `getCurrentSession()` renvoie `null` (plus aucune lecture possible).
 
+## Implémenté en Phase 3
+- **Autorisation sociale** : visibilité d'abord (404), puis `authorize()` avec la ressource réelle ; mises à jour avec l'auteur
+  dans la condition SQL (aucun IDOR possible, testé). Nouvelles permissions : voir [ADMIN-ROLES-PERMISSIONS](admin/ADMIN-ROLES-PERMISSIONS.md#permissions-ajoutées-en-phase-3-réseau-social-et-modération).
+- **Limites nommées** : `post.create` (10/h pour un compte de moins de 7 jours, 60/h ensuite), `comment.create`, `reaction.set`,
+  `relation.follow`, `relation.block`, `report.create` (20/h), `upload.request` (40/h), `profile.update`, `profile.search`, `feed.page`.
+- **Purge** horaire des fenêtres `rate_limit` expirées (clés Better Auth contenant une IP comprises) et des sessions expirées
+  (job `maintenance.purge`) : dette de la Phase 2 soldée.
+- **Uploads** : URL présignée PUT 60 s (type et taille signés), liste blanche JPEG/PNG/WebP, 10 Mo, magic bytes, SVG/GIF/HEIC refusés,
+  décodage borné, ré-encodage sans métadonnées, original supprimé ([ADR-012](adr/ADR-012-MEDIA-PIPELINE.md)). CSP `connect-src`
+  étendue à l'origine du stockage (`S3_PUBLIC_ENDPOINT`).
+- **Texte des membres** rendu par React (aucune injection de balisage) ; liens `rel="nofollow ugc noopener noreferrer"`,
+  seuls `http:`/`https:` deviennent des liens.
+- **Refus d'accès admin** : `requireAdminPermission()` journalise `security.admin_access_denied` et répond 404 sur toutes les pages
+  `/admin` qui exigent une permission (dette de la Phase 2 généralisée).
+- **Contraste** : en-têtes des tableaux d'administration et panneau sombre de la connexion corrigés (violations axe révélées en Phase 3).
+
 ## Données sensibles
 Les convictions religieuses sont une **catégorie particulière de données** dans de nombreux droits (RGPD art. 9 ;
 loi burkinabè n° 001-2021/AN sur la protection des données personnelles, contrôlée par la CIL) ⚠️ **à faire valider par

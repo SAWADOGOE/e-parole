@@ -4,6 +4,31 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 
 ## [Non publié]
 
+### Ajouté — Phase 3 : réseau social (2026-11-06)
+- Profils `/@handle` : avatar, bannière, bio, @handle modifiable (unique, réservés refusés, 1 changement par 24 h), champs sensibles
+  avec visibilité par champ (public / abonnés / moi), privés par défaut ; abonnés, abonnements, recherche de membres découvrables.
+- Images : URL présignées PUT (60 s), job `media.process` (magic bytes, refus SVG/GIF/HEIC, EXIF/GPS retirés, AVIF/WebP 320 à 1280 px),
+  quotas, nettoyage quotidien, diffusion contrôlée par `/api/media`, mode économie de données.
+- Publications typées (texte, témoignage, question biblique, méditation, annonce), **toujours publiques**, jusqu'à 4 images avec texte
+  alternatif, un verset cité par référence et rendu par `VerseQuote`, brouillon local, mentions avec autocomplétion, liens et références
+  bibliques cliquables, modification et suppression ; bouton « Publier » dans la barre d'actions du lecteur (US-5).
+- Commentaires sur un niveau, masquage par l'auteur de la publication, verrouillage ; trois réactions (Amen, J'aime, Encouragé),
+  une par personne et par cible, modifiable et retirable ; compteurs exacts sous concurrence.
+- Abonnements, blocage (tout est caché dans les deux sens, jamais notifié), sourdine, favoris privés.
+- Fils Abonnements et Découvrir chronologiques, curseur, 15 par page, préchargement à 80 %, « Tu es à jour » après 48 h.
+- Notifications in-app regroupées, cloche en direct (SSE + LISTEN/NOTIFY, repli polling 60 s), préférences par type.
+- Modération v1 : signalements (motif, précisions, copie figée), dossiers, priorités 0 à 3, masquage provisoire à 5 signalements,
+  `/admin/moderation` (file, filtres, dossier, décisions Ignorer / Avertir / Masquer / Retirer / Suspendre / Bannir), audit sans contenu.
+- Worker : `media.process`, `media.cleanup`, `maintenance.purge` (fenêtres anti-abus et sessions expirées), `moderation.sanctions.expire`.
+- ADR-011, ADR-012, ADR-013 ; données de démonstration locales `pnpm demo:social`.
+
+### Modifié — Phase 3
+- Dépendances : `@aws-sdk/client-s3` et `@aws-sdk/s3-request-presigner` 3.1159.0, `sharp` 0.35.5 (sans `allowBuilds`).
+- Profil d'un mineur créé non découvrable ; mineurs existants migrés.
+- Pages `/admin` : refus d'accès journalisé (`security.admin_access_denied`) et 404 généralisés ; dialogue de ré-authentification partagé.
+- Coque de l'espace membre allégée d'environ 24 Ko de JS (client d'authentification, `sonner`, menu du compte chargés à la demande).
+- Contraste : en-têtes des tableaux admin et panneau sombre de la page de connexion.
+
 ### Ajouté — Phase 2 : Bible intégrée (2026-11-05)
 - Louis Segond 1910 importée depuis eBible.org : 66 livres, 1 189 chapitres, 31 170 versets, checksums par verset et global, licence documentée.
 - Import contrôlé : `pnpm bible:import` (dry-run, rapport d'intégrité, version STAGED), `bible:activate`, `bible:crosscheck`.

@@ -40,7 +40,10 @@ journalise l'erreur inattendue avec un `requestId`.
 | `*` | `/api/auth/[...all]` | Better Auth | — |
 | POST | `/api/uploads` | Demande d'URL présignée `{ purpose, mime, size }` → `{ uploadUrl, assetId }` | Vérifié |
 | POST | `/api/uploads/:assetId/complete` | Déclenche la validation et la compression | Propriétaire |
+| GET | `/api/uploads/:assetId` | État d'un envoi (`PENDING`, `PROCESSING`, `READY`, `REJECTED`) | Propriétaire |
+| GET | `/api/media/:assetId/:largeur.:format` | Variante d'image (AVIF/WebP), si le contenu qui la porte est visible | Connecté |
 | GET | `/api/notifications/stream` | SSE du compteur de notifications | Connecté |
+| GET | `/api/notifications/count` | Repli du flux SSE (polling 60 s) | Connecté |
 | GET | `/api/me/export` | Archive JSON des données personnelles (job, lien par email) | Connecté + ré-auth |
 | GET | `/api/bible/:translation/:book/:chapter` | JSON d'un chapitre (pour le cache PWA futur) | Public, cache 1 an |
 | GET | `/api/health` | Liveness/readiness (DB) | Public, sans détails |
@@ -50,3 +53,9 @@ Curseur opaque base64 de `(createdAt, id)` ; `limit` ≤ 30 ; réponse `{ items,
 
 ## Versionnement
 Si une API publique ou mobile native apparaît, elle sera préfixée `/api/v1` et documentée en OpenAPI (Phase 7+).
+
+## Implémenté en Phase 3
+Route Handlers via `authenticatedRoute()` ([src/server/http/route-handler.ts](../src/server/http/route-handler.ts)) :
+`Origin` (ou `Sec-Fetch-Site: same-origin` pour un GET sans `Origin`) vérifié, session obligatoire, limite de débit nommée,
+`AppError` convertie en statut HTTP. Les mutations de l'interface sont des Server Actions (`action()` / `adminAction()`).
+La page suivante d'un fil est une Server Action qui renvoie des éléments déjà rendus ([ADR-011](adr/ADR-011-SOCIAL-FEEDS-VISIBILITY.md)).

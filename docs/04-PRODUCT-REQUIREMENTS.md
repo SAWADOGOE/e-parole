@@ -34,9 +34,9 @@ Priorité : **M** = MVP, **P2** = phase suivante, **F** = futur.
 ## Réseau social (SOC)
 | ID | Exigence | Prio |
 |---|---|---|
-| REQ-SOC-1 | Publications : texte, jusqu'à 4 images, verset cité, types (témoignage, question biblique, méditation, annonce) | M |
+| REQ-SOC-1 | Publications : texte, jusqu'à 4 images, verset cité, types (texte, témoignage, question biblique, méditation, annonce). **Toute publication est publique** : visible par tout membre connecté, sans choix de visibilité (décision du propriétaire, 2026-11-05). La visibilité « Communauté » sera décidée en Phase 4 | M |
 | REQ-SOC-2 | Commentaires avec un niveau de réponse | M |
-| REQ-SOC-3 | Réactions limitées (Amen 🙏, J'aime ❤️, Encouragé 💪) | M |
+| REQ-SOC-3 | Réactions limitées, exactement trois (Amen 🙏, J'aime ❤️, Encouragé 💪), toujours accompagnées d'un libellé texte ; une par personne et par cible, modifiable et retirable | M |
 | REQ-SOC-4 | Fil « Abonnements » et fil « Découvrir » chronologiques | M |
 | REQ-SOC-5 | Favoris, partage, mentions, hashtags | M (favoris, mentions) / P2 (hashtags) |
 | REQ-SOC-6 | Signalement de tout contenu | M |
