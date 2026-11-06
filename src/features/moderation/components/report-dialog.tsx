@@ -16,12 +16,14 @@ interface ReportDialogProps {
   targetId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Rend le focus au déclencheur (bouton « … ») : l'élément de menu qui a ouvert le dialogue n'existe plus. */
+  returnFocus?: () => void;
 }
 
 const TITLE: Record<ReportTargetName, "titlePost" | "titleComment" | "titleProfile"> = { POST: "titlePost", COMMENT: "titleComment", PROFILE: "titleProfile" };
 
 /** Signalement (US-41, côté membre) : motif obligatoire, précisions facultatives ≤ 1 000 caractères. Chargé à la demande. */
-export default function ReportDialog({ targetType, targetId, open, onOpenChange }: ReportDialogProps) {
+export default function ReportDialog({ targetType, targetId, open, onOpenChange, returnFocus }: ReportDialogProps) {
   const t = useTranslations("report");
   const tErrors = useTranslations("errors.codes");
   const id = useId();
@@ -31,7 +33,10 @@ export default function ReportDialog({ targetType, targetId, open, onOpenChange 
 
   async function submit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!reason) return;
+    if (!reason) {
+      setError(t("reasonRequired"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -49,7 +54,14 @@ export default function ReportDialog({ targetType, targetId, open, onOpenChange 
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-h-[90dvh] overflow-y-auto">
+      <AlertDialogContent
+        className="max-h-[90dvh] overflow-y-auto"
+        onCloseAutoFocus={(event) => {
+          if (!returnFocus) return;
+          event.preventDefault();
+          returnFocus();
+        }}
+      >
         <AlertDialogTitle>{t(TITLE[targetType])}</AlertDialogTitle>
         <AlertDialogDescription>{t("intro")}</AlertDialogDescription>
         <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
@@ -82,7 +94,7 @@ export default function ReportDialog({ targetType, targetId, open, onOpenChange 
           <FormAlert message={error} />
           <AlertDialogFooter>
             <AlertDialogCancel type="button">{t("cancel")}</AlertDialogCancel>
-            <Button type="submit" disabled={busy || !reason}>
+            <Button type="submit" aria-disabled={busy || undefined}>
               {t("submit")}
             </Button>
           </AlertDialogFooter>

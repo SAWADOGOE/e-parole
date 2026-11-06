@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useState, type KeyboardEvent, type RefObject } from "react";
 import { POST_BODY_MAX } from "../../constants";
 import { mentionSuggestionsAction } from "../../server/actions";
 
@@ -17,6 +17,9 @@ interface MentionTextareaProps {
   help: string;
   placeholder: string;
   invalid: boolean;
+  /** Identifiant du message d'erreur du formulaire, relié au champ quand il est invalide. */
+  errorId: string;
+  inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
 /** Mot en cours de saisie s'il commence par @ (sinon null). */
@@ -29,10 +32,12 @@ function mentionQuery(text: string, caret: number): { start: number; query: stri
  * Zone de texte avec autocomplétion des @mentions (motif combobox : c'est une vraie liste de choix).
  * Les suggestions respectent le blocage et la découvrabilité côté serveur.
  */
-export function MentionTextarea({ value, onChange, label, help, placeholder, invalid }: MentionTextareaProps) {
+/** Seuils annoncés du compteur de caractères : pas une annonce par frappe. */
+const ANNOUNCED_REMAINING = [200, 50, 0];
+
+export function MentionTextarea({ value, onChange, label, help, placeholder, invalid, errorId, inputRef: ref }: MentionTextareaProps) {
   const t = useTranslations("composer");
   const id = useId();
-  const ref = useRef<HTMLTextAreaElement>(null);
   const [query, setQuery] = useState<{ start: number; query: string } | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [active, setActive] = useState(0);
@@ -68,7 +73,7 @@ export function MentionTextarea({ value, onChange, label, help, placeholder, inv
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       setActive((current) => (current + (event.key === "ArrowDown" ? 1 : suggestions.length - 1)) % suggestions.length);
-    } else if (event.key === "Enter" || event.key === "Tab") {
+    } else if (event.key === "Enter") {
       const suggestion = suggestions[active];
       if (suggestion) {
         event.preventDefault();
@@ -88,12 +93,10 @@ export function MentionTextarea({ value, onChange, label, help, placeholder, inv
       <textarea
         ref={ref}
         id={`${id}-body`}
-        role="combobox"
         aria-autocomplete="list"
-        aria-expanded={open}
         aria-controls={`${id}-list`}
         aria-activedescendant={open ? `${id}-option-${active}` : undefined}
-        aria-describedby={`${id}-help ${id}-count`}
+        aria-describedby={`${id}-help${invalid ? ` ${errorId}` : ""}`}
         aria-invalid={invalid || undefined}
         value={value}
         maxLength={POST_BODY_MAX}
@@ -122,15 +125,17 @@ export function MentionTextarea({ value, onChange, label, help, placeholder, inv
             className={`flex min-h-11 cursor-pointer flex-col justify-center rounded-sm px-3 text-sm ${index === active ? "bg-bg-subtle" : ""}`}
           >
             <span className="font-medium text-fg">{suggestion.displayName}</span>
-            <span className="text-muted">@{suggestion.handle}</span>
+            <span className={index === active ? "text-fg" : "text-muted"}>@{suggestion.handle}</span>
           </div>
         ))}
       </div>
       <p id={`${id}-help`} className="text-sm text-muted">
         {help}
       </p>
-      <p id={`${id}-count`} className="text-right text-xs text-muted tabular-nums" aria-live="polite">
-        {POST_BODY_MAX - value.length < 200 ? `${value.length} / ${POST_BODY_MAX}` : null}
+      <p className="text-right text-xs text-muted tabular-nums">{POST_BODY_MAX - value.length < 200 ? `${value.length} / ${POST_BODY_MAX}` : null}</p>
+      <p className="sr-only" aria-live="polite">
+        {ANNOUNCED_REMAINING.includes(POST_BODY_MAX - value.length) ? t("charactersLeft", { count: POST_BODY_MAX - value.length }) : null}
+        {query ? ` ${t("mentionsCount", { count: suggestions.length })}` : null}
       </p>
     </div>
   );

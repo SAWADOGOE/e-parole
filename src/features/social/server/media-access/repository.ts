@@ -21,11 +21,3 @@ export async function canViewAsset(viewerId: string, assetId: string): Promise<b
     )`;
   return rows.length > 0;
 }
-
-/** Les modérateurs voient les images des contenus signalés, même masqués ou retirés. */
-export async function isAssetLinkedToContent(assetId: string): Promise<boolean> {
-  const count = await db.mediaAsset.count({
-    where: { id: assetId, status: "READY", OR: [{ postMedia: { isNot: null } }, { avatarOf: { isNot: null } }, { bannerOf: { isNot: null } }] },
-  });
-  return count > 0;
-}

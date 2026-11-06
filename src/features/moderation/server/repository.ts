@@ -1,5 +1,5 @@
-import type { Prisma} from "@/server/db";
-import { db, type TransactionClient } from "@/server/db";
+import { AppError } from "@/server/errors/app-error";
+import { db, type Prisma, type TransactionClient } from "@/server/db";
 import type { CaseStatusName, DecisionName, ReportReasonName, ReportTargetName } from "../constants";
 import type { CaseDetail, CaseListItem, CaseListQuery } from "../types";
 
@@ -34,19 +34,22 @@ export async function lockOrOpenCase(
   tx: TransactionClient,
   target: { type: ReportTargetName; id: string; authorId: string; authorMinor: boolean; reason: ReportReasonName; priority: number },
 ): Promise<OpenCaseRow> {
-  await tx.$executeRaw`
-    INSERT INTO "moderation_case" ("id", "targetType", "targetId", "targetAuthorId", "targetAuthorMinor", "priority", "dominantReason", "updatedAt")
-    VALUES (replace(gen_random_uuid()::text, '-', ''), ${target.type}::"ReportTarget", ${target.id}, ${target.authorId}, ${target.authorMinor},
-            ${target.priority}, ${target.reason}::"ReportReason", now())
-    ON CONFLICT ("targetType", "targetId") WHERE "status" IN ('OPEN', 'IN_PROGRESS') DO NOTHING`;
-  const rows = await tx.$queryRaw<OpenCaseRow[]>`
-    SELECT "id", "targetType", "targetId", "targetAuthorId", "targetAuthorMinor", "status", "priority", "trustedReportCount", "autoHiddenAt", "assigneeId"
-    FROM "moderation_case"
-    WHERE "targetType" = ${target.type}::"ReportTarget" AND "targetId" = ${target.id} AND "status" IN ('OPEN', 'IN_PROGRESS')
-    FOR UPDATE`;
-  const row = rows[0];
-  if (!row) throw new Error("dossier introuvable après création");
-  return row;
+  // Deux essais : un dossier clos entre l'INSERT et le verrou (décision concurrente) laisse la place à un nouveau dossier.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await tx.$executeRaw`
+      INSERT INTO "moderation_case" ("id", "targetType", "targetId", "targetAuthorId", "targetAuthorMinor", "priority", "dominantReason", "updatedAt")
+      VALUES (replace(gen_random_uuid()::text, '-', ''), ${target.type}::"ReportTarget", ${target.id}, ${target.authorId}, ${target.authorMinor},
+              ${target.priority}, ${target.reason}::"ReportReason", now())
+      ON CONFLICT ("targetType", "targetId") WHERE "status" IN ('OPEN', 'IN_PROGRESS') DO NOTHING`;
+    const rows = await tx.$queryRaw<OpenCaseRow[]>`
+      SELECT "id", "targetType", "targetId", "targetAuthorId", "targetAuthorMinor", "status", "priority", "trustedReportCount", "autoHiddenAt", "assigneeId"
+      FROM "moderation_case"
+      WHERE "targetType" = ${target.type}::"ReportTarget" AND "targetId" = ${target.id} AND "status" IN ('OPEN', 'IN_PROGRESS')
+      FOR UPDATE`;
+    const row = rows[0];
+    if (row) return row;
+  }
+  throw new AppError("CONFLICT");
 }
 
 /** Un signalement par personne et par cible : false si la personne a déjà signalé cette cible. */
@@ -252,9 +255,10 @@ export async function findTargetRoles(userId: string): Promise<("SUPER_ADMIN" | 
   return roles.map((r) => r.role);
 }
 
-export async function assignCase(caseId: string, assigneeId: string, tx: TransactionClient): Promise<number> {
+/** S'assigner un dossier libre (ou déjà à soi) ; reprendre le dossier d'un autre exige le rang ADMIN (`canTakeOver`). */
+export async function assignCase(caseId: string, assigneeId: string, tx: TransactionClient, canTakeOver: boolean): Promise<number> {
   const result = await tx.moderationCase.updateMany({
-    where: { id: caseId, status: { in: ["OPEN", "IN_PROGRESS"] } },
+    where: { id: caseId, status: { in: ["OPEN", "IN_PROGRESS"] }, ...(canTakeOver ? {} : { OR: [{ assigneeId: null }, { assigneeId }] }) },
     data: { assigneeId, status: "IN_PROGRESS" },
   });
   return result.count;
@@ -304,8 +308,8 @@ export async function reporterIds(tx: TransactionClient, caseId: string): Promis
 }
 
 /** Fin des suspensions échues (job horaire). Renvoie les comptes réactivés. */
-export async function expireSuspensions(now: Date): Promise<string[]> {
-  const rows = await db.$queryRaw<{ id: string }[]>`
+export async function expireSuspensions(now: Date, tx: TransactionClient = db): Promise<string[]> {
+  const rows = await tx.$queryRaw<{ id: string }[]>`
     UPDATE "user" SET "status" = 'ACTIVE', "suspendedUntil" = NULL, "updatedAt" = now()
     WHERE "status" = 'SUSPENDED' AND "suspendedUntil" IS NOT NULL AND "suspendedUntil" <= ${now.toISOString()}::timestamp
     RETURNING "id"`;
@@ -315,4 +319,11 @@ export async function expireSuspensions(now: Date): Promise<string[]> {
 export async function findHandle(tx: TransactionClient, userId: string): Promise<string | null> {
   const profile = await tx.profile.findUnique({ where: { userId }, select: { handle: true } });
   return profile?.handle ?? null;
+}
+
+/** Image citée par la copie figée d'un signalement : seule voie d'accès d'un modérateur à une image (ADR-012). */
+export async function isAssetInEvidence(assetId: string): Promise<boolean> {
+  const rows = await db.$queryRaw<{ ok: number }[]>`
+    SELECT 1 AS "ok" FROM "report" r WHERE strpos(r."evidenceSnapshot"::text, ${`"${assetId}"`}) > 0 LIMIT 1`;
+  return rows.length > 0;
 }

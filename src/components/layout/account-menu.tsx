@@ -20,7 +20,7 @@ export function AccountMenu(props: Omit<AccountMenuProps, "initialOpen">) {
       label={t("accountMenu")}
       className={TRIGGER}
       icon={<span aria-hidden="true">{initials(props.displayName) || "?"}</span>}
-      preload={() => void load()}
+      preload={load}
       render={() => <AccountMenuFull {...props} initialOpen />}
     />
   );

@@ -39,7 +39,7 @@ Option 3.
 
 ## Conséquences
 - ➕ Une seule implémentation de chaque règle ; 17 tests d'intégration couvrent chaque surface dans les deux sens.
-- ➕ Temps de réponse mesuré : fil complet p95 ≈ 36 ms en local (50 mesures).
+- ➕ Temps de réponse mesuré : fil complet p95 entre 36 et 58 ms en local (50 mesures, selon la charge du poste).
 - ➖ Requêtes SQL brutes (`$queryRaw`) : typage manuel des lignes ; toute nouvelle requête doit composer les fragments
   (règle vérifiée en revue).
 - ➖ Sans cache partagé, la charge du fil croît avec les lecteurs ; à réévaluer en Phase 8 (tests de charge k6).

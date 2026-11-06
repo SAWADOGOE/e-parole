@@ -22,6 +22,17 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versionnage S
 - Worker : `media.process`, `media.cleanup`, `maintenance.purge` (fenêtres anti-abus et sessions expirées), `moderation.sanctions.expire`.
 - ADR-011, ADR-012, ADR-013 ; données de démonstration locales `pnpm demo:social`.
 
+### Revues de la Phase 3 (`security-auditor`, `accessibility-reviewer`, `code-reviewer`)
+- Sécurité : aucun point critique ni élevé. Corrigés : flux SSE plafonnés et revérifiés, accès modérateur aux images limité aux preuves
+  avec MFA, séparation des tâches renforcée, auteur bloqué toujours maître de ses commentaires, contenu masqué non modifiable, mentions
+  jamais vers une personne qui ne voit pas la publication, journalisation sans contenu, script de démo verrouillé sur l'hôte local.
+- Code : fuite du flux SSE à la déconnexion, nettoyage des médias (base avant stockage, condition revérifiée), reprise du dossier clos
+  pendant un signalement, fin de suspension auditée dans la même transaction, reconnexion LISTEN répétée, octet NUL littéral retiré.
+- Accessibilité : réglages du menu du compte joignables au clavier (bloquant), focus conservé ou rendu (pagination, menus chargés à la
+  demande, dialogues, composer, décisions), nom accessible du bouton Suivre, contrastes, erreurs reliées aux champs, annonces des envois
+  d'images, de la pagination et des nouvelles notifications, hiérarchie des titres.
+- Reportés au backlog (R-4 à R-10), avec leur raison.
+
 ### Modifié — Phase 3
 - Dépendances : `@aws-sdk/client-s3` et `@aws-sdk/s3-request-presigner` 3.1159.0, `sharp` 0.35.5 (sans `allowBuilds`).
 - Profil d'un mineur créé non découvrable ; mineurs existants migrés.

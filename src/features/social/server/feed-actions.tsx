@@ -15,6 +15,8 @@ export interface RenderedPage {
   nextCursor: string | null;
   /** La page contient ou suit le repère « Tu es à jour » : le chargement automatique s'arrête. */
   pastFresh: boolean;
+  /** Nombre de publications ajoutées, annoncé aux lecteurs d'écran. */
+  count: number;
 }
 
 type Source = ReturnType<typeof postPageSchema.parse>["source"];
@@ -41,9 +43,10 @@ export async function loadPostPageAction(input: unknown): Promise<Result<Rendere
       const markerShown = data.markerShown || data.source.kind !== "feed";
       const ctx = await buildRenderContext(page.items);
       return {
-        node: <PostList posts={page.items} ctx={ctx} markerShown={markerShown} />,
+        node: <PostList posts={page.items} ctx={ctx} markerShown={markerShown} headingLevel={data.source.kind === "bookmarks" ? 2 : 3} />,
         nextCursor: page.nextCursor,
         pastFresh: markerShown || freshBoundary(page.items) >= 0,
+        count: page.items.length,
       };
     },
   })(input);

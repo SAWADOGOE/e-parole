@@ -58,6 +58,8 @@ export function DecisionForm({ caseId, targetIsProfile, targetHandle, canBan, ma
       if (result.ok) {
         notify(t("decisionApplied"));
         router.refresh();
+        // Le formulaire disparaît une fois le dossier traité : le focus va au titre du dossier.
+        document.getElementById("titre-dossier")?.focus();
       } else if (result.error.code === "REAUTH_REQUIRED") setPending(payload);
       else if (result.error.fieldErrors?.["confirmHandle"]) setError(t("handleMismatch"));
       else setError(result.error.code === "CONFLICT" ? t("caseClosed") : tErrors(errorKey(result.error.code)));
@@ -70,6 +72,7 @@ export function DecisionForm({ caseId, targetIsProfile, targetHandle, canBan, ma
 
   function submit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
+    if (busy) return;
     const data = new FormData(event.currentTarget);
     void apply({
       caseId,
@@ -92,7 +95,7 @@ export function DecisionForm({ caseId, targetIsProfile, targetHandle, canBan, ma
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-2 text-base font-semibold text-fg">{t("decisionTitle")}</legend>
         {available.map((value) => (
-          <div key={value} className="flex min-h-11 items-start gap-3 rounded-md px-2 py-2 hover:bg-bg-subtle">
+          <div key={value} className="flex min-h-11 items-start gap-3 rounded-md px-2 py-2">
             <input id={`${id}-${value}`} type="radio" name="decision" value={value} checked={decision === value} onChange={() => setDecision(value)} aria-describedby={`${id}-${value}-aide`} className="mt-1 size-4 accent-(--accent)" />
             <span>
               <label htmlFor={`${id}-${value}`} className="block text-sm font-medium text-fg">
@@ -122,15 +125,24 @@ export function DecisionForm({ caseId, targetIsProfile, targetHandle, canBan, ma
       {heavy && targetHandle ? (
         <label className="flex flex-col gap-1 text-sm text-fg">
           {t("confirmHandleLabel", { handle: targetHandle })}
-          <input name="confirmHandle" required autoComplete="off" spellCheck={false} className="h-11 rounded-sm border border-border-strong bg-bg-elevated px-3 text-base" />
+          <input
+            name="confirmHandle"
+            required
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={error === t("handleMismatch") || undefined}
+            aria-describedby={error === t("handleMismatch") ? `${id}-erreur` : undefined}
+            className="h-11 rounded-sm border border-border-strong bg-bg-elevated px-3 text-base" />
         </label>
       ) : null}
-      <FormAlert message={error} />
+      <FormAlert id={`${id}-erreur`} message={error} />
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" variant={heavy || decision === "REMOVE" ? "danger" : "primary"} disabled={busy}>
+        <Button type="submit" variant={heavy || decision === "REMOVE" ? "danger" : "primary"} aria-disabled={busy || undefined} aria-keyshortcuts="Control+Enter" aria-describedby={`${id}-raccourci`}>
           {t("applyDecision")}
         </Button>
-        <span className="text-xs text-muted">{t("applyShortcut")}</span>
+        <span id={`${id}-raccourci`} className="text-xs text-muted">
+          {t("applyShortcut")}
+        </span>
       </div>
       <ReauthDialog
         open={pending !== null}

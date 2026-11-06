@@ -109,8 +109,10 @@ describe("IDOR : édition et suppression", () => {
     const intruder = await createTestUser();
     const postId = await postAs(author.actor);
     const commentId = await commentAs(commenter.actor, postId);
-    await expect(updateComment(intruder.actor, { commentId, body: "x" })).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(deleteComment(intruder.actor, { commentId })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    // Modifier ou retirer passe par « mon commentaire » : celui d'autrui répond comme une ressource absente (404).
+    await expect(updateComment(intruder.actor, { commentId, body: "x" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(deleteComment(intruder.actor, { commentId })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await db.comment.findUniqueOrThrow({ where: { id: commentId } })).deletedAt).toBeNull();
     await expect(hideComment(intruder.actor, { commentId, hidden: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(hideComment(commenter.actor, { commentId, hidden: true })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await hideComment(author.actor, { commentId, hidden: true });

@@ -4,8 +4,6 @@ import { Bookmark, LayoutDashboard, LogOut, Search, ShieldCheck, UserRound, User
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { DataSaverToggle } from "@/components/shared/data-saver-toggle";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/features/auth/lib/auth-client";
 import { initials } from "@/lib/initials";
+import { AccountPreferences } from "./account-preferences";
 
 export interface AccountMenuProps {
   /** Ouvert dès le montage : chargé à la demande par AccountMenu (account-menu.tsx). */
@@ -93,14 +92,7 @@ export default function AccountMenuFull({ displayName, handle, showAdmin, manage
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
-        <div className="px-2 py-1.5">
-          <ThemeToggle />
-        </div>
-        {dataSaver === undefined ? null : (
-          <div className="px-2 py-1.5">
-            <DataSaverToggle enabled={dataSaver} />
-          </div>
-        )}
+        <AccountPreferences dataSaver={dataSaver} />
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut aria-hidden="true" />

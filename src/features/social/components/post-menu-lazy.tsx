@@ -23,10 +23,10 @@ export function PostMenuLazy(props: Omit<PostMenuProps, "initialOpen">) {
   const t = useTranslations("social");
   return (
     <LazyMenuTrigger
-      label={t("menu.label")}
+      label={t("menu.labelFor", { name: props.author.displayName })}
       className={BUTTON}
       icon={<MoreHorizontal aria-hidden="true" className="size-5" />}
-      preload={() => void load()}
+      preload={load}
       render={() => <PostMenu {...props} initialOpen />}
     />
   );

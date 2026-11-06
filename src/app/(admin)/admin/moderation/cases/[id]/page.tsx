@@ -40,7 +40,9 @@ export default async function ModerationCasePage(props: PageProps<"/admin/modera
     <>
       <Breadcrumbs items={[{ label: t("metaTitle"), href: "/admin" }, { label: t("moderation"), href: "/admin/moderation" }, { label: t("caseTitle", { id: detail.id.slice(0, 8) }) }]} />
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="font-serif text-display-sm text-fg">{tReport(`reasons.${detail.dominantReason}`)}</h1>
+        <h1 id="titre-dossier" tabIndex={-1} className="font-serif text-display-sm text-fg">
+          {tReport(`reasons.${detail.dominantReason}`)}
+        </h1>
         <Badge tone={detail.priority <= 1 ? "danger" : "neutral"}>{t("priorityLabel", { label: t(`priority.${String(detail.priority) as "0" | "1" | "2" | "3"}`) })}</Badge>
         <Badge>{t(`caseStatus.${detail.status}`)}</Badge>
         <Badge>{t(`targetType.${detail.targetType}`)}</Badge>

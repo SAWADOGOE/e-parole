@@ -42,8 +42,9 @@ export async function recordMemberEvent(tx: TransactionClient, event: MemberEven
     )
     INSERT INTO "notification_actor" ("notificationId", "actorId")
     SELECT "id", ${event.actorId} FROM grouped
-    ON CONFLICT ("notificationId", "actorId") DO UPDATE SET "createdAt" = now()
+    ON CONFLICT ("notificationId", "actorId") DO NOTHING
     RETURNING "notificationId"`;
+  // Même personne déjà dans le groupe non lu (réaction retirée puis remise) : ni nouveau signal, ni NOTIFY.
   if (rows.length === 0) return false;
   await tx.$executeRaw`SELECT pg_notify(${NOTIFY_CHANNEL}, ${event.recipientId})`;
   return true;
@@ -81,7 +82,10 @@ function displayableCondition(recipientId: string): Prisma.Sql {
     n."type" IN ('MODERATION', 'REPORT_REVIEWED')
     OR EXISTS (SELECT 1 FROM "notification_actor" na WHERE na."notificationId" = n."id" AND ${visibleActorCondition(recipientId, Prisma.sql`na."actorId"`)})
   ) AND (n."postId" IS NULL OR n."type" IN ('MODERATION', 'REPORT_REVIEWED')
-         OR EXISTS (SELECT 1 FROM "post" tp WHERE tp."id" = n."postId" AND tp."deletedAt" IS NULL))`;
+         OR EXISTS (
+           SELECT 1 FROM "post" tp WHERE tp."id" = n."postId" AND tp."deletedAt" IS NULL
+             AND (NOT tp."isHidden" OR tp."authorId" = ${recipientId})
+             AND NOT ${blockedBetween(recipientId, Prisma.sql`tp."authorId"`)}))`;
 }
 
 export async function countUnread(recipientId: string): Promise<number> {

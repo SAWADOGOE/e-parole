@@ -3,6 +3,7 @@ import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
+import { recordAudit } from "../audit/audit";
 import { db } from "../db";
 import { getEnv } from "../env";
 import { enqueueEmail } from "../jobs/enqueue";
@@ -179,7 +180,10 @@ function buildAuth() {
             });
             // Suspension échue mais pas encore levée par le worker : le compte retrouve son accès dès maintenant.
             if (owner?.status === "SUSPENDED" && owner.suspendedUntil && owner.suspendedUntil <= new Date()) {
-              await db.user.updateMany({ where: { id: session.userId, status: "SUSPENDED" }, data: { status: "ACTIVE", suspendedUntil: null } });
+              await db.$transaction(async (tx) => {
+                const { count } = await tx.user.updateMany({ where: { id: session.userId, status: "SUSPENDED" }, data: { status: "ACTIVE", suspendedUntil: null } });
+                if (count === 1) await recordAudit({ actor: null, action: "user.suspension.expired", targetType: "user", targetId: session.userId }, tx);
+              });
               owner.status = "ACTIVE";
             }
             if (!owner || owner.deletedAt || owner.status !== "ACTIVE") {

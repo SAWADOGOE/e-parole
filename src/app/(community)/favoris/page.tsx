@@ -37,7 +37,7 @@ export default async function BookmarksPage(props: PageProps<"/favoris">) {
             fallbackHref={page.nextCursor ? (`/favoris?curseur=${encodeURIComponent(page.nextCursor)}` as Route) : null}
             moreLabel={t("more")}
           >
-            <PostList posts={page.items} ctx={ctx} markerShown />
+            <PostList posts={page.items} ctx={ctx} markerShown headingLevel={2} />
           </FeedPager>
         )}
       </div>

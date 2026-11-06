@@ -31,8 +31,18 @@ export function FeedPager({ source, initialCursor, initialPastFresh, fallbackHre
   const [cursor, setCursor] = useState(initialCursor);
   const [pastFresh, setPastFresh] = useState(initialPastFresh);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [announcement, setAnnouncement] = useState("");
   const container = useRef<HTMLDivElement>(null);
   const loading = useRef(false);
+  /** Page demandée au clavier ou au clic : le focus ira sur sa première publication (rien ne retombe sur la page). */
+  const focusNewPage = useRef(false);
+
+  useEffect(() => {
+    if (!focusNewPage.current || pages.length === 0) return;
+    focusNewPage.current = false;
+    const lastPage = container.current?.querySelector<HTMLElement>(`[data-page="${pages.length}"] [data-feed-item]`);
+    lastPage?.focus();
+  }, [pages.length]);
 
   const loadMore = useCallback(async () => {
     if (!cursor || loading.current) return;
@@ -46,12 +56,13 @@ export function FeedPager({ source, initialCursor, initialPastFresh, fallbackHre
       setCursor(page.nextCursor);
       setPastFresh(page.pastFresh);
       setStatus("idle");
+      setAnnouncement(t("loaded", { count: page.count }));
     } catch {
       setStatus("error");
     } finally {
       loading.current = false;
     }
-  }, [cursor, pastFresh, source]);
+  }, [cursor, pastFresh, source, t]);
 
   useEffect(() => {
     const root = container.current;
@@ -74,12 +85,12 @@ export function FeedPager({ source, initialCursor, initialPastFresh, fallbackHre
     <div ref={container}>
       {children}
       {pages.map((page, index) => (
-        <div key={index} className="contents">
+        <div key={index} className="contents" data-page={index + 1}>
           {page}
         </div>
       ))}
       <div aria-live="polite" className="py-4 text-center text-sm text-muted">
-        {status === "loading" ? t("loadingMore") : null}
+        {status === "loading" ? t("loadingMore") : status === "idle" ? <span className="sr-only">{announcement}</span> : null}
         {status === "error" ? (
           <span className="flex flex-col items-center gap-2">
             {t("loadFailed")}
@@ -89,15 +100,18 @@ export function FeedPager({ source, initialCursor, initialPastFresh, fallbackHre
           </span>
         ) : null}
       </div>
-      {cursor && status === "idle" ? (
+      {cursor && status !== "error" ? (
         <div className="flex justify-center pb-4">
           {fallbackHref ? (
             // Lien stylé sans Slot de Radix : il reste hors du JS initial du fil (docs/29).
             <a
               href={fallbackHref}
               className={buttonVariants({ variant: "secondary" })}
+              aria-disabled={status === "loading" || undefined}
               onClick={(event) => {
                 event.preventDefault();
+                if (status === "loading") return;
+                focusNewPage.current = true;
                 void loadMore();
               }}
             >

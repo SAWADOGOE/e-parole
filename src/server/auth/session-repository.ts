@@ -23,6 +23,12 @@ export async function purgeExpiredSessions(now: Date = new Date()): Promise<numb
   return count;
 }
 
+/** Session toujours valable pour un flux long (SSE) : non expirée, non révoquée, compte actif. */
+export async function isSessionStillValid(sessionId: string, userId: string, now: Date = new Date()): Promise<boolean> {
+  const count = await db.session.count({ where: { id: sessionId, userId, expiresAt: { gt: now }, user: { status: "ACTIVE", deletedAt: null } } });
+  return count === 1;
+}
+
 export async function revokeOtherSessions(userId: string, keepSessionId: string): Promise<number> {
   const { count } = await db.session.deleteMany({ where: { userId, id: { not: keepSessionId } } });
   return count;

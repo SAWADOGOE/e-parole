@@ -26,7 +26,7 @@ export async function PostItem({ post, ctx, headingLevel = 2, onPostPage = false
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const headingId = `publication-${post.id}`;
   return (
-    <article aria-labelledby={headingId} data-feed-item="" className="border-b py-5 first:pt-2">
+    <article aria-labelledby={headingId} data-feed-item="" tabIndex={-1} className="border-b py-5 first:pt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
       <header className="flex items-start gap-3">
         <Avatar name={post.author.displayName} image={post.author.avatar} dataSaver={ctx.dataSaver} />
         <div className="min-w-0 flex-1">

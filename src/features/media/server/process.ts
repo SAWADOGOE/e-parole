@@ -24,7 +24,7 @@ class MediaRejection extends Error {
   }
 }
 
-function variantKey(assetId: string, width: number, format: VariantFormat): string {
+export function variantKey(assetId: string, width: number, format: VariantFormat): string {
   return `media/${assetId}/${width}.${format}`;
 }
 

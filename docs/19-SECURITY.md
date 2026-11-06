@@ -73,6 +73,10 @@
 - **Refus d'accès admin** : `requireAdminPermission()` journalise `security.admin_access_denied` et répond 404 sur toutes les pages
   `/admin` qui exigent une permission (dette de la Phase 2 généralisée).
 - **Contraste** : en-têtes des tableaux d'administration et panneau sombre de la connexion corrigés (violations axe révélées en Phase 3).
+- **Revues de fin de phase** : une suspension ne lève jamais un bannissement ni ne raccourcit une suspension ; corps JSON limité en flux ;
+  séparation des tâches (un modérateur ne décide ni d'un dossier qu'il a signalé, ni du contenu d'un rang égal ou supérieur, et ne prend
+  pas le dossier d'un autre) ; images visibles des modérateurs limitées aux preuves ; flux SSE plafonnés ; erreurs de base de données
+  journalisées sans leur message (qui peut citer la ligne refusée) ; garde « base locale » du script de démo sur le nom d'hôte.
 
 ## Données sensibles
 Les convictions religieuses sont une **catégorie particulière de données** dans de nombreux droits (RGPD art. 9 ;

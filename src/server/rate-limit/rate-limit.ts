@@ -38,6 +38,7 @@ export const RATE_LIMITS = {
   "upload.request": { window: 3600, max: 40 },
   "feed.page": { window: 3600, max: 1200 },
   "notification.read": { window: 3600, max: 600 },
+  "notification.stream": { window: 3600, max: 30 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;

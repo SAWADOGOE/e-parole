@@ -25,6 +25,7 @@ export function ReactionBar({ target, targetId, counts, viewerReaction, compact 
   const [pending, startTransition] = useTransition();
 
   function choose(kind: ReactionKindName): void {
+    if (pending) return;
     const next = state.kind === kind ? null : kind;
     const previous = state;
     const optimistic = { ...state.counts };
@@ -56,17 +57,17 @@ export function ReactionBar({ target, targetId, counts, viewerReaction, compact 
             key={kind}
             type="button"
             aria-pressed={active}
-            disabled={pending}
+            aria-disabled={pending || undefined}
             onClick={() => choose(kind)}
             className={cn(
-              "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-(--motion-fast) disabled:opacity-70",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors duration-(--motion-fast) aria-disabled:opacity-70",
               compact && "min-h-11 px-2.5 text-xs",
               active ? "border-accent bg-accent-subtle font-semibold text-fg" : "border-border text-fg hover:bg-bg-subtle",
             )}
           >
             <span aria-hidden="true">{REACTION_EMOJI[kind]}</span>
             <span>{t(kind)}</span>
-            {count > 0 ? <span className="tabular-nums text-muted">{count}</span> : null}
+            {count > 0 ? <span className={cn("tabular-nums", active ? "text-fg" : "text-muted")}>{count}</span> : null}
           </button>
         );
       })}

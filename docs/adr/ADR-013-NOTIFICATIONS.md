@@ -17,6 +17,10 @@ service tiers, avec repli en polling. Les réseaux mobiles coupent les connexion
 - **Temps réel** : `pg_notify('eparole_notifications', <id du destinataire>)` dans la transaction (livré au commit) ; une
   seule connexion `LISTEN` par processus web, partagée par les flux SSE `/api/notifications/stream` (session + `Origin`
   ou `Sec-Fetch-Site` vérifiés). Le flux n'envoie que le **nombre** de non-lues ; battement 25 s, recyclage 10 min.
+  Trois flux au plus par membre (le plus ancien est fermé), limite `notification.stream` (30/h), session revérifiée chaque
+  minute (suspension, révocation), comptages regroupés à 1 s. Reconnexion LISTEN avec délai croissant, puis compteur renvoyé.
+- Pagination des notifications par `(updatedAt, id)` : un groupe mis à jour entre deux pages peut apparaître deux fois ;
+  accepté au MVP (aucune perte de notification).
 - **Repli** : après 3 erreurs du flux, ou sans `EventSource`, le client interroge `/api/notifications/count` toutes les 60 s.
   La logique temps réel est chargée quand le navigateur est inactif (budget JS du fil).
 - Décisions de modération et retours aux signaleurs : notifications « système » sans acteur, toujours délivrées.

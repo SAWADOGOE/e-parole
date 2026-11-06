@@ -51,7 +51,7 @@ export default async function PeoplePage(props: PageProps<"/membres">) {
           {t("searchSubmit")}
         </Button>
       </form>
-      <div className="mt-6" aria-live="polite">
+      <div className="mt-6">
         {limited ? <p className="text-danger">{tErrors("RATE_LIMITED")}</p> : null}
         {query.q.length > 0 && query.q.length < 2 ? <p className="text-muted">{t("tooShort")}</p> : null}
         {query.q.length >= 2 && !limited && page.items.length === 0 ? <EmptyState icon={Search} title={t("title")} body={t("empty")} /> : null}

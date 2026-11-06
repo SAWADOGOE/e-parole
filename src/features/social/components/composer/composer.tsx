@@ -3,7 +3,7 @@
 import { Info, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, type SubmitEvent } from "react";
+import { useId, useMemo, useRef, useState, type SubmitEvent } from "react";
 import { FormAlert } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { errorKey } from "@/lib/error-key";
@@ -36,10 +36,8 @@ export default function Composer({ isMinor, initialVerse = null, onPublished }: 
   const uploads = useUploads(restored?.images ?? [], MAX_POST_IMAGES);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (restored) notify(t("draftRestored"));
-  }, [restored, t]);
+  const errorId = useId();
+  const bodyField = useRef<HTMLTextAreaElement>(null);
 
   const draft = useMemo<Draft>(
     () => ({ type, body, verse, images: uploads.items.flatMap((item) => (item.assetId && item.state !== "failed" ? [{ assetId: item.assetId, altText: item.altText }] : [])) }),
@@ -52,7 +50,11 @@ export default function Composer({ isMinor, initialVerse = null, onPublished }: 
     setError(null);
     if (uploads.pending) return setError(t("waitImages"));
     const images = uploads.items.flatMap((item) => (item.state === "ready" && item.assetId ? [{ assetId: item.assetId, altText: item.altText.trim() }] : []));
-    if (!body.trim() && !verse && images.length === 0) return setError(t("emptyError"));
+    if (!body.trim() && !verse && images.length === 0) {
+      setError(t("emptyError"));
+      bodyField.current?.focus();
+      return;
+    }
     setBusy(true);
     try {
       const result = await createPostAction({
@@ -97,7 +99,18 @@ export default function Composer({ isMinor, initialVerse = null, onPublished }: 
         </div>
       </fieldset>
 
-      <MentionTextarea value={body} onChange={setBody} label={t("bodyLabel")} help={t("bodyHelp")} placeholder={t("bodyPlaceholder")} invalid={error === t("emptyError")} />
+      {/* Le brouillon retrouvé est signalé dans le composer : un toast, hors de la feuille modale, ne serait pas lu. */}
+      {restored ? <FormAlert tone="success" message={t("draftRestored")} /> : null}
+      <MentionTextarea
+        value={body}
+        onChange={setBody}
+        label={t("bodyLabel")}
+        help={t("bodyHelp")}
+        placeholder={t("bodyPlaceholder")}
+        invalid={error === t("emptyError")}
+        errorId={errorId}
+        inputRef={bodyField}
+      />
       <VerseField verse={verse} onChange={setVerse} />
       <ImageField uploads={uploads} />
 
@@ -112,7 +125,7 @@ export default function Composer({ isMinor, initialVerse = null, onPublished }: 
             {t("minorNotice")}
           </p>
         ) : null}
-        <FormAlert message={error} />
+        <FormAlert id={errorId} message={error} />
         <div className="flex flex-wrap items-center justify-end gap-2">
           {body || verse || uploads.items.length > 0 ? (
             <Button
@@ -122,6 +135,8 @@ export default function Composer({ isMinor, initialVerse = null, onPublished }: 
                 setBody("");
                 setVerse(null);
                 uploads.clear();
+                // Le bouton disparaît avec le brouillon : le focus revient au message.
+                bodyField.current?.focus();
               }}
             >
               {t("discardDraft")}

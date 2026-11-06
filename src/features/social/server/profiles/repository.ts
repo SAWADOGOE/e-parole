@@ -1,6 +1,5 @@
 import { findOwnedReadyAssets, mediaImageFromStored, type MediaImage } from "@/features/media";
-import type { Prisma} from "@/server/db";
-import { db, type TransactionClient } from "@/server/db";
+import { db, Prisma, type TransactionClient } from "@/server/db";
 import type { FieldVisibility } from "../../constants";
 import type { VerifiedBadgeName } from "../../types";
 import { col, notBlocked, visibleAccount } from "../sql";
@@ -119,14 +118,22 @@ export async function setProfileImage(userId: string, slot: "avatar" | "banner",
  * Mentions résolues à l'écriture : la personne existe, reste visible, n'a aucun blocage avec l'auteur,
  * et accepte d'être trouvée (profil découvrable, ou elle suit déjà l'auteur).
  */
-export async function resolveMentionTargets(authorId: string, handles: readonly string[], tx: TransactionClient = db): Promise<{ userId: string; handle: string }[]> {
+export async function resolveMentionTargets(
+  authorId: string,
+  handles: readonly string[],
+  tx: TransactionClient = db,
+  /** Auteur de la publication commentée : la personne mentionnée doit aussi pouvoir la voir (aucun blocage avec lui). */
+  postAuthorId: string | null = null,
+): Promise<{ userId: string; handle: string }[]> {
   if (handles.length === 0) return [];
+  const postVisible = postAuthorId ? Prisma.sql`AND ${notBlocked(postAuthorId, col('pr."userId"'))}` : Prisma.empty;
   return tx.$queryRaw<{ userId: string; handle: string }[]>`
     SELECT pr."userId", lower(pr."handle") AS "handle"
     FROM "profile" pr JOIN "user" u ON u."id" = pr."userId"
     WHERE lower(pr."handle") = ANY(${[...handles]}::text[]) AND pr."userId" <> ${authorId}
       AND ${visibleAccount(col("u"))} AND ${notBlocked(authorId, col('pr."userId"'))}
-      AND (pr."isDiscoverable" OR EXISTS (SELECT 1 FROM "follow" f WHERE f."followerId" = pr."userId" AND f."followingId" = ${authorId}))`;
+      AND (pr."isDiscoverable" OR EXISTS (SELECT 1 FROM "follow" f WHERE f."followerId" = pr."userId" AND f."followingId" = ${authorId}))
+      ${postVisible}`;
 }
 
 /** Autocomplétion des mentions : mêmes règles que la résolution, préfixe sur le handle ou le nom. */

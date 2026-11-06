@@ -71,6 +71,7 @@ export default async function HomePage(props: PageProps<"/">) {
 
   return (
     <>
+      <h1 className="sr-only">{tNav("home")}</h1>
       <p className="font-serif text-xl text-fg">{t("greeting", { name: session.displayName })}</p>
       <DailyVerseCard headingId="verset-du-jour-mobile" size="lg" className="mt-6 lg:hidden" />
       {resumeBook && resumeChapter ? (
@@ -81,7 +82,6 @@ export default async function HomePage(props: PageProps<"/">) {
         </p>
       ) : null}
 
-      <h1 className="sr-only">{tNav("home")}</h1>
       <ComposerLauncher label={t("composeCta")} isMinor={session.actor.isMinor} className="mt-8" />
 
       <nav aria-label={t("feedTabsLabel")} className="mt-6 border-b">

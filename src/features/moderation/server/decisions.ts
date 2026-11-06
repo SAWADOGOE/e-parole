@@ -5,7 +5,7 @@ import type { AdminActionOptions } from "@/server/actions/admin-action-core";
 import { revokeAllSessions } from "@/server/auth/session-repository";
 import type { TransactionClient } from "@/server/db";
 import { AppError } from "@/server/errors/app-error";
-import type { GlobalPermission, PolicyResource } from "@/server/policies";
+import { can, globalRank, type GlobalPermission, type PolicyResource } from "@/server/policies";
 import type { DecisionName } from "../constants";
 import { caseRefSchema, decisionSchema } from "../schemas";
 import {
@@ -104,8 +104,12 @@ export function decisionOptions(decision: DecisionName): AdminActionOptions<type
       const target = await lockCase(tx, input.caseId);
       if (!target) throw new AppError("NOT_FOUND");
       if (target.status !== "OPEN" && target.status !== "IN_PROGRESS") throw new AppError("CONFLICT", { message: "Ce dossier est déjà traité." });
-      // Séparation des tâches : on ne décide jamais d'un dossier qui vise son propre contenu ou son propre compte.
+      // Séparation des tâches : jamais de décision sur son propre contenu, ni sur un dossier qu'on a soi-même signalé,
+      // ni (quelle que soit la décision, même « Ignorer » ou « Masquer ») sur le contenu d'un rang global égal ou supérieur.
       if (target.targetAuthorId === actor.userId) throw new AppError("FORBIDDEN");
+      if ((await reporterIds(tx, target.id)).includes(actor.userId)) throw new AppError("FORBIDDEN");
+      const targetRoles = target.targetAuthorId ? await findTargetRoles(target.targetAuthorId) : [];
+      if (targetRoles.length > 0 && globalRank(actor.globalRoles) <= globalRank(targetRoles)) throw new AppError("FORBIDDEN");
       if (decision === "SUSPEND" || decision === "BAN") {
         const expected = target.targetAuthorId ? await findHandle(tx, target.targetAuthorId) : null;
         if (!expected || input.confirmHandle.replace(/^@/, "").toLowerCase() !== expected.toLowerCase()) {
@@ -157,7 +161,9 @@ export const assignOptions: AdminActionOptions<typeof caseRefSchema, { caseId: s
   schema: caseRefSchema,
   resolveResource: (_input, actor) => Promise.resolve({ assigneeId: actor.userId }),
   handler: async ({ actor, input, tx }) => {
-    if ((await assignCase(input.caseId, actor.userId, tx)) === 0) throw new AppError("NOT_FOUND");
+    // Un MODERATOR ne prend que les dossiers libres ; ADMIN+ peut réassigner un dossier déjà pris.
+    const canTakeOver = can(actor, "moderation:sanction:ban", { targetUserId: "", targetGlobalRoles: [] });
+    if ((await assignCase(input.caseId, actor.userId, tx, canTakeOver)) === 0) throw new AppError("NOT_FOUND");
     return { data: { caseId: input.caseId }, audit: { action: "moderation.case.assign", targetType: "moderation_case", targetId: input.caseId } };
   },
 };

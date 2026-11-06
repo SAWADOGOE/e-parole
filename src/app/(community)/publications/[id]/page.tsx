@@ -45,7 +45,7 @@ export default async function PostPage(props: PageProps<"/publications/[id]">) {
       <PostItem post={post} ctx={ctx} onPostPage />
 
       <section id="commentaires" aria-labelledby="titre-commentaires" className="mt-6 scroll-mt-24">
-        <h2 id="titre-commentaires" className="flex items-center gap-2 text-xl font-semibold text-fg">
+        <h2 id="titre-commentaires" tabIndex={-1} className="flex items-center gap-2 text-xl font-semibold text-fg">
           <MessageCircle aria-hidden="true" className="size-5 text-accent" />
           {t("commentsTitle")} <span className="text-base font-normal text-muted tabular-nums">({post.commentCount})</span>
         </h2>

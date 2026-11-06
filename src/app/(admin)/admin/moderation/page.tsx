@@ -41,7 +41,7 @@ export default async function ModerationQueuePage(props: PageProps<"/admin/moder
     <Badge tone={PRIORITY_TONE[row.priority as 0 | 1 | 2 | 3]}>{t("priorityLabel", { label: t(`priority.${String(row.priority) as "0" | "1" | "2" | "3"}`) })}</Badge>
   );
   const excerpt = (row: CaseListItem) => (
-    <SensitiveText sensitive={SENSITIVE_REASONS.has(row.dominantReason)}>
+    <SensitiveText sensitive={SENSITIVE_REASONS.has(row.dominantReason)} label={t("caseTitle", { id: row.id.slice(0, 8) })}>
       <span className="line-clamp-2 break-words text-fg">{row.excerpt || "—"}</span>
     </SensitiveText>
   );

@@ -66,14 +66,15 @@ export function CommentForm({ mode, onDone, focusOnMount: autoFocus = false }: {
         required
         ref={field}
         placeholder={t("commentPlaceholder")}
-        aria-describedby={`${id}-count`}
+        aria-describedby={`${id}-count${error ? ` ${id}-error` : ""}`}
+        aria-invalid={error ? true : undefined}
         onChange={(event) => setBody(event.target.value)}
         className="rounded-sm border border-border-strong bg-bg-elevated px-3 py-2 text-base text-fg placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       />
       <p id={`${id}-count`} className="text-xs text-muted">
         {t("charactersLeft", { count: COMMENT_BODY_MAX - body.length })}
       </p>
-      <FormAlert message={error} />
+      <FormAlert id={`${id}-error`} message={error} />
       <div className="flex justify-end gap-2">
         {onDone ? (
           <Button variant="ghost" onClick={onDone}>

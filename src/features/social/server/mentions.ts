@@ -13,12 +13,12 @@ import { resolveMentionTargets } from "./profiles/repository";
 export async function syncMentions(
   tx: TransactionClient,
   authorId: string,
-  target: { postId: string } | { commentId: string; postId: string },
+  target: { postId: string } | { commentId: string; postId: string; postAuthorId: string },
   body: string,
 ): Promise<void> {
   const key = "commentId" in target ? { commentId: target.commentId } : { postId: target.postId };
   const previous = new Set(await findMentionedUserIds(tx, key));
-  const resolved = await resolveMentionTargets(authorId, extractMentionHandles(body, MAX_MENTIONS), tx);
+  const resolved = await resolveMentionTargets(authorId, extractMentionHandles(body, MAX_MENTIONS), tx, "postAuthorId" in target ? target.postAuthorId : null);
   await replaceMentions(tx, key, resolved);
   for (const mention of resolved) {
     if (previous.has(mention.userId)) continue;

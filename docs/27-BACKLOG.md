@@ -61,4 +61,11 @@ Tâches volontairement sorties du périmètre actuel pour ne pas alourdir le pro
 |---|---|---|
 | R-2 | Détection automatique de mots-clés d'escroquerie (« Orange Money », « semence » contre prière) → signalement priorité 1 | Prévue par ADMIN-MODERATION, non livrée en Phase 3 |
 | R-3 | Troncature des IP de l'audit après 90 jours | Le journal est en append-only pour le rôle applicatif : il faut une fonction `SECURITY DEFINER` dédiée, à concevoir |
+| R-4 | Purge physique des publications et commentaires supprimés (et de leurs images) après rétention ; durée à fixer dans docs/11 (30 j, ou 1 an si retirés par la modération) | Revue sécurité Phase 3 (M3) : conservés sans limite aujourd'hui |
+| R-5 | Balayage du préfixe `originals/` (une URL présignée réutilisée dans ses 60 s peut laisser un original orphelin) ou règle de cycle de vie du bucket | Revue sécurité Phase 3 (F5), sans contournement du pipeline |
+| R-6 | Quota d'envois atomique (verrou par propriétaire) | Revue sécurité Phase 3 (F8) : des requêtes simultanées peuvent dépasser 8 envois en cours |
+| R-7 | Abonnement à un mineur soumis à son approbation, avant la messagerie (Phase 7) | Revue sécurité Phase 3 (F9) : conforme à docs/20 aujourd'hui, à durcir avant les messages |
+| R-8 | Tests du flux SSE et de la reconnexion LISTEN ; pagination par curseur des commentaires, notifications et favoris | Revue de code Phase 3 : comportements vérifiés à la main, pas encore par des tests automatiques |
+| R-9 | Barre d'actions du lecteur sur deux rangées sous 360 px (six actions depuis « Publier ») | Revue accessibilité Phase 3 (F-9) : conforme (≈ 47 px par cible), mais « Surligner » se coupe à 200 % |
+| R-10 | Messages d'erreur des services (`AppError` avec texte français) à passer par next-intl | Revue de code Phase 3 : cohérent avec les messages par défaut existants, hors i18n |
 | R-1 | Tests manuels aux lecteurs d'écran : TalkBack (Android, prioritaire pour le public cible), NVDA, VoiceOver | Les tests automatiques (axe) passent ; seule l'écoute humaine confirme une lecture agréable. Idéalement par une personne qui utilise TalkBack au quotidien. Protocole : lecture continue d'un chapitre, sélection d'un verset par son numéro, barre d'actions. |

@@ -6,21 +6,37 @@ interface LazyMenuTriggerProps {
   label: string;
   className: string;
   icon: ReactNode;
-  /** Précharge le module du menu (survol, focus, appui) pour qu'il s'ouvre sans attente perceptible. */
-  preload: () => void;
-  /** Le menu complet, rendu ouvert dès qu'il est demandé ; il remplace ce bouton. */
+  /** Charge le module du menu ; appelé au survol, au focus, à l'appui, et attendu au clic. */
+  preload: () => Promise<unknown>;
+  /** Le menu complet, rendu ouvert dès qu'il est chargé ; il remplace ce bouton. */
   render: () => ReactNode;
 }
 
 /**
- * Menu chargé à la demande (docs/29, budget JS de /) : seul ce bouton est envoyé avec la page ; Radix et les dialogues
- * ne sont téléchargés qu'au premier signe d'intention, puis le vrai menu s'ouvre avec le focus.
+ * Menu chargé à la demande (docs/29, budget JS de /) : seul ce bouton est envoyé avec la page. Au clic, le bouton reste
+ * en place (et garde le focus, `aria-busy`) jusqu'à ce que le module soit là ; le vrai menu s'ouvre alors avec le focus.
  */
 export function LazyMenuTrigger({ label, className, icon, preload, render }: LazyMenuTriggerProps) {
-  const [active, setActive] = useState(false);
-  if (active) return <>{render()}</>;
+  const [state, setState] = useState<"idle" | "loading" | "active">("idle");
+  if (state === "active") return <>{render()}</>;
   return (
-    <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={false} className={className} onPointerEnter={preload} onFocus={preload} onPointerDown={preload} onClick={() => setActive(true)}>
+    <button
+      type="button"
+      aria-label={label}
+      aria-haspopup="menu"
+      aria-expanded={false}
+      aria-busy={state === "loading" || undefined}
+      className={className}
+      onPointerEnter={() => void preload()}
+      onFocus={() => void preload()}
+      onClick={() => {
+        if (state !== "idle") return;
+        setState("loading");
+        void preload()
+          .then(() => setState("active"))
+          .catch(() => setState("idle"));
+      }}
+    >
       {icon}
     </button>
   );

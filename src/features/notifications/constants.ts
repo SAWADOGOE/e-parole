@@ -23,5 +23,9 @@ export const POLL_INTERVAL_MS = 60_000;
 export const SSE_HEARTBEAT_MS = 25_000;
 /** Une connexion SSE est recyclée après ce délai (le navigateur se reconnecte seul). */
 export const SSE_MAX_DURATION_MS = 10 * 60_000;
+/** Flux SSE simultanés par membre (onglets, appareils) : au-delà, le plus ancien est fermé. */
+export const SSE_MAX_STREAMS_PER_USER = 3;
+/** La session du flux est revérifiée à cet intervalle (suspension, déconnexion, révocation). */
+export const SSE_SESSION_RECHECK_MS = 60_000;
 /** Au-delà de ce nombre d'erreurs consécutives, le client passe au polling. */
 export const SSE_MAX_FAILURES = 3;

@@ -2,7 +2,7 @@
 
 import { BookOpen, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { previewVerseAction } from "../../server/actions";
 import type { Draft } from "./use-draft";
@@ -19,6 +19,19 @@ export function VerseField({ verse, onChange }: { verse: ComposerVerse | null; o
   const [reference, setReference] = useState("");
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const remove = useRef<HTMLButtonElement>(null);
+  const changed = useRef(false);
+  // Le champ et la citation se remplacent : le focus suit (bouton « Retirer » après choix, champ après retrait).
+  useEffect(() => {
+    if (!changed.current) return;
+    changed.current = false;
+    (verse ? remove.current : input.current)?.focus();
+  }, [verse]);
+  const update = (next: ComposerVerse | null): void => {
+    changed.current = true;
+    onChange(next);
+  };
 
   async function lookup(): Promise<void> {
     if (!reference.trim()) return;
@@ -27,7 +40,7 @@ export function VerseField({ verse, onChange }: { verse: ComposerVerse | null; o
     try {
       const result = await previewVerseAction({ reference });
       if (result.ok && result.data) {
-        onChange({ ...result.data.verse, reference: result.data.reference, text: result.data.text, attribution: result.data.attribution });
+        update({ ...result.data.verse, reference: result.data.reference, text: result.data.text, attribution: result.data.attribution });
         setReference("");
       } else setError(true);
     } catch {
@@ -46,7 +59,7 @@ export function VerseField({ verse, onChange }: { verse: ComposerVerse | null; o
         <figcaption className="mt-2 text-sm text-muted">
           <span className="font-medium text-fg">{verse.reference}</span> · {verse.attribution}
         </figcaption>
-        <Button variant="ghost" size="icon" className="absolute top-0 right-0" aria-label={t("verseRemove")} onClick={() => onChange(null)}>
+        <Button ref={remove} variant="ghost" size="icon" className="absolute top-0 right-0" aria-label={t("verseRemove")} onClick={() => update(null)}>
           <X aria-hidden="true" />
         </Button>
       </figure>
@@ -64,6 +77,7 @@ export function VerseField({ verse, onChange }: { verse: ComposerVerse | null; o
           {t("verseLabel")}
         </label>
         <input
+          ref={input}
           id={`${id}-ref`}
           value={reference}
           maxLength={80}
@@ -79,7 +93,7 @@ export function VerseField({ verse, onChange }: { verse: ComposerVerse | null; o
           }}
           className="h-11 min-w-0 flex-1 basis-48 rounded-sm border border-border-strong bg-bg-elevated px-3 text-base text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         />
-        <Button variant="secondary" disabled={busy} onClick={() => void lookup()}>
+        <Button variant="secondary" aria-disabled={busy || undefined} onClick={() => void (busy ? undefined : lookup())}>
           {t("verseSearch")}
         </Button>
       </div>

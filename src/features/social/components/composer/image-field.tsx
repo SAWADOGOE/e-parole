@@ -16,10 +16,17 @@ export function ImageField({ uploads }: { uploads: Uploads }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const full = uploads.items.length >= MAX_POST_IMAGES;
+  const add = useRef<HTMLButtonElement>(null);
+  const count = (state: string) => uploads.items.filter((item) => item.state === state).length;
+  // Une seule région annoncée, stable, mise à jour à chaque transition d'envoi (WCAG 4.1.3).
+  const status = t("imagesStatus", { ready: count("ready"), pending: count("uploading") + count("processing"), failed: count("failed") }).trim();
 
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-1 text-sm font-medium text-fg">{t("imagesTitle")}</legend>
+      <p className="sr-only" aria-live="polite">
+        {status}
+      </p>
       <p id={`${id}-help`} className="text-sm text-muted">
         {t("imagesHelp")}
       </p>
@@ -32,7 +39,7 @@ export function ImageField({ uploads }: { uploads: Uploads }) {
                   // eslint-disable-next-line @next/next/no-img-element -- aperçu d'une variante déjà traitée par le worker
                   <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <p className="flex items-center gap-2 px-3 text-center text-sm text-muted" role="status">
+                  <p className="flex items-center gap-2 px-3 text-center text-sm text-fg">
                     {item.state === "failed" ? null : <Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}
                     {item.state === "uploading" ? t("imageUploading") : null}
                     {item.state === "processing" ? t("imageProcessing") : null}
@@ -41,7 +48,10 @@ export function ImageField({ uploads }: { uploads: Uploads }) {
                     ) : null}
                   </p>
                 )}
-                <Button variant="secondary" size="icon" className="absolute top-1 right-1" aria-label={t("imageRemove", { index: index + 1 })} onClick={() => uploads.remove(item.key)}>
+                <Button variant="secondary" size="icon" className="absolute top-1 right-1" aria-label={t("imageRemove", { index: index + 1 })} onClick={() => {
+                  uploads.remove(item.key);
+                  add.current?.focus();
+                }}>
                   <X aria-hidden="true" />
                 </Button>
               </div>
@@ -76,7 +86,7 @@ export function ImageField({ uploads }: { uploads: Uploads }) {
         }}
       />
       <div>
-        <Button variant="secondary" disabled={full} aria-describedby={`${id}-help`} onClick={() => input.current?.click()}>
+        <Button ref={add} variant="secondary" aria-disabled={full || undefined} aria-describedby={`${id}-help`} onClick={() => (full ? undefined : input.current?.click())}>
           <ImagePlus aria-hidden="true" />
           {full ? t("imageLimit") : t("imagesAdd")}
         </Button>

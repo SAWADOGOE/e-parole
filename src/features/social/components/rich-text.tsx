@@ -31,7 +31,7 @@ export function RichText({ text, mentions, resolveVerse, className }: RichTextPr
             );
           case "mention":
             return (
-              <Link key={index} href={profilePath(token.handle)} className="font-medium text-accent underline-offset-4 hover:underline">
+              <Link key={index} href={profilePath(token.handle)} className="font-medium text-accent underline underline-offset-4">
                 {token.text}
               </Link>
             );

@@ -16,9 +16,9 @@ Contexte : Android d'entrée de gamme, 3G/4G instable, data coûteuse. La perfor
 ## Mesures de la Phase 3 (2026-11-06, build de production local, données « [Démo] »)
 | Indicateur | Budget | Mesuré |
 |---|---|---|
-| JS initial `/` connecté (gzip) | < 170 Ko | **170,3 Ko** (228,8 Ko avant optimisation) — 0,3 Ko au-dessus |
+| JS initial `/` connecté (gzip) | < 170 Ko | **170,4 Ko** (228,8 Ko avant optimisation) — 0,4 Ko au-dessus, en attente d'arbitrage du propriétaire |
 | JS initial lecteur (gzip) | < 175 Ko | 171,5 Ko |
-| Fil complet (HTML), p95 sur 50 | — | 36 ms (Abonnements), 35 ms (Découvrir) |
+| Fil complet (HTML), p95 sur 50 | — | 36 à 58 ms selon la charge du poste (Abonnements), 35 à 49 ms (Découvrir) |
 | Image de fil 960 px (photos réelles) | ≤ 200 Ko | 17 à 71 Ko (AVIF), 25 à 71 Ko (WebP) |
 | Image 320 px (économie de données) | ≤ 60 Ko | 4 à 7 Ko |
 | Requêtes SQL par page de fil | constant | identique pour 1 ou 15 publications (test d'intégration) |

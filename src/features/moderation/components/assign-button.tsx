@@ -20,6 +20,7 @@ export function AssignButton({ caseId }: { caseId: string }) {
       if (result.ok) {
         notify(t("assigned"));
         router.refresh();
+        document.getElementById("titre-dossier")?.focus();
       } else notifyError(tErrors(errorKey(result.error.code)));
     } catch {
       notifyError(tErrors("INTERNAL"));
@@ -28,7 +29,7 @@ export function AssignButton({ caseId }: { caseId: string }) {
     }
   }
   return (
-    <Button variant="secondary" size="sm" disabled={busy} onClick={() => void assign()}>
+    <Button variant="secondary" size="sm" aria-disabled={busy || undefined} onClick={() => void (busy ? undefined : assign())}>
       {t("assignToMe")}
     </Button>
   );

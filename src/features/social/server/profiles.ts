@@ -1,5 +1,6 @@
 import "server-only";
 import type { z } from "zod";
+import { Prisma } from "@/server/db";
 import { AppError } from "@/server/errors/app-error";
 import { authorize, type Actor } from "@/server/policies";
 import { HANDLE_CHANGE_COOLDOWN_HOURS, MENTION_SUGGESTIONS, type FieldVisibility } from "../constants";
@@ -120,7 +121,7 @@ export async function editProfile(actor: Actor, input: z.infer<typeof updateProf
     });
   } catch (error: unknown) {
     // Course entre deux membres sur le même handle : l'index unique insensible à la casse tranche.
-    if ((error as { code?: unknown }).code === "P2002") throw new AppError("CONFLICT", { fieldErrors: { handle: ["handleTaken"] } });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new AppError("CONFLICT", { fieldErrors: { handle: ["handleTaken"] } });
     throw error;
   }
   return { handle: handleChanged ? input.handle : current.handle };

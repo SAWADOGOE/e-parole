@@ -1,7 +1,7 @@
 import "server-only";
 import type { z } from "zod";
 import { findOwnedReadyAssets } from "@/features/media";
-import { db } from "@/server/db";
+import { db, Prisma } from "@/server/db";
 import { AppError } from "@/server/errors/app-error";
 import { authorize, type Actor } from "@/server/policies";
 import { enforceRateLimit } from "@/server/rate-limit/rate-limit";
@@ -49,7 +49,15 @@ export async function createPost(actor: Actor, input: z.infer<typeof createPostS
       throw new AppError("VALIDATION", { fieldErrors: { images: ["imageAlreadyUsed"] } });
     }
     const id = await insertPost(tx, { authorId: actor.userId, type: input.type, body: input.body, verse });
-    await attachMedia(tx, id, input.images);
+    try {
+      await attachMedia(tx, id, input.images);
+    } catch (error: unknown) {
+      // Deux publications simultanées avec la même image : l'index unique tranche, l'erreur reste lisible.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new AppError("VALIDATION", { fieldErrors: { images: ["imageAlreadyUsed"] } });
+      }
+      throw error;
+    }
     await syncMentions(tx, actor.userId, { postId: id }, input.body);
     return { id };
   });
@@ -59,6 +67,8 @@ export async function createPost(actor: Actor, input: z.infer<typeof createPostS
 export async function updatePost(actor: Actor, input: z.infer<typeof updatePostSchema>): Promise<void> {
   const post = await requireVisiblePost(actor, input.postId);
   authorize(actor, "post:update", { ownerId: post.authorId });
+  // Un contenu masqué par la modération ne change plus : la décision porte sur ce que le modérateur a lu.
+  if (post.isHidden) throw new AppError("FORBIDDEN", { message: "Ce contenu est masqué par la modération : il ne peut plus être modifié." });
   await db.$transaction(async (tx) => {
     if (input.body.length === 0 && !(await hasNonTextContent(tx, post.id))) {
       throw new AppError("VALIDATION", { fieldErrors: { body: ["emptyPost"] } });

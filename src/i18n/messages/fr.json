@@ -86,7 +86,8 @@
     "retry": "Réessayer",
     "endOfFeed": "Il n'y a pas d'autre publication pour le moment.",
     "backToTop": "Revenir en haut du fil",
-    "readBible": "Ouvrir la Bible"
+    "readBible": "Ouvrir la Bible",
+    "loaded": "{count, plural, =0 {Aucune autre publication.} one {# publication ajoutée.} other {# publications ajoutées.}}"
   },
   "bible": {
     "metaTitle": "Bible",
@@ -572,7 +573,8 @@
     "decisionApplied": "Décision appliquée.",
     "caseClosed": "Ce dossier est traité.",
     "handleMismatch": "L'identifiant saisi ne correspond pas.",
-    "openedAgo": "{date}"
+    "openedAgo": "{date}",
+    "evidenceImage": "Image {index} sur {total} de la copie figée"
   },
   "manage": {
     "metaTitle": "Espace responsable",
@@ -724,7 +726,9 @@
       "block": "Bloquer {name}",
       "hideComment": "Masquer ce commentaire",
       "unhideComment": "Afficher de nouveau ce commentaire",
-      "reply": "Répondre"
+      "reply": "Répondre",
+      "labelFor": "Plus d'options pour la publication de {name}",
+      "commentLabelFor": "Plus d'options pour le commentaire de {name}"
     },
     "deleteTitle": "Supprimer cette publication ?",
     "deleteBody": "Elle disparaîtra pour tout le monde, avec ses réactions et ses commentaires. Cette action est définitive.",
@@ -812,7 +816,10 @@
     "mentionsLabel": "Personnes à mentionner",
     "mentionsNone": "Aucune personne trouvée",
     "noScript": "La rédaction d'une publication nécessite JavaScript.",
-    "signInRequired": "Connecte-toi pour publier."
+    "signInRequired": "Connecte-toi pour publier.",
+    "mentionsCount": "{count, plural, =0 {Aucune personne proposée.} one {# personne proposée, flèches pour choisir, Entrée pour valider.} other {# personnes proposées, flèches pour choisir, Entrée pour valider.}}",
+    "charactersLeft": "{count, plural, =0 {Limite de caractères atteinte.} one {# caractère restant.} other {# caractères restants.}}",
+    "imagesStatus": "{ready, plural, =0 {} one {# image prête.} other {# images prêtes.}} {pending, plural, =0 {} one {# image en préparation.} other {# images en préparation.}} {failed, plural, =0 {} one {# image refusée.} other {# images refusées.}}"
   },
   "people": {
     "metaTitle": "Membres",
@@ -845,7 +852,9 @@
     "reportProfile": "Signaler ce profil",
     "infoTitle": "À propos",
     "visibleTo": "Visible par : {audience}",
-    "backToProfile": "Retour au profil de {name}"
+    "backToProfile": "Retour au profil de {name}",
+    "followName": "Suivre {name}",
+    "unfollowShort": "Ne plus suivre"
   },
   "bookmarks": {
     "metaTitle": "Mes favoris",
@@ -912,7 +921,8 @@
       "FOLLOW": "Nouveaux abonnés"
     },
     "preferencesSave": "Enregistrer mes préférences",
-    "preferencesSaved": "Préférences enregistrées."
+    "preferencesSaved": "Préférences enregistrées.",
+    "newArrived": "{count, plural, one {# nouvelle notification} other {# nouvelles notifications}}"
   },
   "privacy": {
     "metaTitle": "Confidentialité",
@@ -954,6 +964,7 @@
     "sent": "Merci. Ton signalement a été transmis à l'équipe de modération.",
     "already": "Tu as déjà signalé ce contenu. Merci, il est en cours d'examen.",
     "distress": "Si toi ou quelqu'un est en danger immédiat, appelle les secours de ton pays sans attendre.",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "reasonRequired": "Choisis un motif pour envoyer le signalement."
   }
 }

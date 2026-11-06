@@ -64,7 +64,13 @@ export function ProfileForm({ profile }: { profile: OwnProfile }) {
       });
       if (!result.ok) {
         const handleError = result.error.fieldErrors?.["handle"]?.[0];
-        if (handleError) setErrors({ handle: t(`errors.${handleError === "handleTaken" || handleError === "handleReserved" || handleError === "handleCooldown" ? handleError : "handleFormat"}`) });
+        if (handleError) {
+          const message = t(`errors.${handleError === "handleTaken" || handleError === "handleReserved" || handleError === "handleCooldown" ? handleError : "handleFormat"}`);
+          setErrors({ handle: message });
+          // Annoncée (région d'alerte) et reliée au champ, qui reçoit le focus.
+          setAlert(message);
+          document.querySelector<HTMLInputElement>('input[name="handle"]')?.focus();
+        }
         else setAlert(tErrors(errorKey(result.error.code)));
         return;
       }

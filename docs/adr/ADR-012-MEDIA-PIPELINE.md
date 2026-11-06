@@ -16,8 +16,10 @@ contournerait ces deux règles. La CSP (`img-src 'self'`) n'autorise d'ailleurs 
   animées, décodage borné à 40 Mpx, ré-encodage AVIF (q 50) et WebP (q 72) en 320/640/960/1280 px sans agrandissement,
   avatar carré 320 px, bannière 3:1 ; aucune métadonnée conservée (EXIF, GPS, XMP) ; SHA-256 de l'original, couleur dominante.
 - **Diffusion** : `/api/media/[assetId]/[largeur].[format]`, membre connecté, contrôle `canViewAsset` (propriétaire, ou contenu
-  visible sans blocage), en-têtes `Cache-Control: private` et `Cross-Origin-Resource-Policy: same-origin`. Les modérateurs voient
-  les images des contenus signalés.
+  visible sans blocage), en-têtes `Cache-Control: private` et `Cross-Origin-Resource-Policy: same-origin`. Un modérateur ne voit
+  que les images citées par la copie figée d'un signalement, et seulement avec une session d'administration complète (MFA).
+- Nettoyage : les lignes sont supprimées d'abord par une requête qui revérifie qu'aucune publication, aucun profil ni aucun dossier
+  ouvert ne cite l'image ; le stockage n'est vidé qu'ensuite (jamais d'image cassée).
 - HEIC n'est pas accepté : les binaires précompilés de `sharp` ne le décodent pas, et iOS convertit en JPEG à l'envoi.
 - Économie de données (en-tête `Save-Data` ou interrupteur du menu) : images derrière un `<details>` natif, variante 320 px.
 - Quotas : 8 envois non terminés, 300 Mo de variantes par membre, 40 demandes par heure ; nettoyage quotidien

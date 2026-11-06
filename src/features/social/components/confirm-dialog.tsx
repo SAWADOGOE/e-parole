@@ -18,14 +18,22 @@ interface ConfirmDialogProps {
   body: string;
   confirmLabel: string;
   onConfirm: () => void;
+  /** Élément qui reprend le focus à la fermeture (le bouton « … » du menu qui a ouvert le dialogue). */
+  returnFocus?: () => void;
 }
 
 /** Confirmation destructive : la conséquence est nommée, « Annuler » reçoit le focus (docs/16). */
-export function ConfirmDialog({ open, onOpenChange, title, body, confirmLabel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, body, confirmLabel, onConfirm, returnFocus }: ConfirmDialogProps) {
   const tCommon = useTranslations("common");
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onCloseAutoFocus={(event) => {
+          if (!returnFocus) return;
+          event.preventDefault();
+          returnFocus();
+        }}
+      >
         <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription>{body}</AlertDialogDescription>
         <AlertDialogFooter>

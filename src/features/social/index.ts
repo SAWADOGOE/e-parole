@@ -4,7 +4,7 @@ export { extractMentionHandles, tokenizeRichText, type RichToken } from "./lib/r
 export { bookmarkedPosts, feedPage, getPost, postComments, profilePosts, relationList, searchPeople, type FeedName } from "./server/feeds";
 export { getOwnProfile, getProfile, isMinorBirthYear } from "./server/profiles";
 export { listOwnRelations } from "./server/relations/repository";
-export { canViewAsset, isAssetLinkedToContent } from "./server/media-access/repository";
+export { canViewAsset } from "./server/media-access/repository";
 export { quotedPassages, resolveSharedVerse, verseKey, verseLinkResolver } from "./server/verses";
 export { requireVisiblePost } from "./server/posts";
 export { buildRenderContext } from "./server/render-context";

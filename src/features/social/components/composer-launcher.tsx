@@ -17,6 +17,7 @@ export function ComposerLauncher({ label, isMinor, className }: { label: string;
     <>
       <a
         href="/publier"
+        aria-haspopup="dialog"
         onPointerEnter={() => void load()}
         onFocus={() => void load()}
         onClick={(event) => {
@@ -24,7 +25,7 @@ export function ComposerLauncher({ label, isMinor, className }: { label: string;
           setRequested(true);
           setOpen(true);
         }}
-        className={cn("flex min-h-12 items-center gap-3 rounded-lg border border-border-strong bg-bg-elevated px-4 text-left text-base text-muted hover:bg-bg-subtle", className)}
+        className={cn("flex min-h-12 items-center gap-3 rounded-lg border border-border-strong bg-bg-elevated px-4 text-left text-base text-muted hover:bg-bg-subtle hover:text-fg", className)}
       >
         <PenLine aria-hidden="true" className="size-5 text-accent" />
         {label}

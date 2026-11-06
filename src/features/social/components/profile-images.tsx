@@ -57,12 +57,12 @@ export function ProfileImages({ hasAvatar, hasBanner }: { hasAvatar: boolean; ha
               }}
             />
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" disabled={working !== null} onClick={() => inputs[slot].current?.click()}>
+              <Button variant="secondary" aria-disabled={working !== null || undefined} onClick={() => (working === null ? inputs[slot].current?.click() : undefined)}>
                 {working === slot ? <Loader2 aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : null}
                 {working === slot ? tComposer("imageProcessing") : t("imageChange")}
               </Button>
               {present ? (
-                <Button variant="ghost" disabled={working !== null} onClick={() => void run(() => profileImageAction({ slot, assetId: null }), t("imageRemoved"))}>
+                <Button variant="ghost" aria-disabled={working !== null || undefined} onClick={() => (working === null ? void run(() => profileImageAction({ slot, assetId: null }), t("imageRemoved")) : undefined)}>
                   {t("imageRemove")}
                 </Button>
               ) : null}

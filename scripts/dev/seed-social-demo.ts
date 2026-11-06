@@ -15,9 +15,18 @@ if (process.env["NODE_ENV"] === "production" || process.env["APP_ENV"] === "prod
   console.error("Démo refusée : environnement de production.");
   process.exit(1);
 }
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+/** Hôte réellement local (pas une chaîne « localhost » glissée dans un paramètre de l'URL). */
+function isLocal(value: string | undefined): boolean {
+  try {
+    return value !== undefined && LOCAL_HOSTS.has(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
 const url = process.env["MIGRATION_DATABASE_URL"] ?? "";
-if (!/127\.0\.0\.1|localhost/.test(url)) {
-  console.error("Démo refusée : la base doit être locale.");
+if (!isLocal(url) || !isLocal(process.env["S3_ENDPOINT"])) {
+  console.error("Démo refusée : la base et le stockage doivent être locaux.");
   process.exit(1);
 }
 

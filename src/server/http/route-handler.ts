@@ -2,7 +2,7 @@ import "server-only";
 import { getCurrentSession, type CurrentSession } from "../auth/session";
 import { getEnv } from "../env";
 import { AppError, HTTP_STATUS, isAppError } from "../errors/app-error";
-import { logger } from "../logger";
+import { logger, safeError } from "../logger";
 import { enforceRateLimit, type RateLimitName } from "../rate-limit/rate-limit";
 
 /**
@@ -37,7 +37,7 @@ export async function authenticatedRoute(request: Request, options: RouteOptions
     return await run(session);
   } catch (error: unknown) {
     if (isAppError(error)) return errorResponse(error);
-    logger.error({ err: error, path: new URL(request.url).pathname }, "erreur inattendue dans un Route Handler");
+    logger.error({ err: safeError(error), path: new URL(request.url).pathname }, "erreur inattendue dans un Route Handler");
     return errorResponse(new AppError("INTERNAL"));
   }
 }

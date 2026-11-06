@@ -159,6 +159,20 @@ export async function findVisibleCommentAccess(viewerId: string, commentId: stri
   return rows[0] ?? null;
 }
 
+/**
+ * Commentaire de l'acteur lui-même, sans la règle de visibilité de la publication : un membre bloqué par l'auteur de la
+ * publication doit pouvoir modifier ou retirer ce qu'il a écrit. Verrou de ligne optionnel.
+ */
+export async function findOwnCommentAccess(actorId: string, commentId: string, tx: TransactionClient = db, lock = false): Promise<CommentAccessRow | null> {
+  const rows = await tx.$queryRaw<CommentAccessRow[]>`
+    SELECT c."id", c."postId", c."parentId", c."authorId", p."authorId" AS "postAuthorId", p."commentsLocked",
+           c."isHidden", c."hiddenByPostAuthor", c."deletedAt"
+    FROM "comment" c JOIN "post" p ON p."id" = c."postId"
+    WHERE c."id" = ${commentId} AND c."authorId" = ${actorId} AND c."deletedAt" IS NULL
+    ${lock ? Prisma.sql`FOR UPDATE OF c` : Prisma.empty}`;
+  return rows[0] ?? null;
+}
+
 /** Un commentaire est compté dans post.commentCount s'il n'est ni supprimé ni masqué. */
 export function isCounted(row: Pick<CommentAccessRow, "deletedAt" | "isHidden" | "hiddenByPostAuthor">): boolean {
   return row.deletedAt === null && !row.isHidden && !row.hiddenByPostAuthor;

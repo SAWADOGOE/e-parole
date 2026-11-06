@@ -134,7 +134,7 @@ test.describe("réseau social", () => {
     await expect(page.getByText("[E2E] Publication de Ruth pour ses abonnés")).toHaveCount(0);
     await page.goto(`/@${ruth.handle}`);
     await expectAccessible(page);
-    await page.getByRole("button", { name: "Suivre" }).click();
+    await page.getByRole("button", { name: `Suivre ${ruth.name}` }).click();
     await expect(page.getByRole("button", { name: /Ne plus suivre/ })).toBeVisible();
     await page.goto("/");
     await expect(page.getByText("[E2E] Publication de Ruth pour ses abonnés")).toBeVisible();
@@ -187,7 +187,7 @@ test.describe("réseau social", () => {
     await login(estherPage, esther);
     await estherPage.goto("/?fil=decouvrir");
     const article = estherPage.getByRole("article").filter({ hasText: "Envoie 5000 F" });
-    await article.getByRole("button", { name: "Plus d'options pour cette publication" }).click();
+    await article.getByRole("button", { name: /Plus d'options pour la publication/ }).click();
     await estherPage.getByRole("menuitem", { name: "Signaler" }).click();
     const dialog = estherPage.getByRole("alertdialog", { name: "Signaler cette publication" });
     await dialog.getByLabel("Escroquerie ou demande d'argent").check();
@@ -221,6 +221,34 @@ test.describe("réseau social", () => {
     await page.goto("/notifications");
     await expect(page.getByText("L'un de tes contenus a été masqué par l'équipe de modération.")).toBeVisible();
     await expect(page.getByText(/Motif : Les demandes d'argent/)).toBeVisible();
+  });
+
+  test("clavier : réglages du menu du compte et retour du focus après un dialogue", async ({ page }) => {
+    const ruth = await createMember("Ruth");
+    const paul = await createMember("Paul");
+    await login(page, paul);
+    await publishText(page, "[E2E] Publication pour le test clavier");
+    await page.context().clearCookies();
+    await login(page, ruth);
+
+    // Économie de données : élément de menu coché au clavier (flèches + Espace), mémorisé dans un cookie.
+    await page.getByRole("button", { name: "Menu du compte" }).click();
+    const saver = page.getByRole("menuitemcheckbox", { name: /Économie de données/ });
+    await expect(saver).toBeVisible();
+    await saver.focus();
+    await page.keyboard.press("Space");
+    await expect(saver).toHaveAttribute("aria-checked", "true");
+    expect((await page.context().cookies()).find((cookie) => cookie.name === "eparole-data-saver")?.value).toBe("1");
+    await page.keyboard.press("Escape");
+
+    // Dialogue de signalement ouvert depuis le menu « … » : Échap rend le focus au bouton du menu.
+    await page.goto("/?fil=decouvrir");
+    const article = page.getByRole("article").filter({ hasText: "Publication pour le test clavier" });
+    await article.getByRole("button", { name: /Plus d'options pour la publication/ }).click();
+    await page.getByRole("menuitem", { name: "Signaler" }).click();
+    await expect(page.getByRole("alertdialog", { name: "Signaler cette publication" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(article.getByRole("button", { name: /Plus d'options pour la publication/ })).toBeFocused();
   });
 
   test("un membre reçoit 404 sur /admin/moderation", async ({ page }) => {

@@ -3,7 +3,7 @@
 import { Eye, EyeOff, Flag, MoreHorizontal, Pencil, Reply, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { deleteCommentAction, hideCommentAction } from "../server/actions";
@@ -28,21 +28,28 @@ interface CommentActionsProps {
 
 export function CommentActions({ postId, commentId, replyParentId, authorName, body, isOwn, isPostAuthor, hiddenByPostAuthor, locked }: CommentActionsProps) {
   const t = useTranslations("social");
-  const { busy, run } = useActionRunner();
+  const { run } = useActionRunner();
   const [mode, setMode] = useState<"reply" | "edit" | null>(null);
   const [dialog, setDialog] = useState<"delete" | "report" | null>(null);
+  const replyButton = useRef<HTMLButtonElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  /** Formulaire de réponse ou de modification refermé : le focus revient au bouton qui l'avait ouvert. */
+  function closeForm(from: "reply" | "edit"): void {
+    setMode(null);
+    requestAnimationFrame(() => (from === "reply" ? replyButton.current : menuButton.current)?.focus());
+  }
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-1">
         {replyParentId && !locked ? (
-          <Button variant="ghost" size="sm" aria-expanded={mode === "reply"} onClick={() => setMode(mode === "reply" ? null : "reply")}>
+          <Button ref={replyButton} variant="ghost" size="sm" aria-expanded={mode === "reply"} onClick={() => setMode(mode === "reply" ? null : "reply")}>
             <Reply aria-hidden="true" />
             {t("menu.reply")}
           </Button>
         ) : null}
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label={t("menu.commentLabel")} disabled={busy} className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg-subtle">
+          <DropdownMenuTrigger ref={menuButton} aria-label={t("menu.commentLabelFor", { name: authorName })} className="inline-flex size-11 items-center justify-center rounded-md text-muted hover:bg-bg-subtle">
             <MoreHorizontal aria-hidden="true" className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -73,9 +80,9 @@ export function CommentActions({ postId, commentId, replyParentId, authorName, b
         </DropdownMenu>
       </div>
       {mode === "reply" && replyParentId ? (
-        <CommentForm mode={{ kind: "new", postId, parentId: replyParentId, replyTo: authorName }} onDone={() => setMode(null)} focusOnMount />
+        <CommentForm mode={{ kind: "new", postId, parentId: replyParentId, replyTo: authorName }} onDone={() => closeForm("reply")} focusOnMount />
       ) : null}
-      {mode === "edit" ? <CommentForm mode={{ kind: "edit", commentId, body }} onDone={() => setMode(null)} focusOnMount /> : null}
+      {mode === "edit" ? <CommentForm mode={{ kind: "edit", commentId, body }} onDone={() => closeForm("edit")} focusOnMount /> : null}
       <ConfirmDialog
         open={dialog === "delete"}
         onOpenChange={(open) => setDialog(open ? "delete" : null)}
@@ -83,8 +90,9 @@ export function CommentActions({ postId, commentId, replyParentId, authorName, b
         body={t("deleteCommentBody")}
         confirmLabel={t("menu.delete")}
         onConfirm={() => void run(() => deleteCommentAction({ commentId }), t("commentDeleted"))}
+        returnFocus={() => document.getElementById("titre-commentaires")?.focus()}
       />
-      {dialog === "report" ? <ReportDialog targetType="COMMENT" targetId={commentId} open onOpenChange={(open) => setDialog(open ? "report" : null)} /> : null}
+      {dialog === "report" ? <ReportDialog targetType="COMMENT" targetId={commentId} open onOpenChange={(open) => setDialog(open ? "report" : null)} returnFocus={() => menuButton.current?.focus()} /> : null}
     </div>
   );
 }
