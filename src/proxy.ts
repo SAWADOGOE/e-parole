@@ -4,6 +4,17 @@ import { NextResponse, type NextRequest } from "next/server";
  * Proxy (ex-middleware) : identifiant de corrélation, CSP avec nonce et en-têtes de sécurité.
  * Il ne fait AUCUNE autorisation (docs/19-SECURITY.md) : celle-ci est vérifiée dans chaque action et page.
  */
+/** Origine du stockage S3 : le navigateur y envoie les images par URL présignée (ADR-004). Rien d'autre n'est autorisé. */
+function storageOrigin(): string {
+  const raw = process.env["S3_PUBLIC_ENDPOINT"] ?? process.env["S3_ENDPOINT"];
+  if (!raw) return "";
+  try {
+    return ` ${new URL(raw).origin}`;
+  } catch {
+    return "";
+  }
+}
+
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   // Identifiant de corrélation : repris seulement s'il a un format sûr, sinon régénéré.
@@ -18,7 +29,7 @@ export function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
-    `connect-src 'self'${isDev ? " ws:" : ""}`,
+    `connect-src 'self'${storageOrigin()}${isDev ? " ws:" : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

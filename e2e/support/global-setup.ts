@@ -5,6 +5,8 @@ import { createImportClient } from "../../scripts/bible/repository";
 import { e2eEnv, MAILPIT_URL } from "./env";
 
 const TABLES = [
+  "notification_actor", "notification", "notification_preference", "sanction", "moderation_action", "report",
+  "moderation_case", "mention", "post_bookmark", "reaction", "comment", "post_media", "post", "follow", "block", "mute",
   "audit_log", "community_member", "community", "user_role", "two_factor", "session", "account",
   "verification", "profile", "media_asset", "platform_setting", "feature_flag", "rate_limit", "user",
 ];

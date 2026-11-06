@@ -1,0 +1,45 @@
+import { z } from "zod";
+import {
+  CASE_STATUSES,
+  DECISIONS,
+  INTERNAL_NOTE_MAX,
+  PUBLIC_REASON_MAX,
+  REPORT_DETAILS_MAX,
+  REPORT_REASONS,
+  REPORT_TARGETS,
+  SUSPENSION_MAX_DAYS,
+} from "./constants";
+
+const noNul = (value: string): boolean => !value.includes("\u0000");
+const id = z.string().min(1).max(64).regex(/^[a-z0-9]+$/);
+
+export const reportSchema = z.strictObject({
+  targetType: z.enum(REPORT_TARGETS),
+  targetId: id,
+  reason: z.enum(REPORT_REASONS),
+  details: z.string().trim().max(REPORT_DETAILS_MAX).refine(noNul).default(""),
+});
+
+export const decisionSchema = z
+  .strictObject({
+    caseId: id,
+    decision: z.enum(DECISIONS),
+    publicReason: z.string().trim().min(1).max(PUBLIC_REASON_MAX).refine(noNul),
+    internalNote: z.string().trim().max(INTERNAL_NOTE_MAX).refine(noNul).default(""),
+    durationDays: z.number().int().min(1).max(SUSPENSION_MAX_DAYS).nullable().default(null),
+    /** Suspendre ou bannir : le modérateur ressaisit le @handle visé (docs/admin, actions destructives). */
+    confirmHandle: z.string().trim().max(31).refine(noNul).default(""),
+  })
+  .refine((d) => (d.decision === "SUSPEND") === (d.durationDays !== null), { message: "durationRequired", path: ["durationDays"] });
+
+export const caseRefSchema = z.strictObject({ caseId: id });
+
+export const caseListQuerySchema = z.object({
+  statut: z.enum([...CASE_STATUSES, "ouverts"]).catch("ouverts"),
+  priorite: z.coerce.number().int().min(0).max(3).optional().catch(undefined),
+  motif: z.enum(REPORT_REASONS).optional().catch(undefined),
+  type: z.enum(REPORT_TARGETS).optional().catch(undefined),
+  assigne: z.enum(["moi", "personne"]).optional().catch(undefined),
+  q: z.string().trim().max(64).refine(noNul).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).max(1000).catch(1),
+});

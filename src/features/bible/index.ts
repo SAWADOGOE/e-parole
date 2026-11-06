@@ -18,3 +18,5 @@ export { searchBible } from "./server/search";
 export { assertCanonicalChapter, findBookBySegment, resolveChapter } from "./server/resolve-chapter";
 export { isoDay, utcDay } from "./server/daily-verse";
 export type * from "./types";
+export { parseReference } from "./lib/parse-reference";
+export { chapterPath, formatReference, passagePath } from "./lib/format";

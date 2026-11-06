@@ -242,6 +242,27 @@ Les modèles non détaillés ici (`Session`, `Account`, `Verification`, `TwoFact
 `PlatformSetting`, `FeatureFlag`, `Conversation`, `ConversationMember`, `Message`, `Event`, `EventAttendee`) suivent
 les mêmes conventions et seront spécifiés dans la PR de la phase qui les introduit.
 
+## Implémenté en Phase 3 (migration `20261106090000_social_network`)
+Modèles : `Post`, `PostMedia`, `Comment`, `Reaction`, `Follow`, `Block`, `Mute`, `PostBookmark`, `Mention`, `Notification`,
+`NotificationActor`, `NotificationPreference`, `ModerationCase`, `Report`, `ModerationAction`, `Sanction` ; champs ajoutés à
+`Profile` (`country`, `countryVisibility`, `handleChangedAt`, liens avatar et bannière), `MediaAsset` (`variants`,
+`dominantColor`, `errorCode`, état `PROCESSING`) et `User` (`suspendedUntil`). Écarts à la spécification ci-dessus :
+
+| Spécification | Implémenté | Raison |
+|---|---|---|
+| `Post.visibility` (+ `communityId`) | **Supprimé** : toute publication est publique (décision du 2026-11-05) | Une colonne à valeur unique serait du poids mort ; la visibilité Communauté sera ajoutée en Phase 4 par migration additive si elle est retenue ([ADR-011](adr/ADR-011-SOCIAL-FEEDS-VISIBILITY.md)) |
+| `Post.verseRef Json` | Colonnes typées `verseTranslationId`, `verseBookId`, `verseChapter`, `verseStart`, `verseEnd` (CHECK tout ou rien, 30 versets au plus) | Clés étrangères vers la Bible, validation SQL, comme `DailyVerse` |
+| `PostType` (8 valeurs) | 5 valeurs : `TEXT`, `TESTIMONY`, `QUESTION`, `MEDITATION`, `ANNOUNCEMENT` (REQ-SOC-1) | Ne rien anticiper ; `ALTER TYPE … ADD VALUE` le moment venu |
+| `Bookmark` | `PostBookmark` (`post_bookmark`) | `BibleBookmark` existe déjà |
+| `ReportTarget` (8 valeurs) | `POST`, `COMMENT`, `PROFILE` | Les autres cibles arrivent avec leur module |
+| `ModerationDecision.RESTORE` | Non créé | Contestations en Phase 5 |
+| Compteurs | `amenCount`, `loveCount`, `encouragedCount`, `commentCount`, `replyCount`, incrémentés en transaction | Une réaction par personne et par cible : verrou consultatif par (personne, cible) |
+
+SQL brut de la migration : visibilité des champs de profil limitée à PUBLIC / FOLLOWERS / PRIVATE ; mineurs existants rendus
+non découvrables ; index partiels du fil (`deletedAt IS NULL AND NOT isHidden`) ; trigger « un seul niveau de réponse » ;
+`num_nonnulls` pour les cibles de réaction et de mention ; relations jamais envers soi-même ; un groupe de notification non lu
+par clé ; un dossier de modération ouvert par cible ; `moderation_action` en append-only pour le rôle applicatif.
+
 ## Isolation entre communautés
 1. Toute table « interne » porte `communityId` (Post, PrayerRequest, Event, EditorialContent communautaire, ModerationCase).
 2. Les repositories exposent des fonctions **qui exigent** un `CommunityScope` obtenu via `requireCommunityRole()` :

@@ -2,6 +2,12 @@
 
 Politique générale : [20-PRIVACY-AND-MODERATION.md](../20-PRIVACY-AND-MODERATION.md).
 
+**Statut : v1 implémentée en Phase 3** (publications, commentaires, profils). Écarts : pas de recherche plein texte des dossiers
+(identifiant ou @auteur uniquement) ; pas de filtre « communauté » ni de file `/manage` (Phase 4) ; « Restaurer » et les
+contestations en Phase 5 ; détection automatique de mots-clés d'escroquerie non livrée (backlog). Masquer et Retirer ne s'appliquent
+pas à un profil (Ignorer, Avertir, Suspendre, Bannir). Suspendre et Bannir exigent une ré-authentification de 10 minutes et la
+ressaisie du @handle visé ; un modérateur ne décide jamais d'un dossier visant son propre contenu.
+
 ## File de dossiers
 Un **dossier** (`ModerationCase`) regroupe tous les signalements d'une même cible. Colonnes : priorité, motif dominant,
 type de cible, extrait (tronqué, flouté si `SEXUAL` ou `SELF_HARM` jusqu'au clic), nombre de signalements, âge du dossier,

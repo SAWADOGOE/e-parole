@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +16,7 @@ import {
 import { DailyVerseForm } from "@/features/bible/components/daily-verse-form";
 import { DeleteDailyVerseButton } from "@/features/bible/components/delete-daily-verse-button";
 import { formatReference } from "@/features/bible/lib/format";
-import { requireAdminPage } from "@/server/auth/session";
-import { can } from "@/server/policies";
+import { requireAdminPermission } from "@/server/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("adminBible");
@@ -29,8 +27,7 @@ const monthKey = (date: Date): string => date.toISOString().slice(0, 7);
 const shiftMonth = (year: number, month: number, delta: number): Date => new Date(Date.UTC(year, month + delta, 1));
 
 export default async function AdminDailyVersesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const session = await requireAdminPage();
-  if (!can(session.actor, "daily_verse:manage")) notFound();
+  await requireAdminPermission("daily_verse:manage", "/admin/bible/daily-verses");
   const t = await getTranslations("adminBible");
   const tAdmin = await getTranslations("admin");
   const format = await getFormatter();

@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { requireActor } from "../auth/session";
 import { AppError, isAppError } from "../errors/app-error";
 import { fail, ok, type Result } from "../errors/result";
-import { logger } from "../logger";
+import { logger, safeError } from "../logger";
 import type { Actor } from "../policies";
 import { enforceRateLimit, type RateLimitName } from "../rate-limit/rate-limit";
 import { getRequestContext } from "../request-context";
@@ -25,7 +25,7 @@ export async function toResult<T>(run: () => Promise<T>): Promise<Result<T>> {
   } catch (error: unknown) {
     if (isAppError(error)) return fail(error.toPayload(requestId));
     if (isNextControlFlow(error)) throw error;
-    logger.error({ err: error, requestId }, "erreur inattendue dans une action");
+    logger.error({ err: safeError(error), requestId }, "erreur inattendue dans une action");
     return fail(new AppError("INTERNAL").toPayload(requestId));
   }
 }

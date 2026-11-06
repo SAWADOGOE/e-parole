@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ADMIN_PAGE_SIZE, auditListQuerySchema, listAuditLogs } from "@/features/administration";
-import { requireAdminPage } from "@/server/auth/session";
+import { recordDeniedAccess, requireAdminPage } from "@/server/auth/session";
 import { can } from "@/server/policies";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,7 +20,10 @@ export default async function AuditLogsPage(props: PageProps<"/admin/audit-logs"
   const actor = session.actor;
   const seesAll = can(actor, "audit:read", { auditActorId: null });
   const seesOwn = can(actor, "audit:read", { auditActorId: actor.userId });
-  if (!seesAll && !seesOwn) notFound();
+  if (!seesAll && !seesOwn) {
+    await recordDeniedAccess(actor, "security.admin_access_denied", "route", "/admin/audit-logs");
+    notFound();
+  }
 
   const t = await getTranslations("admin");
   const format = await getFormatter();
@@ -61,7 +64,7 @@ export default async function AuditLogsPage(props: PageProps<"/admin/audit-logs"
       ) : (
         <div className="mt-6 overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="bg-bg-subtle text-muted">
+            <thead className="bg-bg-subtle text-fg">
               <tr>
                 <th scope="col" className="px-4 py-3 font-medium">{t("colDate")}</th>
                 <th scope="col" className="px-4 py-3 font-medium">{t("colAction")}</th>

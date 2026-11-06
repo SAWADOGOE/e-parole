@@ -1,11 +1,10 @@
 "use client";
 
-import { formText } from "@/lib/form-data";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, type SubmitEvent } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { FormAlert, FormField } from "@/components/shared/form-field";
+import { FormAlert } from "@/components/shared/form-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GlobalRoleName } from "@/server/policies/roles";
 import { errorKey } from "@/lib/error-key";
-import { changeRoleAction, reauthenticateAction } from "../server/actions";
+import { changeRoleAction } from "../server/actions";
+import { ReauthDialog } from "./reauth-dialog";
 
 interface RoleState {
   role: GlobalRoleName;
@@ -33,12 +33,10 @@ type Pending = { mode: "grant" | "revoke"; role: GlobalRoleName } | null;
 export function RoleManager({ userId, userName, roles }: { userId: string; userName: string; roles: RoleState[] }) {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
-  const tAuth = useTranslations("auth");
   const router = useRouter();
   const [confirming, setConfirming] = useState<Pending>(null);
   const [reauthFor, setReauthFor] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reauthError, setReauthError] = useState<string | undefined>(undefined);
   const tErrors = useTranslations("errors.codes");
   const [busy, setBusy] = useState(false);
 
@@ -56,23 +54,6 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
       return;
     }
     setError(tErrors(errorKey(result.error.code)));
-  }
-
-  async function submitReauth(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const change = reauthFor;
-    if (!change) return;
-    const password = formText(new FormData(event.currentTarget), "password");
-    setBusy(true);
-    setReauthError(undefined);
-    const result = await reauthenticateAction({ password }).finally(() => setBusy(false));
-    if (!result.ok) {
-      // L'erreur s'affiche DANS la modale (le reste de la page est masqué par Radix).
-      setReauthError(result.error.fieldErrors?.["password"] ? tAuth("wrongPassword") : tErrors(errorKey(result.error.code)));
-      return;
-    }
-    setReauthFor(null);
-    await apply(change);
   }
 
   return (
@@ -132,28 +113,15 @@ export function RoleManager({ userId, userName, roles }: { userId: string; userN
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={reauthFor !== null} onOpenChange={(open) => !open && setReauthFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogTitle>{t("reauthTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>{t("reauthIntro")}</AlertDialogDescription>
-          <form method="post" onSubmit={(e) => void submitReauth(e)} className="flex flex-col gap-4">
-            <FormField
-              name="password"
-              type="password"
-              label={tAuth("passwordLabel")}
-              autoComplete="current-password"
-              required
-              error={reauthError}
-            />
-            <AlertDialogFooter>
-              <AlertDialogCancel type="button">{tCommon("cancel")}</AlertDialogCancel>
-              <Button type="submit" disabled={busy}>
-                {t("reauthSubmit")}
-              </Button>
-            </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ReauthDialog
+        open={reauthFor !== null}
+        onClose={() => setReauthFor(null)}
+        onConfirmed={() => {
+          const change = reauthFor;
+          setReauthFor(null);
+          if (change) void apply(change);
+        }}
+      />
     </section>
   );
 }

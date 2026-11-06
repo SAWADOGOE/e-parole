@@ -15,6 +15,9 @@ ADR qui le déclare `Remplacé par ADR-xxx`.
 | [008](ADR-008-ADMIN-RBAC.md) | RBAC hybride : rôles en base, permissions en code | Accepté | 2026-11-04 |
 | [009](ADR-009-PHASE1-TOOLING.md) | TypeScript 6, pnpm 11, SeaweedFS en dev, délai de publication de 7 jours | Accepté | 2026-11-04 |
 | [010](ADR-010-BIBLE-RENDERING-CACHE.md) | Rendu et cache du lecteur biblique sous CSP à nonce | Accepté | 2026-11-05 |
+| [011](ADR-011-SOCIAL-FEEDS-VISIBILITY.md) | Fils, visibilité et blocage : règles d'accès en SQL, sans cache partagé | Proposé | 2026-11-06 |
+| [012](ADR-012-MEDIA-PIPELINE.md) | Images : bucket privé, variantes servies par l'application | Proposé | 2026-11-06 |
+| [013](ADR-013-NOTIFICATIONS.md) | Notifications in-app : groupes en base, SSE sur LISTEN/NOTIFY, repli polling | Proposé | 2026-11-06 |
 
 « Accepté » signifie validé par la conception de Phase 0, **sous réserve de la validation de l'utilisateur**.
 

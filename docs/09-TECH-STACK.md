@@ -47,6 +47,8 @@ Non installés en Phase 1 (pas encore utilisés) : `@aws-sdk/client-s3`, `sharp`
 | Paquet | Version | Publication | Usage |
 |---|---|---|---|
 | `saxes` (dev) | 6.0.0 | 2021-11-07 | Lecture en flux du fichier USFX par `scripts/bible` ; déjà présent via `jsdom`, aucune dépendance runtime |
+| `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | 3.1159.0 | 2026-10-28 | Phase 3 : stockage S3 (SeaweedFS en dev) et URL présignées PUT (ADR-004, ADR-012). Serveur et worker seulement |
+| `sharp` | 0.35.5 | 2026-09-27 | Phase 3 : vérification, ré-encodage AVIF/WebP et retrait des métadonnées dans le worker. Binaires précompilés `@img/*` : **aucune entrée `allowBuilds` nécessaire** (pas de script d'installation) |
 
 Extensions PostgreSQL : `unaccent`, `pg_trgm`. Aucune API biblique externe à l'exécution.
 

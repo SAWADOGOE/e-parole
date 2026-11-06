@@ -266,6 +266,12 @@ test.describe("sélection au clavier", () => {
     await readerReady(page);
     await page.locator("#v36").click();
     await page.getByRole("button", { name: "Surligner" }).click();
+    // La hauteur de la barre (rangée de couleurs ouverte) est transmise au défilement par un ResizeObserver : on attend
+    // cette frame, comme le ferait toute frappe clavier humaine.
+    await page.waitForFunction(() => {
+      const bar = document.querySelector<HTMLElement>("[data-reader-actions]");
+      return bar !== null && getComputedStyle(document.documentElement).getPropertyValue("--reader-bar-height").trim() === `${bar.offsetHeight}px`;
+    });
     await page.getByRole("link", { name: /Chapitre suivant/ }).focus();
     const link = await page.getByRole("link", { name: /Chapitre suivant/ }).boundingBox();
     const bar = await page.getByRole("group", { name: "Actions sur la sélection" }).boundingBox();

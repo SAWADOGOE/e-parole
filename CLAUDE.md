@@ -4,7 +4,7 @@ Plateforme sociale **protestante évangélique** (pas catholique) : Bible intég
 prières + enseignements + administration. Signature : « Grandir dans la foi, ensemble. » Français par défaut,
 i18n prévue. Cible : Afrique francophone, mobile, réseau lent.
 
-**État : Phase 2 (Bible) livrée sur `phase-2/bible`, en attente de validation. Ne pas commencer la Phase 3 (réseau social) sans accord explicite.**
+**État : Phases 1 et 2 fusionnées ; Phase 3 (réseau social) livrée sur `phase-3/social`, en attente de validation. Ne pas commencer la Phase 4 (communautés, prières) sans accord explicite.**
 
 ## Identité (non négociable)
 - Centralité du Christ, autorité des Écritures, salut par grâce par la foi. Accueil des pentecôtistes,
@@ -31,7 +31,12 @@ Versions publiées depuis au moins 7 jours (`minimumReleaseAge`). Jamais d'alpha
   de formulaires, Route Handlers pour uploads, webhooks, SSE et API consommées hors React. Toute entrée validée par Zod côté serveur.
 - Prisma : accès DB uniquement via `src/server/db` et les repositories des modules. Migrations versionnées,
   jamais `db push` hors local. Ids `cuid2`, `createdAt/updatedAt`, soft delete (`deletedAt`) seulement là où `docs/11` le prévoit.
-- Admin : `adminAction()` (Next) délègue à `runAdminAction()` (cœur testable). Pages : `requireAdminPage()`, `requireCommunityManager()`.
+- Admin : `adminAction()` (Next) délègue à `runAdminAction()` (cœur testable). Pages : `requireAdminPermission()` (refus journalisé + 404), `requireCommunityManager()`.
+- Social : toute lecture compose les fragments de `src/features/social/server/sql.ts` (`notBlocked`, `notMuted`, `visibleAccount`) ;
+  visibilité d'abord (404) puis `authorize()`. Aucun cache partagé des fils (ADR-011). Images servies par `/api/media` (ADR-012).
+- Budget JS de `/` : îlots lourds chargés à la demande (`LazyMenuTrigger`, `next/dynamic`) ; `buttonVariants` depuis
+  `components/ui/button-variants` dans un îlot client (évite le `Slot` Radix) ; un composant client importé par un layout est
+  chargé même s'il n'est pas affiché.
 - Erreurs : `AppError` typées (`NOT_FOUND`, `FORBIDDEN`, `VALIDATION`, `RATE_LIMITED`, `CONFLICT`) mappées vers une UI soignée.
 
 ## Sécurité (toujours)

@@ -40,13 +40,13 @@ export function FormField({ label, hint, error, trailing, ...inputProps }: FormF
  * Région d'annonce unique et stable : seul son contenu change, pour une annonce fiable par les lecteurs d'écran.
  * Vide, elle reste présente mais invisible.
  */
-export function FormAlert({ message, tone = "danger" }: { message: string | null; tone?: "danger" | "success" }) {
+export function FormAlert({ message, tone = "danger", id }: { message: string | null; tone?: "danger" | "success"; id?: string }) {
   const styles =
     tone === "danger"
       ? "rounded-md border border-danger bg-bg-elevated px-4 py-3 text-sm text-danger"
       : "rounded-md border border-accent bg-accent-subtle px-4 py-3 text-sm text-fg";
   return (
-    <div role={tone === "danger" ? "alert" : "status"} aria-atomic="true" className={message ? styles : "sr-only"}>
+    <div id={id} role={tone === "danger" ? "alert" : "status"} aria-atomic="true" className={message ? styles : "sr-only"}>
       {message}
     </div>
   );

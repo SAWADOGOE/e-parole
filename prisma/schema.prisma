@@ -1,4 +1,4 @@
-// e-Parole — schéma Prisma (Phase 1 : fondations ; Phase 2 : Bible).
+// e-Parole — schéma Prisma (Phase 1 : fondations ; Phase 2 : Bible ; Phase 3 : réseau social et modération).
 // Spécification : docs/11-DATABASE-DESIGN.md. Tables en snake_case via @@map.
 // Les modèles User, Session, Account, Verification, TwoFactor et RateLimit suivent
 // le schéma attendu par Better Auth 1.7 (noms de champs imposés par la bibliothèque).
@@ -69,7 +69,10 @@ enum CommunityStatus {
 }
 
 enum MediaStatus {
+  /// URL présignée émise, fichier pas encore confirmé.
   PENDING
+  /// Envoi confirmé, traitement en cours dans le worker (job media.process).
+  PROCESSING
   READY
   REJECTED
 }
@@ -120,6 +123,77 @@ enum ReaderFont {
   SANS
 }
 
+/// Types de publication (REQ-SOC-1). Toute publication est publique : aucune colonne de visibilité (décision du 2026-11-05).
+enum PostType {
+  TEXT
+  TESTIMONY
+  QUESTION
+  MEDITATION
+  ANNOUNCEMENT
+}
+
+/// Exactement trois réactions (REQ-SOC-3).
+enum ReactionKind {
+  AMEN
+  LOVE
+  ENCOURAGED
+}
+
+enum NotificationType {
+  REACTION
+  COMMENT
+  REPLY
+  MENTION
+  FOLLOW
+  /// Décision de modération communiquée à l'auteur.
+  MODERATION
+  /// Retour générique au signaleur (« Nous avons examiné… »).
+  REPORT_REVIEWED
+}
+
+/// Cibles signalables en Phase 3 ; les autres (prière, communauté, message) arriveront avec leur module.
+enum ReportTarget {
+  POST
+  COMMENT
+  PROFILE
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  FRAUD_FINANCIAL
+  IMPERSONATION
+  DANGEROUS_LINK
+  SEXUAL
+  SELF_HARM
+  MINOR_SAFETY
+  OTHER
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+/// RESTORE arrivera avec les contestations (Phase 5).
+enum ModerationDecision {
+  DISMISS
+  WARN
+  HIDE
+  REMOVE
+  SUSPEND
+  BAN
+}
+
+enum SanctionKind {
+  WARNING
+  SUSPENSION
+  BAN
+}
+
 // ---------------------------------------------------------------------------
 // Identité et authentification (Better Auth)
 // ---------------------------------------------------------------------------
@@ -132,6 +206,8 @@ model User {
   image            String?
   twoFactorEnabled Boolean       @default(false)
   status           AccountStatus @default(ACTIVE)
+  /// Fin d'une suspension (SUSPENDED) ; le worker réactive le compte à cette date.
+  suspendedUntil   DateTime?
   /// Minimisation : année seulement, pour la protection des mineurs.
   birthYear        Int?
   locale           String        @default("fr")
@@ -156,6 +232,27 @@ model User {
   bibleBookmarks     BibleBookmark[]
   bibleReadingState  BibleReadingState?
   dailyVersesCreated DailyVerse[]
+
+  posts             Post[]
+  comments          Comment[]
+  reactions         Reaction[]
+  following         Follow[]                @relation("Follower")
+  followers         Follow[]                @relation("Following")
+  blocking          Block[]                 @relation("Blocker")
+  blockedBy         Block[]                 @relation("Blocked")
+  muting            Mute[]                  @relation("Muter")
+  mutedBy           Mute[]                  @relation("Muted")
+  postBookmarks     PostBookmark[]
+  mentions          Mention[]
+  notifications     Notification[]
+  notificationActs  NotificationActor[]
+  notificationPrefs NotificationPreference?
+  reports           Report[]
+  casesTargeting    ModerationCase[]        @relation("CaseTargetAuthor")
+  casesAssigned     ModerationCase[]        @relation("CaseAssignee")
+  moderationActions ModerationAction[]
+  sanctions         Sanction[]              @relation("SanctionTarget")
+  sanctionsIssued   Sanction[]              @relation("SanctionIssuer")
 
   @@index([status])
   @@map("user")
@@ -244,26 +341,37 @@ model RateLimit {
 // Profil
 // ---------------------------------------------------------------------------
 
+/// Champs sensibles : visibilité par champ PUBLIC / FOLLOWERS / PRIVATE (CHECK en SQL : jamais COMMUNITY), privés par défaut.
+/// Le filtrage est fait par le repository social (src/features/social/server), jamais par l'UI.
 model Profile {
   userId                 String         @id
   user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Unicité insensible à la casse assurée par un index sur lower(handle) (migration SQL).
   handle                 String         @unique
-  displayName            String
+  handleChangedAt        DateTime?
+  displayName            String         @db.VarChar(60)
   bio                    String?        @db.VarChar(280)
-  avatarId               String?
-  bannerId               String?
-  churchName             String?
+  avatarId               String?        @unique
+  avatar                 MediaAsset?    @relation("ProfileAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
+  bannerId               String?        @unique
+  banner                 MediaAsset?    @relation("ProfileBanner", fields: [bannerId], references: [id], onDelete: SetNull)
+  churchName             String?        @db.VarChar(100)
   churchVisibility       Visibility     @default(PRIVATE)
-  city                   String?
+  /// Ville : visibilité locationVisibility. Toujours PRIVATE pour un mineur (pas de géolocalisation).
+  city                   String?        @db.VarChar(80)
   locationVisibility     Visibility     @default(PRIVATE)
-  denomination           String?
+  country                String?        @db.VarChar(60)
+  countryVisibility      Visibility     @default(PRIVATE)
+  denomination           String?        @db.VarChar(80)
   denominationVisibility Visibility     @default(PRIVATE)
+  /// Recherche de profils et autocomplétion des mentions ; false par défaut pour un mineur.
   isDiscoverable         Boolean        @default(true)
   verifiedBadge          VerifiedBadge?
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 
+  /// Recherche de profils et mentions (pg_trgm).
+  @@index([handle(ops: raw("gin_trgm_ops"))], map: "profile_handle_trgm_idx", type: Gin)
   @@map("profile")
 }
 
@@ -379,26 +487,376 @@ model FeatureFlag {
 // Médias (fichiers dans le stockage S3, métadonnées ici)
 // ---------------------------------------------------------------------------
 
+/// Pipeline ADR-004 : l'original (clé `key`, bucket privé) est supprimé après traitement ; seules les variantes
+/// ré-encodées (AVIF/WebP, sans EXIF) restent, servies par l'application après contrôle d'accès (ADR-012).
 model MediaAsset {
-  id        String       @id @default(cuid(2))
-  ownerId   String
-  owner     User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  purpose   MediaPurpose
-  bucket    String
-  key       String       @unique
-  mime      String
-  size      Int
-  width     Int?
-  height    Int?
-  sha256    String?
-  status    MediaStatus  @default(PENDING)
-  isPublic  Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id            String       @id @default(cuid(2))
+  ownerId       String
+  owner         User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  purpose       MediaPurpose
+  bucket        String
+  key           String       @unique
+  /// MIME déclaré à la demande d'URL ; le worker le confronte aux magic bytes.
+  mime          String
+  /// Taille déclarée de l'original (octets, ≤ 10 Mo).
+  size          Int
+  width         Int?
+  height        Int?
+  /// SHA-256 de l'original (contrôle d'intégrité, détection de doublons).
+  sha256        String?
+  /// Variantes produites : [{ width, height, format, key, bytes }].
+  variants      Json         @default("[]")
+  /// Couleur dominante (#rrggbb) affichée en attendant l'image.
+  dominantColor String?
+  /// Code de refus (MAGIC_MISMATCH, UNSUPPORTED_FORMAT, TOO_LARGE, DECODE_FAILED…) : jamais de contenu.
+  errorCode     String?
+  status        MediaStatus  @default(PENDING)
+  isPublic      Boolean      @default(false)
+  uploadedAt    DateTime?
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  avatarOf  Profile?   @relation("ProfileAvatar")
+  bannerOf  Profile?   @relation("ProfileBanner")
+  postMedia PostMedia?
 
   @@index([ownerId, createdAt(sort: Desc)])
   @@index([status, createdAt])
   @@map("media_asset")
+}
+
+// ---------------------------------------------------------------------------
+// Réseau social (Phase 3) — règles d'accès appliquées dans src/features/social/server (ADR-011)
+// ---------------------------------------------------------------------------
+
+/// Toujours publique (visible par tout membre connecté), sauf pour un compte bloqué dans un sens ou dans l'autre.
+/// Le verset cité est une référence (coordonnées) ; son texte est rendu depuis bible_verse, jamais recopié.
+model Post {
+  id                  String    @id @default(cuid(2))
+  authorId            String
+  type                PostType  @default(TEXT)
+  body                String    @default("") @db.VarChar(5000)
+  verseTranslationId  Int?
+  verseBookId         String?
+  verseChapter        Int?
+  verseStart          Int?
+  verseEnd            Int?
+  /// Masqué par la modération (décision ou masquage provisoire à 5 signalements) ; l'auteur le voit avec une mention.
+  isHidden            Boolean   @default(false)
+  hiddenAt            DateTime?
+  commentsLocked      Boolean   @default(false)
+  /// deletedAt posé par la modération (« Retirer ») plutôt que par l'auteur.
+  removedByModeration Boolean   @default(false)
+  amenCount           Int       @default(0)
+  loveCount           Int       @default(0)
+  encouragedCount     Int       @default(0)
+  /// Commentaires visibles (ni supprimés ni masqués), tous niveaux.
+  commentCount        Int       @default(0)
+  editedAt            DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  author           User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  verseTranslation BibleTranslation? @relation(fields: [verseTranslationId], references: [id], onDelete: Restrict)
+  verseBook        BibleBook?        @relation(fields: [verseBookId], references: [id], onDelete: Restrict)
+  media            PostMedia[]
+  comments         Comment[]
+  reactions        Reaction[]
+  mentions         Mention[]
+  bookmarks        PostBookmark[]
+
+  @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@map("post")
+}
+
+model PostMedia {
+  postId   String
+  assetId  String     @unique
+  position Int
+  /// Texte alternatif saisi par l'auteur (WCAG 1.1.1).
+  altText  String     @default("") @db.VarChar(300)
+  post     Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  asset    MediaAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@id([postId, position])
+  @@map("post_media")
+}
+
+/// Un seul niveau de réponse : parentId désigne toujours un commentaire de premier niveau (vérifié par le service et un trigger).
+model Comment {
+  id                  String    @id @default(cuid(2))
+  postId              String
+  authorId            String
+  parentId            String?
+  body                String    @db.VarChar(2000)
+  /// Masqué par la modération.
+  isHidden            Boolean   @default(false)
+  /// Masqué par l'auteur de la publication : visible seulement par son propre auteur.
+  hiddenByPostAuthor  Boolean   @default(false)
+  removedByModeration Boolean   @default(false)
+  amenCount           Int       @default(0)
+  loveCount           Int       @default(0)
+  encouragedCount     Int       @default(0)
+  replyCount          Int       @default(0)
+  editedAt            DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]  @relation("CommentReplies")
+  reactions Reaction[]
+  mentions  Mention[]
+
+  @@index([postId, parentId, createdAt, id])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("comment")
+}
+
+/// Une réaction par personne et par cible, modifiable (CHECK num_nonnulls(postId, commentId) = 1 en SQL).
+model Reaction {
+  id        String       @id @default(cuid(2))
+  userId    String
+  postId    String?
+  commentId String?
+  kind      ReactionKind
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([postId])
+  @@index([commentId])
+  @@map("reaction")
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt(sort: Desc)])
+  @@map("follow")
+}
+
+/// Le blocage est symétrique dans ses effets : aucun des deux ne voit l'autre. Jamais notifié.
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("block")
+}
+
+/// Mise en sourdine : retire des fils et des notifications du membre qui l'a posée, sans rien changer pour l'autre.
+model Mute {
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+  muter     User     @relation("Muter", fields: [muterId], references: [id], onDelete: Cascade)
+  muted     User     @relation("Muted", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@id([muterId, mutedId])
+  @@map("mute")
+}
+
+/// Favori d'une publication (distinct de BibleBookmark), strictement privé.
+model PostBookmark {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("post_bookmark")
+}
+
+/// Mention résolue à l'écriture (blocage et découvrabilité vérifiés). handle = forme écrite dans le texte.
+model Mention {
+  id        String   @id @default(cuid(2))
+  postId    String?
+  commentId String?
+  userId    String
+  handle    String   @db.VarChar(30)
+  createdAt DateTime @default(now())
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@unique([commentId, userId])
+  @@index([userId])
+  @@map("mention")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications in-app (REQ-NOTIF-1, ADR-013) : une ligne par groupe, acteurs distincts dans notification_actor.
+// Un seul groupe non lu par (destinataire, groupKey) : index unique partiel en SQL.
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id          String           @id @default(cuid(2))
+  recipientId String
+  type        NotificationType
+  /// Clé de regroupement, ex. « reaction:post:<id> » ; jamais de contenu.
+  groupKey    String           @db.VarChar(120)
+  postId      String?
+  commentId   String?
+  /// Données de la notification de modération (décision, date de fin, motif communiqué). Vide sinon.
+  data        Json             @default("{}")
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  recipient User                @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  actors    NotificationActor[]
+
+  @@index([recipientId, updatedAt(sort: Desc), id(sort: Desc)])
+  @@map("notification")
+}
+
+model NotificationActor {
+  notificationId String
+  actorId        String
+  createdAt      DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  actor          User         @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, actorId])
+  @@index([actorId])
+  @@map("notification_actor")
+}
+
+/// Préférences in-app par type ; absence de ligne = tout activé.
+model NotificationPreference {
+  userId    String   @id
+  reaction  Boolean  @default(true)
+  comment   Boolean  @default(true)
+  reply     Boolean  @default(true)
+  mention   Boolean  @default(true)
+  follow    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preference")
+}
+
+// ---------------------------------------------------------------------------
+// Modération v1 (US-41, docs/admin/ADMIN-MODERATION.md)
+// ---------------------------------------------------------------------------
+
+/// Un dossier ouvert par cible (index unique partiel en SQL sur les statuts OPEN et IN_PROGRESS).
+model ModerationCase {
+  id                 String       @id @default(cuid(2))
+  targetType         ReportTarget
+  targetId           String
+  /// Auteur de la cible au premier signalement (contexte de modération uniquement).
+  targetAuthorId     String?
+  targetAuthorMinor  Boolean      @default(false)
+  status             CaseStatus   @default(OPEN)
+  /// 0 critique … 3 faible (docs/20).
+  priority           Int          @default(2)
+  dominantReason     ReportReason
+  reportCount        Int          @default(0)
+  /// Signalements de comptes de plus de 7 jours : 5 déclenchent le masquage provisoire.
+  trustedReportCount Int          @default(0)
+  assigneeId         String?
+  autoHiddenAt       DateTime?
+  resolvedAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  targetAuthor User?              @relation("CaseTargetAuthor", fields: [targetAuthorId], references: [id], onDelete: SetNull)
+  assignee     User?              @relation("CaseAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reports      Report[]
+  actions      ModerationAction[]
+  sanctions    Sanction[]
+
+  @@index([status, priority, createdAt])
+  @@index([targetType, targetId])
+  @@index([targetAuthorId, createdAt(sort: Desc)])
+  @@map("moderation_case")
+}
+
+/// evidenceSnapshot : copie figée de la cible au moment du signalement (seule donnée vue par la modération).
+model Report {
+  id               String       @id @default(cuid(2))
+  reporterId       String
+  caseId           String
+  targetType       ReportTarget
+  targetId         String
+  reason           ReportReason
+  details          String?      @db.VarChar(1000)
+  evidenceSnapshot Json
+  /// Compte du signaleur âgé de plus de 7 jours au moment du signalement.
+  reporterTrusted  Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+
+  reporter User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  case     ModerationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([caseId, createdAt])
+  @@map("report")
+}
+
+/// Historique des décisions : append-only pour le rôle applicatif (migration SQL).
+model ModerationAction {
+  id           String             @id @default(cuid(2))
+  caseId       String
+  moderatorId  String
+  decision     ModerationDecision
+  /// Motif communiqué à l'auteur.
+  publicReason String             @db.VarChar(500)
+  /// Note interne, visible des seuls modérateurs ; jamais copiée dans l'audit.
+  internalNote String?            @db.VarChar(1000)
+  durationDays Int?
+  createdAt    DateTime           @default(now())
+
+  case      ModerationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  moderator User           @relation(fields: [moderatorId], references: [id], onDelete: Restrict)
+  sanctions Sanction[]
+
+  @@index([caseId, createdAt])
+  @@map("moderation_action")
+}
+
+model Sanction {
+  id         String       @id @default(cuid(2))
+  userId     String
+  kind       SanctionKind
+  caseId     String?
+  actionId   String?
+  issuedById String
+  startsAt   DateTime     @default(now())
+  endsAt     DateTime?
+  createdAt  DateTime     @default(now())
+
+  user     User              @relation("SanctionTarget", fields: [userId], references: [id], onDelete: Cascade)
+  issuedBy User              @relation("SanctionIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  case     ModerationCase?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  action   ModerationAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("sanction")
 }
 
 // ---------------------------------------------------------------------------
@@ -433,6 +891,7 @@ model BibleTranslation {
   bookmarks     BibleBookmark[]
   readingStates BibleReadingState[]
   dailyVerses   DailyVerse[]
+  posts         Post[]
 
   @@map("bible_translation")
 }
@@ -481,6 +940,7 @@ model BibleBook {
   bookmarks    BibleBookmark[]
   dailyVerses  DailyVerse[]
   poolEntries  DailyVersePool[]
+  posts        Post[]
 
   @@index([testament, order])
   @@map("bible_book")

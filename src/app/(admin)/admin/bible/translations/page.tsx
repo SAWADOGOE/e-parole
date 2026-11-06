@@ -1,13 +1,12 @@
 import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { listTranslationsForAdmin } from "@/features/bible";
 import { TranslationControl } from "@/features/bible/components/translation-control";
-import { requireAdminPage } from "@/server/auth/session";
+import { requireAdminPermission } from "@/server/auth/session";
 import { can } from "@/server/policies";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,8 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminBibleTranslationsPage() {
-  const session = await requireAdminPage();
-  if (!can(session.actor, "bible:translation:read")) notFound();
+  const session = await requireAdminPermission("bible:translation:read", "/admin/bible/translations");
   const t = await getTranslations("adminBible");
   const tAdmin = await getTranslations("admin");
   const format = await getFormatter();

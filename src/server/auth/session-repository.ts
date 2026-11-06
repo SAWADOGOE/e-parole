@@ -1,5 +1,5 @@
 import { recordAudit } from "../audit/audit";
-import { db } from "../db";
+import { db, type TransactionClient } from "../db";
 import type { Actor } from "../policies";
 
 /** Atteste qu'un second facteur a été vérifié pour cette session. */
@@ -9,6 +9,24 @@ export async function markSessionMfaVerified(sessionId: string): Promise<void> {
 
 export async function markSessionReauthenticated(sessionId: string, at: Date): Promise<void> {
   await db.session.update({ where: { id: sessionId }, data: { reauthenticatedAt: at } });
+}
+
+/** Suspension ou bannissement : toutes les sessions du compte sont fermées dans la transaction de la décision. */
+export async function revokeAllSessions(userId: string, tx: TransactionClient = db): Promise<number> {
+  const { count } = await tx.session.deleteMany({ where: { userId } });
+  return count;
+}
+
+/** Purge quotidienne des sessions expirées (adresse IP et agent utilisateur inclus). */
+export async function purgeExpiredSessions(now: Date = new Date()): Promise<number> {
+  const { count } = await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
+  return count;
+}
+
+/** Session toujours valable pour un flux long (SSE) : non expirée, non révoquée, compte actif. */
+export async function isSessionStillValid(sessionId: string, userId: string, now: Date = new Date()): Promise<boolean> {
+  const count = await db.session.count({ where: { id: sessionId, userId, expiresAt: { gt: now }, user: { status: "ACTIVE", deletedAt: null } } });
+  return count === 1;
 }
 
 export async function revokeOtherSessions(userId: string, keepSessionId: string): Promise<number> {

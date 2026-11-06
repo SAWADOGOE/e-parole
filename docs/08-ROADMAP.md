@@ -48,7 +48,7 @@ pas en Phase 5.
   recherche « grace » < 150 ms p95 en local.
 - **Risques** : écarts de versification entre sources ; licence (voir [bible/BIBLE-LICENSING.md](bible/BIBLE-LICENSING.md)).
 
-## Phase 3 — Réseau social
+## Phase 3 — Réseau social (livrée le 2026-11-06 sur `phase-3/social`, en attente de validation)
 - **Tâches** : profils et visibilité ; uploads S3 (URL présignées, sharp, AVIF/WebP) ; publications typées ;
   commentaires ; réactions ; follows ; blocages ; fils (pagination par curseur) ; mentions ; favoris ;
   signalements + `/admin/moderation` v1 ; notifications in-app.

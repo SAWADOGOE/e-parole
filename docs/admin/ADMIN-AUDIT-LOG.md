@@ -12,6 +12,10 @@
 | Paramètres | `setting.updated`, `feature_flag.updated` |
 | Sécurité | `auth.mfa.enabled`, `auth.mfa.reset`, `security.admin_access_denied`, `security.cross_community_attempt` |
 
+Ajouté en Phase 3 : `moderation.auto_hide` (masquage provisoire, sans acteur), `user.suspension.expired` (levée automatique).
+`moderation.decision` enregistre la décision, le type de cible, la durée et l'identifiant de l'auteur visé — jamais le motif
+communiqué, la note interne ni le contenu signalé (testé).
+
 Les actions ordinaires des membres (publier, commenter, prier) ne sont **pas** dans l'audit log.
 
 ## Format

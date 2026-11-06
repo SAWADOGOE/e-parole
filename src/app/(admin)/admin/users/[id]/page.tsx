@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { findAdminUser, ROLE_GRANT_PERMISSION } from "@/features/administration";
 import { RoleManager } from "@/features/administration/components/role-manager";
-import { requireAdminPage } from "@/server/auth/session";
+import { requireAdminPermission } from "@/server/auth/session";
 import { can, GLOBAL_ROLES } from "@/server/policies";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,8 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminUserDetailPage(props: PageProps<"/admin/users/[id]">) {
-  const session = await requireAdminPage();
-  if (!can(session.actor, "user:read:admin", { linkedToCase: false })) notFound();
+  const session = await requireAdminPermission("user:read:admin", "/admin/users", { linkedToCase: false });
   const { id } = await props.params;
   const user = await findAdminUser(id);
   if (!user) notFound();

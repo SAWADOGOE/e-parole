@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Copy, Highlighter, NotebookPen, Share2, X } from "lucide-react";
+import { Bookmark, Copy, Highlighter, NotebookPen, PenLine, Share2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { HIGHLIGHT_COLORS } from "../constants";
@@ -15,12 +15,14 @@ interface ReaderActionBarProps {
   onNote: () => void;
   onBookmark: () => void;
   onShare: () => void;
+  /** Ouvre le composer pré-rempli avec la référence sélectionnée (US-5). */
+  onPublish: () => void;
 }
 
 const ACTION = "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-0.5 text-center text-xs font-medium [overflow-wrap:anywhere] text-fg hover:bg-bg-subtle disabled:opacity-50";
 
 /** Barre d'actions de la sélection : au-dessus de la navigation sur mobile, libellés toujours visibles. */
-export default function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight, onNote, onBookmark, onShare }: ReaderActionBarProps) {
+export default function ReaderActionBar({ reference, busy, onClear, onCopy, onHighlight, onNote, onBookmark, onShare, onPublish }: ReaderActionBarProps) {
   const t = useTranslations("bible");
   const [colorsOpen, setColorsOpen] = useState(false);
   const bar = useRef<HTMLDivElement>(null);
@@ -90,6 +92,10 @@ export default function ReaderActionBar({ reference, busy, onClear, onCopy, onHi
         <button type="button" className={ACTION} onClick={onShare}>
           <Share2 aria-hidden="true" className="size-5" />
           {t("actions.share")}
+        </button>
+        <button type="button" className={ACTION} onClick={onPublish}>
+          <PenLine aria-hidden="true" className="size-5" />
+          {t("actions.publish")}
         </button>
       </div>
     </div>

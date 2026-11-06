@@ -12,6 +12,7 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast: "!rounded-md !border !border-border !bg-bg-elevated !text-fg !shadow-sm !font-sans",
+          title: "!text-fg",
           description: "!text-muted",
         },
       }}

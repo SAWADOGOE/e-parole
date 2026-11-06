@@ -92,7 +92,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
 
   const selection = useMemo(() => [...selected].sort((a, b) => a - b), [selected]);
   const selectionReference = selection.length > 0 ? formatSelectionReference(bookName, chapter, selection) : reference;
-  const { busy, copy, share, highlight, bookmark, requireAccount } = useSelectionActions({
+  const { busy, copy, share, highlight, bookmark, publish, requireAccount } = useSelectionActions({
     bookId,
     bookSlug,
     chapter,
@@ -138,6 +138,7 @@ export function ReaderChrome(props: ReaderChromeProps) {
               }}
               onBookmark={bookmark}
               onShare={() => void share()}
+              onPublish={publish}
             />,
             slot,
           )

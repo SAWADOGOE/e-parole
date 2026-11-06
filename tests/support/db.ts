@@ -2,6 +2,22 @@ import pg from "pg";
 import { testAppUrl, testOwnerUrl } from "./integration-env";
 
 const TABLES = [
+  "notification_actor",
+  "notification",
+  "notification_preference",
+  "sanction",
+  "moderation_action",
+  "report",
+  "moderation_case",
+  "mention",
+  "post_bookmark",
+  "reaction",
+  "comment",
+  "post_media",
+  "post",
+  "follow",
+  "block",
+  "mute",
   "audit_log",
   "community_member",
   "community",

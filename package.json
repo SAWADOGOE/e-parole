@@ -28,9 +28,12 @@
     "bible:import": "tsx scripts/bible/import.ts",
     "bible:activate": "tsx scripts/bible/activate.ts",
     "bible:crosscheck": "tsx scripts/bible/cross-check.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "demo:social": "tsx scripts/dev/seed-social-demo.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1159.0",
+    "@aws-sdk/s3-request-presigner": "3.1159.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "better-auth": "1.7.14",
@@ -49,6 +52,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
+    "sharp": "0.35.5",
     "sonner": "2.0.8",
     "tailwind-merge": "3.7.0",
     "zod": "4.6.7"

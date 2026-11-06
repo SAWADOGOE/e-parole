@@ -84,3 +84,8 @@ Commencer par `pnpm db:seed`, qui crée les 66 livres et la liste de référence
 - Stockage objet : synchronisation S3 (`aws s3 sync` ou `rclone`) vers un bucket de sauvegarde. ⚠️ Non testé en Phase 1.
 - En production : job quotidien chiffré, rétention selon [11](11-DATABASE-DESIGN.md#sauvegarde-restauration-rétention),
   test de restauration mensuel documenté.
+
+## Stockage des images (Phase 3)
+`S3_PUBLIC_ENDPOINT` est l'adresse du stockage vue par le navigateur (URL présignées d'envoi), par défaut `S3_ENDPOINT`.
+En dev : `http://127.0.0.1:58333`. SeaweedFS accepte les requêtes CORS du navigateur par défaut. Le worker doit tourner
+(`pnpm worker`) pour que les images envoyées deviennent visibles. Données de démonstration locales : `pnpm demo:social`.

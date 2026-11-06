@@ -13,6 +13,13 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().min(1),
+  S3_ENDPOINT: z.url(),
+  /** Adresse du stockage vue par le navigateur (URL présignées) ; par défaut S3_ENDPOINT. */
+  S3_PUBLIC_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).default("us-east-1"),
+  S3_BUCKET_PRIVATE: z.string().min(3),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 });
 

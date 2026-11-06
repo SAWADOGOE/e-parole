@@ -46,10 +46,18 @@ describe("garde-fous PostgreSQL", () => {
 
   it("crée un profil avec un handle valide dérivé du nom", async () => {
     const user = await db.user.create({ data: { email: "nouveau@exemple.test", name: "Aïcha Ouédraogo", birthYear: 2004 } });
-    await createProfileForUser(user.id, user.name);
+    await createProfileForUser(user.id, user.name, 2004);
     const profile = await db.profile.findUniqueOrThrow({ where: { userId: user.id } });
     expect(profile.handle).toMatch(/^aicha_ouedraogo_\d{4,5}$/);
     expect(profile.displayName).toBe("Aïcha Ouédraogo");
+    expect(profile.isDiscoverable).toBe(true);
+  });
+
+  it("un mineur n'est pas découvrable par défaut", async () => {
+    const birthYear = new Date().getUTCFullYear() - 15;
+    const user = await db.user.create({ data: { email: "jeune@exemple.test", name: "Jeune Test", birthYear } });
+    await createProfileForUser(user.id, user.name, birthYear);
+    expect((await db.profile.findUniqueOrThrow({ where: { userId: user.id } })).isDiscoverable).toBe(false);
   });
 
   it("un créneau rendu (connexion réussie) libère une place", async () => {
