@@ -101,3 +101,22 @@ describe("readJson (corps des Route Handlers)", () => {
     expect(await readJson(new Request("http://localhost/x", { method: "POST", body: '{"a":1}' }))).toEqual({ a: 1 });
   });
 });
+
+describe("preuves de modération : correspondance structurée", () => {
+  it("un identifiant d'image écrit dans le texte d'une publication n'ouvre pas l'accès modérateur", async () => {
+    const { isAssetInEvidence } = await import("@/features/moderation");
+    const owner = await createTestUser();
+    const author = await createTestUser();
+    const reporter = await createTestUser();
+    const privateDraft = await db.mediaAsset.create({ data: { ownerId: owner.actor.userId, purpose: "POST_IMAGE", bucket: "b", key: "k-draft", mime: "image/jpeg", size: 1, status: "READY" } });
+    const postId = await postAs(author.actor, `[Test] "${privateDraft.id}"`);
+    await createReport(reporter.actor, { targetType: "POST", targetId: postId, reason: "SPAM", details: "" });
+    expect(await isAssetInEvidence(privateDraft.id)).toBe(false);
+
+    const attached = await db.mediaAsset.create({ data: { ownerId: author.actor.userId, purpose: "POST_IMAGE", bucket: "b", key: "k-attached", mime: "image/jpeg", size: 1, status: "READY", width: 10, height: 10 } });
+    const { createPost } = await import("@/features/social/server/posts");
+    const { id: withImage } = await createPost(author.actor, { type: "TEXT", body: "[Test]", verse: null, images: [{ assetId: attached.id, altText: "" }] });
+    await createReport(reporter.actor, { targetType: "POST", targetId: withImage, reason: "SPAM", details: "" });
+    expect(await isAssetInEvidence(attached.id)).toBe(true);
+  });
+});

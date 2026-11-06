@@ -138,7 +138,11 @@ function unreferenced(alias: Prisma.Sql): Prisma.Sql {
     AND NOT EXISTS (SELECT 1 FROM "profile" p WHERE p."avatarId" = ${alias}."id" OR p."bannerId" = ${alias}."id")
     AND NOT EXISTS (
       SELECT 1 FROM "report" r JOIN "moderation_case" c ON c."id" = r."caseId"
-      WHERE c."status" IN ('OPEN', 'IN_PROGRESS') AND strpos(r."evidenceSnapshot"::text, ${alias}."id") > 0)`;
+      WHERE c."status" IN ('OPEN', 'IN_PROGRESS')
+        AND (r."evidenceSnapshot"->>'avatarId' = ${alias}."id" OR r."evidenceSnapshot"->>'bannerId' = ${alias}."id"
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r."evidenceSnapshot"->'media') = 'array' THEN r."evidenceSnapshot"->'media' ELSE '[]'::jsonb END) e
+            WHERE e->>'assetId' = ${alias}."id")))`;
 }
 
 /**

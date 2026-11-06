@@ -321,9 +321,18 @@ export async function findHandle(tx: TransactionClient, userId: string): Promise
   return profile?.handle ?? null;
 }
 
-/** Image citée par la copie figée d'un signalement : seule voie d'accès d'un modérateur à une image (ADR-012). */
+/**
+ * Image citée par la copie figée d'un signalement : seule voie d'accès d'un modérateur à une image (ADR-012).
+ * Correspondance sur les seuls champs structurés (jamais sur le texte libre du contenu, où l'on pourrait écrire un identifiant).
+ */
 export async function isAssetInEvidence(assetId: string): Promise<boolean> {
   const rows = await db.$queryRaw<{ ok: number }[]>`
-    SELECT 1 AS "ok" FROM "report" r WHERE strpos(r."evidenceSnapshot"::text, ${`"${assetId}"`}) > 0 LIMIT 1`;
+    SELECT 1 AS "ok" FROM "report" r
+    WHERE r."evidenceSnapshot"->>'avatarId' = ${assetId}
+       OR r."evidenceSnapshot"->>'bannerId' = ${assetId}
+       OR EXISTS (
+         SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r."evidenceSnapshot"->'media') = 'array' THEN r."evidenceSnapshot"->'media' ELSE '[]'::jsonb END) e
+         WHERE e->>'assetId' = ${assetId})
+    LIMIT 1`;
   return rows.length > 0;
 }
